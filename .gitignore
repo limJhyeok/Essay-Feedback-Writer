@@ -1,0 +1,14 @@
+# python
+*.pyc
+__pycache__/
+
+# env, config
+.env
+
+# IDE
+.vscode/
+
+# DB
+alembic.ini
+migrations
+*.db

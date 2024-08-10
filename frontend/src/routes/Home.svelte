@@ -1,8 +1,11 @@
 <script>
   import { faBars } from '@fortawesome/free-solid-svg-icons';
   import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
-  import { isLogin, isSignUpPage } from "../lib/store"
-  
+  import { isLogin, isSignUpPage, chatHistoryTitles } from "../lib/store"
+  import fastapi from "../lib/api";
+
+  $: chatHistoryTitles
+
   // TODO: messages will be empty list after applying backend
   let activeMessages = []
   let userInput = '';
@@ -21,10 +24,11 @@
       ]
     }
   ]  
-  let chatHistoryTitles = [
-    { id: 0, name: "Chat 1" },
-    { id: 1, name: "Chat 2" },
-  ];
+  // let chatHistoryTitles = [
+  //   { id: 0, name: "Chat 1" },
+  //   { id: 1, name: "Chat 2" },
+  // ];
+  // let chatHistoryTitles=[];
   let activeChatId = -1;
   let isSidebarVisible = true;
 
@@ -35,7 +39,23 @@
       // 여기서 API 호출을 통해 ChatGPT 응답을 받는 로직을 추가하세요.
     }
   }
-
+  function getChatTitles() {
+    // TODO: user_id backend로 받아오기
+    let user_id = 1
+    let url = "/api/chat/titles/" + user_id
+    let params = {}
+    fastapi('get', url, params, 
+        (json) => {
+          console.log(json)
+          chatHistoryTitles.set(json);
+          console.log(json.chat_history_titles);
+        },
+        (json_error) => {
+            error = json_error
+        }
+    )
+  }
+  getChatTitles()
   function selectChat(id) {
     activeChatId = id;
     activeMessages = chatHistory[activeChatId].message
@@ -228,7 +248,7 @@
     <div class = "h-full w-full">
       <div class="sidebar {isSidebarVisible ? '': 'hidden'}">
         <ul>
-          {#each chatHistoryTitles as chatTitles}
+          {#each $chatHistoryTitles as chatTitles}
             <button on:click={() => selectChat(chatTitles.id)} class:active={chatTitles.id === activeChatId}>
               {chatTitles.name}
             </button>

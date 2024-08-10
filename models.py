@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, MetaData
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, MetaData, DateTime
+from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -19,7 +20,7 @@ class User(Base):
     email = Column(String, unique=True, nullable=False)
     password =  Column(String, nullable=False)
     is_social = Column(Boolean, default = False)
-    social_accounts = relationship("SocialAccount", back_populates = "user")
+    social_accounts = relationship("SocialAccount", backref = "user")
 
 class SocialAccount(Base):
   __tablename__ = "social_account"
@@ -27,4 +28,12 @@ class SocialAccount(Base):
   user_id = Column(Integer, ForeignKey("user.id"))
   provider = Column(String, nullable = False)
   provider_user_id = Column(String, unique=True, nullable = False)
-  user = relationship("User", back_populates = "social_accounts")
+
+class Chat(Base):
+   __tablename__ = "chat"
+   id = Column(Integer, primary_key = True, index= True)
+   user_id = Column(Integer, ForeignKey("user.id"))
+   title = Column(String, nullable = True)
+   message = Column(String, nullable = True)
+   created_at = Column(DateTime, default=func.now(), nullable=False)
+   updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)

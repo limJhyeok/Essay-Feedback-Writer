@@ -1,4 +1,6 @@
 from domain.user import user_router
+from domain.chat import chat_router
+
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import FileResponse
@@ -21,6 +23,7 @@ app.add_middleware(
 )
 
 app.include_router(user_router.router)
+app.include_router(chat_router.router)
 
 # @app.get("/")
 # def index():

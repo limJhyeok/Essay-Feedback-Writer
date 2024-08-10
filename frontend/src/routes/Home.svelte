@@ -1,29 +1,14 @@
 <script>
   import { faBars } from '@fortawesome/free-solid-svg-icons';
   import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
-  import { isLogin, isSignUpPage, chatHistoryTitles } from "../lib/store"
+  import { isLogin, isSignUpPage, chatTitles, sessionMessages } from "../lib/store"
   import fastapi from "../lib/api";
 
-  $: chatHistoryTitles
+  $: chatTitles, sessionMessages
 
   // TODO: messages will be empty list after applying backend
   let activeMessages = []
   let userInput = '';
-  // TODO: chatHistory will be empty list after applying backend
-  let chatHistory = [
-    {
-      message: [
-        { sender: 'user', text: 'Hello\nHow are you?' },
-        { sender: 'bot', text: 'I am fine, thank you!\nHow can I assist you today?' }
-      ]
-    },
-    {
-      message: [
-        { sender: 'user', text: 'Hello\nHow are you2?' },
-        { sender: 'bot', text: 'I am fine2, thank you!2\nHow can I assist you today?' }
-      ]
-    }
-  ]  
   let activeChatId = -1;
   let isSidebarVisible = true;
 
@@ -41,7 +26,7 @@
     let params = {}
     fastapi('get', url, params, 
         (json) => {
-          chatHistoryTitles.set(json);
+          chatTitles.set(json);
         },
         (json_error) => {
             error = json_error
@@ -49,9 +34,25 @@
     )
   }
   getChatTitles()
+  function getSessionMessages(chat_id) {
+    let url = "/api/chat/session/" + chat_id
+    let params = {}
+    fastapi('get', url, params, 
+        (json) => {
+          sessionMessages.set(json.message_history)
+        },
+        (json_error) => {
+            error = json_error
+        }
+    )
+  }
+  // getChatMessages()
   function selectChat(id) {
-    activeChatId = id;
-    activeMessages = chatHistory[activeChatId].message
+    activeChatId = id
+    // activeMessages = chatHistory[activeChatId].message
+    getSessionMessages(id)
+    activeMessages = $sessionMessages.messages
+
     // id를 사용하여 특정 채팅 기록을 로드하는 로직을 추가하세요.
   }
   function toggleSidebar() {
@@ -241,9 +242,9 @@
     <div class = "h-full w-full">
       <div class="sidebar {isSidebarVisible ? '': 'hidden'}">
         <ul>
-          {#each $chatHistoryTitles as chatTitles}
-            <button on:click={() => selectChat(chatTitles.id)} class:active={chatTitles.id === activeChatId}>
-              {chatTitles.name}
+          {#each $chatTitles as chatTitle}
+            <button on:click={() => selectChat(chatTitle.id)} class:active={chatTitle.id === activeChatId}>
+              {chatTitle.name}
             </button>
           {/each}
         </ul>

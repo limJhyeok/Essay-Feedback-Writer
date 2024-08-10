@@ -17,6 +17,8 @@
     "@fortawesome/fontawesome-svg-core": "^6.6.0",
     "@fortawesome/free-solid-svg-icons": "^6.6.0",
     "@fortawesome/svelte-fontawesome": "^0.2.2",
+    "bootstrap": "^5.3.3",
+    "qs": "^6.13.0",
     "svelte-spa-router": "^4.0.1"
   }
 }

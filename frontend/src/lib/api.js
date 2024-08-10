@@ -1,5 +1,5 @@
 import qs from "qs"
-import { access_token, username, is_login } from "./store"
+import { accessToken, userEmail, isLogin } from "./store"
 import { get } from 'svelte/store'
 import { push } from 'svelte-spa-router'
 
@@ -26,7 +26,7 @@ const fastapi = (operation, url, params, success_callback, failure_callback) => 
         }
     }
 
-    const _access_token = get(access_token)
+    const _access_token = get(accessToken)
     if (_access_token) {
         options.headers["Authorization"] = "Bearer " + _access_token
     }
@@ -50,9 +50,9 @@ const fastapi = (operation, url, params, success_callback, failure_callback) => 
                             success_callback(json)
                         }
                     }else if(operation !== 'login' && response.status === 401) { // token time out
-                        access_token.set('')
-                        username.set('')
-                        is_login.set(false)
+                        accessToken.set('')
+                        userEmail.set('')
+                        isLogin.set(false)
                         alert("로그인이 필요합니다.")
                         push('/user-login')
                     }else {

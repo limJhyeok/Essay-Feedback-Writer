@@ -9,4 +9,7 @@ const persist_storage = (key, initValue) => {
   return store
 }
 
-export const test = persist_storage("test", 0)
+export const isLogin = persist_storage("isLogin", false)
+export const userEmail = persist_storage("userEmail", "")
+export const accessToken = persist_storage("accessToken", "")
+export const isSignUpPage = persist_storage("isSignUpPage", false)

@@ -1,24 +1,36 @@
 <script>
   import { faBars } from '@fortawesome/free-solid-svg-icons';
   import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
-
+  import { isLogin, isSignUpPage } from "../lib/store"
+  
   // TODO: messages will be empty list after applying backend
-  let messages = [
-    { sender: 'user', text: 'Hello\nHow are you?' },
-    { sender: 'bot', text: 'I am fine, thank you!\nHow can I assist you today?' },
-  ];
+  let activeMessages = []
   let userInput = '';
   // TODO: chatHistory will be empty list after applying backend
   let chatHistory = [
-    { id: 1, name: "Chat 1" },
-    { id: 2, name: "Chat 2" },
+    {
+      message: [
+        { sender: 'user', text: 'Hello\nHow are you?' },
+        { sender: 'bot', text: 'I am fine, thank you!\nHow can I assist you today?' }
+      ]
+    },
+    {
+      message: [
+        { sender: 'user', text: 'Hello\nHow are you2?' },
+        { sender: 'bot', text: 'I am fine2, thank you!2\nHow can I assist you today?' }
+      ]
+    }
+  ]  
+  let chatHistoryTitles = [
+    { id: 0, name: "Chat 1" },
+    { id: 1, name: "Chat 2" },
   ];
-  let activeChatId = 1;
+  let activeChatId = -1;
   let isSidebarVisible = true;
 
   function sendMessage() {
     if (userInput.trim()) {
-      messages = [...messages, { sender: 'user', text: userInput }];
+      activeMessages = [...activeMessages, { sender: 'user', text: userInput }];
       userInput = '';
       // 여기서 API 호출을 통해 ChatGPT 응답을 받는 로직을 추가하세요.
     }
@@ -26,6 +38,7 @@
 
   function selectChat(id) {
     activeChatId = id;
+    activeMessages = chatHistory[activeChatId].message
     // id를 사용하여 특정 채팅 기록을 로드하는 로직을 추가하세요.
   }
   function toggleSidebar() {
@@ -37,12 +50,23 @@
       sendMessage();
     }
   }
+  function goToSignUp(){
+    event.preventDefault();
+    $isSignUpPage = true
+    window.location.hash = '#/authorize';
+  }
+  function goToLogin(){
+    event.preventDefault();
+    $isSignUpPage = false
+    window.location.hash = '#/authorize';
+  }
 </script>
 
 <!-- TODO: faRobot으로 import하면 왜 안되는지 모르겠음 -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<!-- TODO: style sheet 부트스트랩으로 변경 -->
 <style>
-  .container {
+  .full-container {
     display: flex;
     height: 100vh;
   }
@@ -52,7 +76,7 @@
     display: flex;
     flex-direction: column;
     transition: width 0.3s;
-    overflow-y: auto; 
+    overflow-y: auto;
   }
   .sidebar.hidden {
     width: 0;
@@ -77,6 +101,11 @@
     list-style: none;
     padding: 15px 20px;
     cursor: pointer;
+  }
+  .top-bar {
+    display: flex;
+    justify-content: flex-end;
+    padding: 10px;
   }
   .chat-container {
     flex: 1;
@@ -180,9 +209,12 @@
     align-items: center;
     text-align: center;
   }
+  .mr-6 {
+    margin-right: 6px;
+  }
 </style>
 
-<div class="container">
+<div class="full-container">
   <nav class="h-full w-full {isSidebarVisible ? 'nav-bg-grey' : ''}" >
     <div class=" h-14">
       <button class = "toggle-button" on:click="{toggleSidebar}">
@@ -196,20 +228,35 @@
     <div class = "h-full w-full">
       <div class="sidebar {isSidebarVisible ? '': 'hidden'}">
         <ul>
-          {#each chatHistory as chat}
-            <button on:click={() => selectChat(chat.id)} class:active={chat.id === activeChatId}>
-              {chat.name}
+          {#each chatHistoryTitles as chatTitles}
+            <button on:click={() => selectChat(chatTitles.id)} class:active={chatTitles.id === activeChatId}>
+              {chatTitles.name}
             </button>
           {/each}
         </ul>
       </div>
     </div>
   </nav>
+  
   <!-- TODO: user와 bot의 채팅이 좌우로 넓게 배열되어있어서 유저가 읽기 불편함
    (ChatGPT처럼 가운데에 몰려있는 형식으로 변환 필요해보임) -->
   <div class="chat-container">
+    <!-- TODO: User Login 여부에 따른 top-bar 변환 필요 -->
+    <!-- if isLogin == false  else user profile-->
+    <div class="top-bar">
+      <button class="btn relative btn-primary btn-small mr-6" on:click={goToLogin}>
+        <div class="flex items-center justify-center">
+          로그인
+        </div>
+      </button>
+      <button class="btn relative btn-secondary btn-small" on:click={goToSignUp}>
+        <div class = "flex items-center justify-center">
+          회원가입
+        </div>
+      </button>
+    </div>
     <div class="messages">
-      {#each messages as message}
+      {#each activeMessages as message}
         <div class="message {message.sender}">
           {message.text}
         </div>

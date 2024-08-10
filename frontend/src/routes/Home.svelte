@@ -24,11 +24,6 @@
       ]
     }
   ]  
-  // let chatHistoryTitles = [
-  //   { id: 0, name: "Chat 1" },
-  //   { id: 1, name: "Chat 2" },
-  // ];
-  // let chatHistoryTitles=[];
   let activeChatId = -1;
   let isSidebarVisible = true;
 
@@ -46,9 +41,7 @@
     let params = {}
     fastapi('get', url, params, 
         (json) => {
-          console.log(json)
           chatHistoryTitles.set(json);
-          console.log(json.chat_history_titles);
         },
         (json_error) => {
             error = json_error

@@ -34,6 +34,14 @@ class Chat(Base):
    id = Column(Integer, primary_key = True, index= True)
    user_id = Column(Integer, ForeignKey("user.id"))
    title = Column(String, nullable = True)
-   message = Column(String, nullable = True)
    created_at = Column(DateTime, default=func.now(), nullable=False)
    updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
+
+class ChatSession(Base):
+    __tablename__ = "chat_session"
+    id = Column(Integer, primary_key=True, index=True)
+    chat_id = Column(Integer, ForeignKey("chat.id"), nullable=False)  # 외래 키 추가
+    sender = Column(String, nullable=False)
+    message = Column(String, nullable=True)
+    created_at = Column(DateTime, default=func.now(), nullable=False)
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)

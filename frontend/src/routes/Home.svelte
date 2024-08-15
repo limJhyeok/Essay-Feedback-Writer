@@ -71,6 +71,11 @@
     $isSignUpPage = false
     window.location.hash = '#/authorize';
   }
+  function handleLogOut(){
+    event.preventDefault();
+    $isLogin=false;
+    window.location.reload();
+  }
 </script>
 
 <!-- TODO: faRobot으로 import하면 왜 안되는지 모르겠음 -->
@@ -255,6 +260,7 @@
     <!-- TODO: User Login 여부에 따른 top-bar 변환 필요 -->
     <!-- if isLogin == false  else user profile-->
     <div class="top-bar">
+      {#if $isLogin == false}
       <button class="btn relative btn-primary btn-small mr-6" on:click={goToLogin}>
         <div class="flex items-center justify-center">
           로그인
@@ -265,6 +271,14 @@
           회원가입
         </div>
       </button>
+      {:else}
+        <button class="btn relative btn-primary btn-small mr-6" on:click|preventDefault={handleLogOut}>
+          <div class="flex items-center justify-center">
+            로그아웃
+          </div>
+        </button>
+      {/if}
+      
     </div>
     <div class="messages">
       {#each activeMessages as message}

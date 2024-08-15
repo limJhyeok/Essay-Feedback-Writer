@@ -8,15 +8,28 @@
 
   // TODO: messages will be empty list after applying backend
   let activeMessages = []
-  let userInput = '';
+  let userMessage = '';
   let activeChatId = -1;
   let isSidebarVisible = true;
 
   function sendMessage() {
-    if (userInput.trim()) {
-      activeMessages = [...activeMessages, { sender: 'user', text: userInput }];
-      userInput = '';
-      // 여기서 API 호출을 통해 ChatGPT 응답을 받는 로직을 추가하세요.
+    if (userMessage.trim()) {
+      let user_id = 1
+      let url = '/api/chat/session'
+      let params = {
+        user_id: user_id,
+        chat_id: activeChatId,
+        message: userMessage
+      }
+      fastapi('post', url, params, 
+        (json) => {
+          activeMessages = [...activeMessages, { sender: 'user', text: userMessage }];
+          userMessage = '';
+        },
+        (json_error) => {
+          error = json_error
+        }
+      )
     }
   }
   function getChatTitles() {
@@ -289,7 +302,7 @@
     </div>
     <div class="input-container">
       <textarea
-        bind:value={userInput}
+        bind:value={userMessage}
         on:keydown={handleKeyDown}
         placeholder="Type your message here..."
         class="message-input"

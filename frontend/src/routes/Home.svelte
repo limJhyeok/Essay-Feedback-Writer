@@ -34,6 +34,7 @@
     )
   }
   getChatTitles()
+  // TODO: Title 두번 누르면 다른 SessionMessage 표출되는 문제 해결(반응현 변수 원인?)
   function getSessionMessages(chat_id) {
     let url = "/api/chat/session/" + chat_id
     let params = {}
@@ -46,14 +47,10 @@
         }
     )
   }
-  // getChatMessages()
   function selectChat(id) {
     activeChatId = id
-    // activeMessages = chatHistory[activeChatId].message
     getSessionMessages(id)
     activeMessages = $sessionMessages.messages
-
-    // id를 사용하여 특정 채팅 기록을 로드하는 로직을 추가하세요.
   }
   function toggleSidebar() {
     isSidebarVisible = !isSidebarVisible;

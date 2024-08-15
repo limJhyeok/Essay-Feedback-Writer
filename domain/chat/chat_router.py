@@ -1,8 +1,9 @@
 from datetime import timedelta, datetime
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from database import get_db
 from domain.chat import chat_crud
+from domain.chat import chat_schema
 router = APIRouter(
     prefix = "/api/chat"
 )
@@ -19,7 +20,7 @@ def get_chat_history_titles(user_id: int, db: Session = Depends(get_db)):
 
 @router.get("/session/{chat_id}")
 def get_chat_session_messages(chat_id: int, db: Session = Depends(get_db)):
-    db_chat_sessions = chat_crud.get_chat_session(db, chat_id)
+    db_chat_sessions = chat_crud.get_chat_sessions(db, chat_id)
 
     res = {"message_history": {
         "messages": []
@@ -28,3 +29,20 @@ def get_chat_session_messages(chat_id: int, db: Session = Depends(get_db)):
     if db_chat_sessions:
         res["message_history"]["messages"] = [{"sender": db_chat_session.sender, "text": db_chat_session.message} for db_chat_session in db_chat_sessions]
     return res
+
+@router.post("/session", status_code=status.HTTP_201_CREATED)
+def post_chat_session(_user_chat_sesion_create: chat_schema.UserChatSessionCreate, db: Session = Depends(get_db)):
+    chat = chat_crud.get_chat(db, _user_chat_sesion_create.chat_id)
+    if not chat:
+        raise HTTPException(status_code=404, detail="No chat found for this user")
+    _chat_session_create = chat_schema.ChatSessionCreate(
+        user_id = _user_chat_sesion_create.user_id,
+        chat_id = _user_chat_sesion_create.chat_id,
+        sender = "user",
+        message = _user_chat_sesion_create.message
+    )
+    chat_session = chat_crud.create_chat_session(
+        db=db,
+        _chat_session_create=_chat_session_create
+    )
+    return chat_session

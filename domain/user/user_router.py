@@ -68,10 +68,8 @@ async def reset_password(
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Email does not exist")
 
-    # 임시 비밀번호 생성 및 업데이트
     temp_password = user_utils.generate_temporary_password()
     hashed_password = pwd_context.hash(temp_password)
     user_crud.update_user_password(db, user, hashed_password)
     
-    # 임시 비밀번호 이메일로 발송
     await user_utils.send_temporary_password(user.email, temp_password)

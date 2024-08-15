@@ -69,22 +69,19 @@
   }
   function handleKeyDown(event) {
     if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault(); // Prevent the default new line behavior
+      event.preventDefault(); 
       sendMessage();
     }
   }
   function goToSignUp(){
-    event.preventDefault();
     $isSignUpPage = true
     window.location.hash = '#/authorize';
   }
   function goToLogin(){
-    event.preventDefault();
     $isSignUpPage = false
     window.location.hash = '#/authorize';
   }
   function handleLogOut(){
-    event.preventDefault();
     $accessToken=""
     $isLogin=false
     $userEmail=""
@@ -275,12 +272,12 @@
     <!-- if isLogin == false  else user profile-->
     <div class="top-bar">
       {#if $isLogin == false}
-      <button class="btn relative btn-primary btn-small mr-6" on:click={goToLogin}>
+      <button class="btn relative btn-primary btn-small mr-6" on:click|preventDefault={goToLogin}>
         <div class="flex items-center justify-center">
           로그인
         </div>
       </button>
-      <button class="btn relative btn-secondary btn-small" on:click={goToSignUp}>
+      <button class="btn relative btn-secondary btn-small" on:click|preventDefault={goToSignUp}>
         <div class = "flex items-center justify-center">
           회원가입
         </div>

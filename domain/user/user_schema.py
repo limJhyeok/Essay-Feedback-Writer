@@ -12,10 +12,14 @@ class UserCreate(BaseModel):
         return v
 
 class User(BaseModel):
-  id: int
-  email: EmailStr
+    id: int
+    email: EmailStr
+
+class UserEmail(BaseModel):
+    email: EmailStr
 
 class Token(BaseModel):
     access_token: str
     token_type: str
     email: EmailStr
+

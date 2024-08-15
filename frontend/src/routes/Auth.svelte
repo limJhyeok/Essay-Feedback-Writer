@@ -2,9 +2,11 @@
   import { userEmail, accessToken, isLogin, isSignUpPage} from "../lib/store"
   import fastapi from "../lib/api";
   import { push } from "svelte-spa-router";
+	import {link} from 'svelte-spa-router'
 
   let user_email = '';
   let user_password = '';
+  let social_account_providers = ['Google', 'Microsoft', 'Apple']
 
   function login(event) {
       event.preventDefault()
@@ -58,87 +60,71 @@
   }
 </script>
 <style>
-  .social-section {
-    margin-top: 24px;
+  :global(body) {
+    background-color: #f8f9fa;
   }
-  .social-btn {
-    padding: 0 8px 0 52px;
-    position: relative;
-    width: 320px;
-    border: 1px solid;
-    border-radius: 6px;
-    font-size: 16px;
-    align-items: center;
-    background-color: #fff;
-    height: 52px;
-    cursor: pointer;
-    color: #2d333a;
-    margin-bottom: 8px;
-    display: flex;
-    outline: 0;
+  
+  main {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    padding: 2rem;
   }
-  .social-logo-wrapper {
-    position: absolute;
-    left: 26px;
-    top: 50%;
-    transform: translate(-50%) translateY(-50%);
+
+  .form-control, .btn {
+    border-radius: 0.25rem;
   }
-  .social-logo {
-    width: 20px;
-    height: 20px;
-    display: inline-block;
-}
+
+  .btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+  }
+
+  .btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+  }
+
+  .social-section .btn {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
 </style>
 
-
-<main class="main-container">
-  <div class="row justify-content-center">
-      <div class="col-md-6">
-          <h1 class="text-center mt-5">{$isSignUpPage ? '회원가입' : '로그인'}</h1>
-          <form on:submit={handleAuthSubmit}>
-            <div class="mb-3">
-                <label for="email" class="form-label">Email</label>
-                <input type="email" id="email" class="form-control" bind:value={user_email} required />
-            </div>
-            <div class="mb-3">
-              <label for="password" class="form-label">Password</label>
-              <input type="password" id="password" class="form-control" bind:value={user_password} required />
-            </div>
-            <button type="submit" class="btn btn-primary w-100">{$isSignUpPage ? '회원가입' : '로그인'}</button>
-          </form>
-          <button class="btn btn-link w-100 mt-3" on:click={toggleMode}>
-              {$isSignUpPage ? '이미 계정이 있으신가요? 로그인' : '계정이 없으신가요? 회원가입'}
-          </button>
-          <div class = "social-section">
-            <!-- TODO: on:click시 google로 로그인 -->
-            <button class = "social-btn w-100">
-              <span class="social-logo-wrapper">
-                <img class="social-logo" src="/google-icon.svg" alt="Google 로고">
-              </span>
-                <span class = "social-text">
-                  Google로 계속하기
-                </span>
-            </button>
-            <!-- TODO: on:click시 MS로 로그인 -->
-            <button class = "social-btn w-100">
-              <span class="social-logo-wrapper">
-                <img class="social-logo" src="/microsoft-icon.svg" alt="Microsoft 로고">
-              </span>
-                <span class = "social-text">
-                  Microsoft로 계속하기
-                </span>
-            </button>
-            <!-- TODO: on:click시 Apple로 로그인 -->
-            <button class = "social-btn w-100">
-              <span class="social-logo-wrapper">
-                <img class="social-logo" src="/apple-icon.svg" alt="Apple 로고">
-              </span>
-                <span class = "social-text">
-                  Apple로 계속하기
-                </span>
-            </button>
-          </div>
+<main class="container vh-100 d-flex align-items-center justify-content-center">
+  <div class="col-md-6 col-lg-4">
+    <h1 class="text-center mb-4">{$isSignUpPage ? '회원가입' : '로그인'}</h1>
+    <form on:submit={handleAuthSubmit} class="mb-3">
+      <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        <input type="email" id="email" class="form-control" bind:value={user_email} required />
       </div>
-
-  </div>
+      <div class="mb-3">
+        <label for="password" class="form-label">Password</label>
+        <input type="password" id="password" class="form-control" bind:value={user_password} required />
+      </div>
+      <button type="submit" class="btn btn-primary w-100">{$isSignUpPage ? '회원가입' : '로그인'}</button>
+    </form>
+    <div class="text-center mb-3">
+      <button class="btn btn-link" on:click={toggleMode}>
+        {$isSignUpPage ? '이미 계정이 있으신가요? 로그인' : '계정이 없으신가요? 회원가입'}
+      </button>
+    </div>
+    <div class="text-center mb-4">
+      <a use:link href="/reset-password" class="text-decoration-none d-inline-block">
+        비밀번호를 잃어버리셨나요? 비밀번호 초기화
+      </a>
+    </div>
+    <div class="social-section">
+      {#each social_account_providers as provider}
+        <button class="btn btn-outline-secondary w-100 mb-2 text-start position-relative">
+          <div class="position-absolute start-0 top-50 translate-middle-y ms-3">
+            <img src="/{provider.toLowerCase()}-icon.svg" alt="{provider} 로고" width="20" height="20">
+          </div>
+          <span class="ms-5">{provider}로 계속하기</span>
+        </button>
+      {/each}
+    </div>
+    
 </main>
+

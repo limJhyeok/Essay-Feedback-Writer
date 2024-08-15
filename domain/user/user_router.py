@@ -60,10 +60,10 @@ def user_create(_user_create: user_schema.UserCreate, db: Session = Depends(get_
 
 @router.post("/reset-password", status_code=status.HTTP_204_NO_CONTENT)
 async def reset_password(
-    user_email: EmailStr, 
+    _user_email: user_schema.UserEmail,
     db: Session = Depends(get_db)
 ):
-    user = user_crud.get_existing_user_for_reset_password(db, user_email=user_email)
+    user = user_crud.get_existing_user_for_reset_password(db, user_email=_user_email.email)
 
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Email does not exist")

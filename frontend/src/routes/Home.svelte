@@ -1,12 +1,11 @@
 <script>
   import { faBars } from '@fortawesome/free-solid-svg-icons';
   import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
-  import { isLogin, isSignUpPage, chatTitles, sessionMessages } from "../lib/store"
+  import { isLogin, isSignUpPage, chatTitles, sessionMessages, accessToken, userEmail } from "../lib/store"
   import fastapi from "../lib/api";
 
   $: chatTitles, sessionMessages
 
-  // TODO: messages will be empty list after applying backend
   let activeMessages = []
   let userMessage = '';
   let activeChatId = -1;
@@ -86,7 +85,9 @@
   }
   function handleLogOut(){
     event.preventDefault();
-    $isLogin=false;
+    $accessToken=""
+    $isLogin=false
+    $userEmail=""
     window.location.reload();
   }
 </script>

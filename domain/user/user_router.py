@@ -1,12 +1,12 @@
 from datetime import timedelta, datetime
 from fastapi import APIRouter, Depends, HTTPException, Form
-from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from database import get_db
 from domain.user.user_crud import pwd_context
 from domain.user import user_crud, user_schema, user_utils
 from starlette import status
-from jose import jwt
+from jose import jwt, JWTError
 from dotenv import load_dotenv
 import os
 from pydantic import EmailStr
@@ -17,8 +17,10 @@ router = APIRouter(
 
 load_dotenv()
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
-SECRET_KEY = os.getenv("ALGORITHM")
+SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
+TOKEN_URL = "/api/user/login"
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl=TOKEN_URL)
 
 class OAuth2EmailPasswordRequestForm:
     def __init__(self, email: str = Form(...), password: str = Form(...)):
@@ -49,6 +51,26 @@ def login_for_access_token(form_data: OAuth2EmailPasswordRequestForm = Depends()
         "token_type": "bearer",
         "email": user.email
     }
+
+def get_current_user(token: str = Depends(oauth2_scheme),
+                     db: Session = Depends(get_db)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail = "Could not validate credentials",
+        headers = {"WWW-Authenticate": "Bearer"}
+    )
+    try:
+        payload =jwt.decode(token, SECRET_KEY, algorithms = [ALGORITHM])
+        user_email = payload.get("sub")
+        if user_email is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    user = user_crud.get_user(db, email = user_email)
+    if user is None:
+        raise credentials_exception
+    return user
+
 
 @router.post("/create", status_code = status.HTTP_204_NO_CONTENT)
 def user_create(_user_create: user_schema.UserCreate, db: Session = Depends(get_db)):

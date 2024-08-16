@@ -13,10 +13,8 @@
 
   function sendMessage() {
     if (userMessage.trim()) {
-      let user_id = 1
       let url = '/api/chat/session'
       let params = {
-        user_id: user_id,
         chat_id: activeChatId,
         message: userMessage
       }
@@ -33,9 +31,9 @@
   }
   function getChatTitles() {
     // TODO: user_id backend로 받아오기
-    let user_id = 1
-    let url = "/api/chat/titles/" + user_id
+    let url = "/api/chat/titles"
     let params = {}
+
     fastapi('get', url, params, 
         (json) => {
           chatTitles.set(json);

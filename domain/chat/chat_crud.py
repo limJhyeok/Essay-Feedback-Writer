@@ -20,3 +20,10 @@ def create_chat_session(db: Session, _chat_session_create: chat_schema.ChatSessi
     chat_session = ChatSession(chat_id=_chat_session_create.chat_id, sender=_chat_session_create.sender, message=_chat_session_create.message)
     db.add(chat_session)
     db.commit()
+
+def create_chat(db: Session, _chat_create: chat_schema.ChatCreate):
+    chat = Chat(user_id = _chat_create.user_id,
+                title = _chat_create.title)
+    db.add(chat)
+    db.commit()
+    return chat

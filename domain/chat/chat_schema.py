@@ -1,8 +1,9 @@
 from pydantic import BaseModel
-from datetime import datetime
+from typing import Optional
 
 class ChatCreate(BaseModel):
-    pass
+    user_id: int
+    title: Optional[str] = "임시 chat"
 
 class Chat(BaseModel):
   pass
@@ -14,6 +15,5 @@ class ChatSessionCreate(BaseModel):
     message: str
 
 class UserChatSessionCreate(BaseModel):
-   user_id: int
    chat_id: int
    message: str

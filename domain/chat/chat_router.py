@@ -4,33 +4,19 @@ from sqlalchemy.orm import Session
 from database import get_db
 from domain.chat import chat_crud
 from domain.chat import chat_schema
-<<<<<<< HEAD
-from domain.user import user_router, user_schema
-=======
 from domain.user import user_router
 from models import User
->>>>>>> backend/feat/chat-create
 router = APIRouter(
     prefix = "/api/chat"
 )
 
 EMPTY_CHAT_ID = -1
 
-<<<<<<< HEAD
-@router.get("/titles", response_model=list[dict])
-def get_chat_history_titles(db: Session = Depends(get_db), 
-                            current_user: user_schema.User = Depends(user_router.get_current_user)):
-    db_chat_titles = chat_crud.get_chat_histories(db, current_user.id)
-    if not db_chat_titles:
-        return []
-        # raise HTTPException(status_code=404, detail="No chat found for this user")
-=======
 @router.get("/titles")
 def get_chat_history_titles(current_user: User = Depends(user_router.get_current_user), db: Session = Depends(get_db)):
     db_chat_titles = chat_crud.get_chat_histories(db, current_user.id)
     if not db_chat_titles:
         return []
->>>>>>> backend/feat/chat-create
     
     chat_titles = [{'id': db_chat_title.id, 'name': db_chat_title.title} for db_chat_title in db_chat_titles]
     return chat_titles
@@ -64,16 +50,12 @@ def create_chat(chat_title: str,
 
 
 @router.post("/session", status_code=status.HTTP_201_CREATED)
-<<<<<<< HEAD
-def post_chat_session_from_user(_user_chat_sesion_create: chat_schema.UserChatSessionCreate, db: Session = Depends(get_db)):
-=======
 def post_chat_session(_user_chat_sesion_create: chat_schema.UserChatSessionCreate,
                       db: Session = Depends(get_db),
                       current_user: User = Depends(user_router.get_current_user)):
->>>>>>> backend/feat/chat-create
     chat = chat_crud.get_chat(db, _user_chat_sesion_create.chat_id)
     if not chat:
-        # TODO: refactoring?(모듈화)
+        # TODO: refactoring?(모듈화): create_chat과 매우 비슷
         # TODO: _user_chat_sesion_create.message를 이용하여 chat의 title 부여한 후에 ChatCreate 만들기
         _chat_create = chat_schema.ChatCreate(
         user_id = current_user.id,

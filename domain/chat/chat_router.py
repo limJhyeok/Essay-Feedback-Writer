@@ -10,7 +10,7 @@ router = APIRouter(
     prefix = "/api/chat"
 )
 
-EMPTY_CHAT_SESSION_ID = -1
+EMPTY_CHAT_ID = -1
 
 @router.get("/titles")
 def get_chat_history_titles(current_user: User = Depends(user_router.get_current_user), db: Session = Depends(get_db)):
@@ -22,34 +22,57 @@ def get_chat_history_titles(current_user: User = Depends(user_router.get_current
     return chat_titles
 
 @router.get("/session/{chat_id}")
-def get_chat_session_messages(chat_id: int, db: Session = Depends(get_db)):
-    # TODO: chat session이 만들어지지 않았거나 특별한 chat session을 선택하지 않았을 때 새로운 chat session을 만들어서 chatting 시작하기
-    if chat_id == EMPTY_CHAT_SESSION_ID:
-        pass
-        # create chat session
-    db_chat_sessions = chat_crud.get_chat_sessions(db, chat_id)
-
+def get_chat_session_messages(chat_id: int, db: Session = Depends(get_db), current_user: User = Depends(user_router.get_current_user)):
     res = {"message_history": {
         "messages": []
+        }
     }
-           }
+    if chat_id == EMPTY_CHAT_ID:
+        return res
+
+    db_chat_sessions = chat_crud.get_chat_sessions(db, chat_id)
     if db_chat_sessions:
         res["message_history"]["messages"] = [{"sender": db_chat_session.sender, "text": db_chat_session.message} for db_chat_session in db_chat_sessions]
     return res
 
+@router.post("/create", status_code=status.HTTP_201_CREATED)
+def create_chat(chat_title: str,
+                db: Session = Depends(get_db),
+                current_user: User = Depends(user_router.get_current_user)):
+    _chat_create = chat_schema.ChatCreate(
+        user_id = current_user.id,
+        title = chat_title
+    )
+    chat_crud.create_chat(
+        db = db,
+        _chat_create = _chat_create
+    )
+
+
 @router.post("/session", status_code=status.HTTP_201_CREATED)
-def post_chat_session(_user_chat_sesion_create: chat_schema.UserChatSessionCreate, db: Session = Depends(get_db)):
+def post_chat_session(_user_chat_sesion_create: chat_schema.UserChatSessionCreate,
+                      db: Session = Depends(get_db),
+                      current_user: User = Depends(user_router.get_current_user)):
     chat = chat_crud.get_chat(db, _user_chat_sesion_create.chat_id)
     if not chat:
-        raise HTTPException(status_code=404, detail="No chat found for this user")
+        # TODO: refactoring?(모듈화)
+        # TODO: _user_chat_sesion_create.message를 이용하여 chat의 title 부여한 후에 ChatCreate 만들기
+        _chat_create = chat_schema.ChatCreate(
+        user_id = current_user.id,
+        )
+        db_chat = chat_crud.create_chat(
+            db=db,
+            _chat_create=_chat_create
+        )
+        _user_chat_sesion_create.chat_id = db_chat.id
+
     _chat_session_create = chat_schema.ChatSessionCreate(
-        user_id = _user_chat_sesion_create.user_id,
+        user_id = current_user.id,
         chat_id = _user_chat_sesion_create.chat_id,
         sender = "user",
         message = _user_chat_sesion_create.message
     )
-    chat_session = chat_crud.create_chat_session(
+    chat_crud.create_chat_session(
         db=db,
         _chat_session_create=_chat_session_create
     )
-    return chat_session

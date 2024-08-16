@@ -4,16 +4,19 @@ from sqlalchemy.orm import Session
 from database import get_db
 from domain.chat import chat_crud
 from domain.chat import chat_schema
+from domain.user import user_router, user_schema
 router = APIRouter(
     prefix = "/api/chat"
 )
 
 
-@router.get("/titles/{user_id}")
-def get_chat_history_titles(user_id: int, db: Session = Depends(get_db)):
-    db_chat_titles = chat_crud.get_chat_histories(db, user_id)
+@router.get("/titles", response_model=list[dict])
+def get_chat_history_titles(db: Session = Depends(get_db), 
+                            current_user: user_schema.User = Depends(user_router.get_current_user)):
+    db_chat_titles = chat_crud.get_chat_histories(db, current_user.id)
     if not db_chat_titles:
-        raise HTTPException(status_code=404, detail="No chat found for this user")
+        return []
+        # raise HTTPException(status_code=404, detail="No chat found for this user")
     
     chat_titles = [{'id': db_chat_title.id, 'name': db_chat_title.title} for db_chat_title in db_chat_titles]
     return chat_titles
@@ -31,7 +34,7 @@ def get_chat_session_messages(chat_id: int, db: Session = Depends(get_db)):
     return res
 
 @router.post("/session", status_code=status.HTTP_201_CREATED)
-def post_chat_session(_user_chat_sesion_create: chat_schema.UserChatSessionCreate, db: Session = Depends(get_db)):
+def post_chat_session_from_user(_user_chat_sesion_create: chat_schema.UserChatSessionCreate, db: Session = Depends(get_db)):
     chat = chat_crud.get_chat(db, _user_chat_sesion_create.chat_id)
     if not chat:
         raise HTTPException(status_code=404, detail="No chat found for this user")

@@ -54,7 +54,7 @@ const fastapi = (operation, url, params, success_callback, failure_callback) => 
                         userEmail.set('')
                         isLogin.set(false)
                         alert("로그인이 필요합니다.")
-                        push('/user-login')
+                        push('/authorize')
                     }else {
                         if (failure_callback) {
                             failure_callback(json)

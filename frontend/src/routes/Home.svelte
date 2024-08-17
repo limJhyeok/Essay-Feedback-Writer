@@ -26,6 +26,7 @@
       let url = '/api/chat/session'
       let params = {
         chat_id: activeChatId,
+        sender: 'user',
         message: userMessage
       }
       fastapi('post', url, params, 
@@ -37,12 +38,37 @@
             };
           });
           userMessage = '';
+
+          generateAnswer();
         },
         (json_error) => {
           error = json_error
         }
       )
     }
+  }
+  function generateAnswer(){
+    let url = '/api/chat/generate-answer'
+    let params = {
+      chat_id: activeChatId,
+      // TODO: bot id 변경
+      bot_id: 1,
+      question: userMessage,
+      context: $sessionMessages.messages
+    }
+    fastapi('post', url, params, 
+      (json) => {
+        sessionMessages.update(state => {
+          return {
+            ...state,
+            messages: [...state.messages, { sender: 'bot', text: json }]
+          };
+        });
+      },
+      (json_error) => {
+        error = json_error
+      }
+    )
   }
   function getChatTitles() {
     let url = "/api/chat/titles"
@@ -95,6 +121,7 @@
       sendMessage();
     }
   }
+  
   function goToSignUp(){
     $isSignUpPage = true
     window.location.hash = '#/authorize';
@@ -288,7 +315,7 @@
         </ul>
       </div>
     </div>
-
+    <!-- TODO: 새 채팅 생성 후 자동으로 채팅 목록에 추가한 화면 rendering -->
     {#if isNewChatModalOpen}
       <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0, 0, 0, 0.5);">
         <div class="modal-dialog modal-dialog-centered">

@@ -50,13 +50,13 @@ def create_chat(chat_create_request: chat_schema.ChatCreateRequest,
 
 
 @router.post("/session", status_code=status.HTTP_201_CREATED)
-def post_chat_session(_user_chat_sesion_create: chat_schema.UserChatSessionCreate,
+def post_chat_session(user_chat_session_create_request: chat_schema.UserChatSessionCreateRequest,
                       db: Session = Depends(get_db),
                       current_user: User = Depends(user_router.get_current_user)):
-    chat = chat_crud.get_chat(db, _user_chat_sesion_create.chat_id)
+    chat = chat_crud.get_chat(db, user_chat_session_create_request.chat_id)
     if not chat:
         # TODO: refactoring?(모듈화): create_chat과 매우 비슷
-        # TODO: _user_chat_sesion_create.message와 AI를 이용하여 chat의 title 부여한 후에 ChatCreate 만들기
+        # TODO: user_chat_session_create_request.message와 AI를 이용하여 chat의 title 부여한 후에 ChatCreate 만들기
         _chat_create = chat_schema.ChatCreate(
         user_id = current_user.id,
         )
@@ -64,13 +64,13 @@ def post_chat_session(_user_chat_sesion_create: chat_schema.UserChatSessionCreat
             db=db,
             _chat_create=_chat_create
         )
-        _user_chat_sesion_create.chat_id = db_chat.id
+        user_chat_session_create_request.chat_id = db_chat.id
 
     _chat_session_create = chat_schema.ChatSessionCreate(
-        user_id = current_user.id,
-        chat_id = _user_chat_sesion_create.chat_id,
-        sender = "user",
-        message = _user_chat_sesion_create.message
+        sender_id = current_user.id,
+        chat_id = user_chat_session_create_request.chat_id,
+        sender = user_chat_session_create_request.sender,
+        message = user_chat_session_create_request.message
     )
     chat_crud.create_chat_session(
         db=db,

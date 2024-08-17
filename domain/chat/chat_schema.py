@@ -19,9 +19,11 @@ class ChatSessionCreate(BaseModel):
     message: str
     sender_id: int
 
-class UserChatSessionCreate(BaseModel):
-   chat_id: int
-   message: str
+class UserChatSessionCreateRequest(BaseModel):
+    chat_id: int
+    sender: str
+    message: str
+   
 
 class GenerateAnswerRequest(BaseModel):
    chat_id: int

@@ -5,6 +5,11 @@ class ChatCreate(BaseModel):
     user_id: int
     title: Optional[str] = "임시 chat"
 
+
+class ChatCreateRequest(BaseModel):
+    title: str
+
+
 class Chat(BaseModel):
   pass
 

@@ -1,5 +1,4 @@
-from datetime import timedelta, datetime
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 from database import get_db
 from domain.chat import chat_crud
@@ -35,13 +34,15 @@ def get_chat_session_messages(chat_id: int, db: Session = Depends(get_db), curre
         res["message_history"]["messages"] = [{"sender": db_chat_session.sender, "text": db_chat_session.message} for db_chat_session in db_chat_sessions]
     return res
 
+
+# TODO: chat create schema를 만들어서 입력받기
 @router.post("/create", status_code=status.HTTP_201_CREATED)
-def create_chat(chat_title: str,
+def create_chat(chat_create_request: chat_schema.ChatCreateRequest,
                 db: Session = Depends(get_db),
                 current_user: User = Depends(user_router.get_current_user)):
     _chat_create = chat_schema.ChatCreate(
         user_id = current_user.id,
-        title = chat_title
+        title = chat_create_request.title
     )
     chat_crud.create_chat(
         db = db,

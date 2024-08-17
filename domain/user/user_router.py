@@ -30,7 +30,6 @@ class OAuth2EmailPasswordRequestForm:
 @router.post("/login", response_model=user_schema.Token)
 def login_for_access_token(form_data: OAuth2EmailPasswordRequestForm = Depends(),
                            db: Session = Depends(get_db)):
-    # check user and password
     user = user_crud.get_user(db, form_data.email)
     if not user or not pwd_context.verify(form_data.password, user.password):
         raise HTTPException(

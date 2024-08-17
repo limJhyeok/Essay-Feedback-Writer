@@ -5,7 +5,6 @@
   import fastapi from "../lib/api";
 
   $: chatTitles, sessionMessages
-
   let activeMessages = []
   let userMessage = '';
   let activeChatId = -1;
@@ -19,7 +18,7 @@
 
   function closeNewChatModal() {
     isNewChatModalOpen = false;
-    newChatTitle = ""; // 모달이 닫힐 때 입력값 초기화
+    newChatTitle = "";
   }
 
   function sendMessage() {
@@ -31,7 +30,12 @@
       }
       fastapi('post', url, params, 
         (json) => {
-          activeMessages = [...activeMessages, { sender: 'user', text: userMessage }];
+          sessionMessages.update(state => {
+            return {
+              ...state,
+              messages: [...state.messages, { sender: 'user', text: userMessage }]
+            };
+          });
           userMessage = '';
         },
         (json_error) => {
@@ -54,7 +58,6 @@
     )
   }
   getChatTitles()
-  // TODO: Title 두번 누르면 다른 SessionMessage 표출되는 문제 해결(반응현 변수 원인?)
   function getSessionMessages(chat_id) {
     let url = "/api/chat/session/" + chat_id
     let params = {}
@@ -82,7 +85,6 @@
   function selectChat(id) {
     activeChatId = id
     getSessionMessages(id)
-    activeMessages = $sessionMessages.messages
   }
   function toggleSidebar() {
     isSidebarVisible = !isSidebarVisible;
@@ -316,8 +318,6 @@
   <!-- TODO: user와 bot의 채팅이 좌우로 넓게 배열되어있어서 유저가 읽기 불편함
    (ChatGPT처럼 가운데에 몰려있는 형식으로 변환 필요해보임) -->
   <div class="chat-container">
-    <!-- TODO: User Login 여부에 따른 top-bar 변환 필요 -->
-    <!-- if isLogin == false  else user profile-->
     <div class="top-bar">
       {#if $isLogin == false}
       <button class="btn relative btn-primary btn-small mr-6" on:click|preventDefault={goToLogin}>
@@ -339,8 +339,9 @@
       {/if}
       
     </div>
+    <!-- TODO: Active Chat ID 가 -1일 경우 비어있는 chatting으로 화면 rendering(store 변수 때문에 계속 남아있음) -->
     <div class="messages">
-      {#each activeMessages as message}
+      {#each $sessionMessages.messages as message}
         <div class="message {message.sender}">
           {message.text}
         </div>

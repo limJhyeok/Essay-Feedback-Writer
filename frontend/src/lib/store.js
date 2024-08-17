@@ -18,4 +18,4 @@ export const userEmail = persist_storage("userEmail", "")
 export const accessToken = persist_storage("accessToken", "")
 export const isSignUpPage = persist_storage("isSignUpPage", false)
 export const chatTitles = persist_storage("chatTitles", []);
-export const sessionMessages = persist_storage("sessionMessages", []);
+export const sessionMessages = persist_storage("sessionMessages", {});

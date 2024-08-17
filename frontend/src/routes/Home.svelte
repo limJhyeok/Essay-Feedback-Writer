@@ -1,5 +1,5 @@
 <script>
-  import { faBars } from '@fortawesome/free-solid-svg-icons';
+  import { faBars, faComments, faUpRightAndDownLeftFromCenter } from '@fortawesome/free-solid-svg-icons';
   import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
   import { isLogin, isSignUpPage, chatTitles, sessionMessages, accessToken, userEmail } from "../lib/store"
   import fastapi from "../lib/api";
@@ -10,6 +10,17 @@
   let userMessage = '';
   let activeChatId = -1;
   let isSidebarVisible = true;
+  let newChatTitle = '';
+  let isNewChatModalOpen = false;
+
+  function openNewChatModal() {
+    isNewChatModalOpen = true;
+  }
+
+  function closeNewChatModal() {
+    isNewChatModalOpen = false;
+    newChatTitle = ""; // 모달이 닫힐 때 입력값 초기화
+  }
 
   function sendMessage() {
     if (userMessage.trim()) {
@@ -30,7 +41,6 @@
     }
   }
   function getChatTitles() {
-    // TODO: user_id backend로 받아오기
     let url = "/api/chat/titles"
     let params = {}
 
@@ -51,6 +61,18 @@
     fastapi('get', url, params, 
         (json) => {
           sessionMessages.set(json.message_history)
+        },
+        (json_error) => {
+            error = json_error
+        }
+    )
+  }
+  function createNewChat(){
+    let url = "/api/chat/create"
+    let params = {title: newChatTitle}
+    fastapi('post', url, params, 
+        (json) => {
+            newChatTitle=''
         },
         (json_error) => {
             error = json_error
@@ -195,12 +217,11 @@
   }
 
   .toggle-button {
-    position: absolute;
-    top: 20px;
-    left: 20px;
     color: black;
     border: white;
     border: none;
+    top: 20px;
+    left: 20px;
     padding: 10px;
     border-radius: 4px;
     cursor: pointer;
@@ -240,29 +261,58 @@
 </style>
 
 <div class="full-container">
-  <nav class="h-full w-full {isSidebarVisible ? 'nav-bg-grey' : ''}" >
-    <div class=" h-14">
-      <button class = "toggle-button" on:click="{toggleSidebar}">
-        {#if isSidebarVisible}
-          <FontAwesomeIcon icon = {faBars} />
-        {:else}
-          <FontAwesomeIcon icon = {faBars} />
-        {/if}
+  <nav class="h-full w-full {isSidebarVisible ? 'nav-bg-grey' : ''}">
+    <div class="h-14 d-flex justify-content-between items-center px-4 align-items-center">
+      <div>
+        <button class="toggle-button" on:click="{toggleSidebar}">
+          <FontAwesomeIcon icon={faBars} />
+        </button>
+      </div>
+      <button class="toggle-button" on:click="{openNewChatModal}">
+        <FontAwesomeIcon icon={faComments} />
       </button>
     </div>
-    <div class = "h-full w-full">
-      <div class="sidebar {isSidebarVisible ? '': 'hidden'}">
+    <div class="h-full w-full">
+      <div class="sidebar {isSidebarVisible ? '' : 'hidden'}">
         <ul>
           {#each $chatTitles as chatTitle}
-            <button on:click={() => selectChat(chatTitle.id)} class:active={chatTitle.id === activeChatId}>
+            <button
+              on:click={() => selectChat(chatTitle.id)}
+              class:active={chatTitle.id === activeChatId}
+            >
               {chatTitle.name}
             </button>
           {/each}
         </ul>
       </div>
     </div>
+
+    {#if isNewChatModalOpen}
+      <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0, 0, 0, 0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">새 채팅 생성</h5>
+              <button type="button" class="btn-close" aria-label="Close" on:click="{closeNewChatModal}"></button>
+            </div>
+            <div class="modal-body">
+              <input
+                type="text"
+                class="form-control"
+                bind:value={newChatTitle}
+                placeholder="채팅 제목을 입력하세요"
+              />
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" on:click="{closeNewChatModal}">취소</button>
+              <button type="button" class="btn btn-primary" on:click="{createNewChat}">생성</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    {/if}
   </nav>
-  
+    
   <!-- TODO: user와 bot의 채팅이 좌우로 넓게 배열되어있어서 유저가 읽기 불편함
    (ChatGPT처럼 가운데에 몰려있는 형식으로 변환 필요해보임) -->
   <div class="chat-container">

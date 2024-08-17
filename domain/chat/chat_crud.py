@@ -1,4 +1,4 @@
-from models import Chat, ChatSession
+from models import Chat, ChatSession, Bot
 from sqlalchemy.orm import Session
 from domain.chat import chat_schema
 
@@ -17,7 +17,10 @@ def get_chat(db: Session, chat_id: int):
     return chat
 
 def create_chat_session(db: Session, _chat_session_create: chat_schema.ChatSessionCreate):
-    chat_session = ChatSession(chat_id=_chat_session_create.chat_id, sender=_chat_session_create.sender, message=_chat_session_create.message)
+    chat_session = ChatSession(chat_id=_chat_session_create.chat_id, 
+                               sender=_chat_session_create.sender, 
+                               message=_chat_session_create.message, 
+                               sender_id = _chat_session_create.sender_id)
     db.add(chat_session)
     db.commit()
 
@@ -27,3 +30,7 @@ def create_chat(db: Session, _chat_create: chat_schema.ChatCreate):
     db.add(chat)
     db.commit()
     return chat
+
+def get_bot(db: Session, bot_id: int):
+    bot = db.query(Bot).filter(Bot.id == bot_id).first()
+    return bot

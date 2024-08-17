@@ -14,11 +14,17 @@ class Chat(BaseModel):
   pass
 
 class ChatSessionCreate(BaseModel):
-    user_id: int
     chat_id: int
     sender: str
     message: str
+    sender_id: int
 
 class UserChatSessionCreate(BaseModel):
    chat_id: int
    message: str
+
+class GenerateAnswerRequest(BaseModel):
+   chat_id: int
+   bot_id: int
+   question: str
+   context: Optional[list]

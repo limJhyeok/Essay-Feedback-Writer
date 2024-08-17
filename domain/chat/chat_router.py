@@ -35,7 +35,6 @@ def get_chat_session_messages(chat_id: int, db: Session = Depends(get_db), curre
     return res
 
 
-# TODO: chat create schema를 만들어서 입력받기
 @router.post("/create", status_code=status.HTTP_201_CREATED)
 def create_chat(chat_create_request: chat_schema.ChatCreateRequest,
                 db: Session = Depends(get_db),
@@ -57,7 +56,7 @@ def post_chat_session(_user_chat_sesion_create: chat_schema.UserChatSessionCreat
     chat = chat_crud.get_chat(db, _user_chat_sesion_create.chat_id)
     if not chat:
         # TODO: refactoring?(모듈화): create_chat과 매우 비슷
-        # TODO: _user_chat_sesion_create.message를 이용하여 chat의 title 부여한 후에 ChatCreate 만들기
+        # TODO: _user_chat_sesion_create.message와 AI를 이용하여 chat의 title 부여한 후에 ChatCreate 만들기
         _chat_create = chat_schema.ChatCreate(
         user_id = current_user.id,
         )
@@ -77,3 +76,33 @@ def post_chat_session(_user_chat_sesion_create: chat_schema.UserChatSessionCreat
         db=db,
         _chat_session_create=_chat_session_create
     )
+
+@router.post("/generate-answer", status_code=status.HTTP_201_CREATED)
+def generate_answer(generate_answer_request: chat_schema.GenerateAnswerRequest, db: Session = Depends(get_db)):
+    bot = chat_crud.get_bot(db, generate_answer_request.bot_id)
+    ####### You should replace the Model to AI model
+    class Model:
+        def __init__(self):
+            pass
+        def __call__(self, answer: str, context: list[dict]= None):
+            answer = "this is temporary answer"
+            if context is not None:
+                answer = "following by, this is temporary answer"
+            return answer
+    model = Model()
+    ###############
+    if generate_answer_request.context:
+        answer = model(generate_answer_request.question, generate_answer_request.context)
+    else:
+        answer = model(generate_answer_request.question)
+
+    chat_session_create = chat_schema.ChatSessionCreate(
+        chat_id = generate_answer_request.chat_id,
+        sender = 'bot',
+        message = answer,
+        sender_id = bot.id
+    )
+    chat_crud.create_chat_session(db, chat_session_create)
+    return answer
+
+    

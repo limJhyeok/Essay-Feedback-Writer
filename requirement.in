@@ -4,3 +4,5 @@ alembic
 passlib[bcrypt]
 python-multipart
 python-jose[cryptography]
+langchain
+langchain-community

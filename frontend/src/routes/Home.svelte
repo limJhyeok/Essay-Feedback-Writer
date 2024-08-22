@@ -37,9 +37,9 @@
               messages: [...state.messages, { sender: 'user', text: userMessage }]
             };
           });
-          userMessage = '';
-
           generateAnswer();
+          userMessage = '';
+          
         },
         (json_error) => {
           error = json_error

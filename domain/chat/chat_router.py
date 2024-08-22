@@ -5,6 +5,13 @@ from domain.chat import chat_crud
 from domain.chat import chat_schema
 from domain.user import user_router
 from models import User
+from langchain_community.chat_models import ChatOllama
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain_core.callbacks.manager import CallbackManager
+
+
 router = APIRouter(
     prefix = "/api/chat"
 )
@@ -77,24 +84,31 @@ def post_chat_session(user_chat_session_create_request: chat_schema.UserChatSess
         _chat_session_create=_chat_session_create
     )
 
+from langchain_core.messages import HumanMessage
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 @router.post("/generate-answer", status_code=status.HTTP_201_CREATED)
 def generate_answer(generate_answer_request: chat_schema.GenerateAnswerRequest, db: Session = Depends(get_db)):
     bot = chat_crud.get_bot(db, generate_answer_request.bot_id)
     ####### You should replace the Model to AI model
-    class Model:
-        def __init__(self):
-            pass
-        def __call__(self, answer: str, context: list[dict]= None):
-            answer = "this is temporary answer"
-            if context is not None:
-                answer = "following by, this is temporary answer"
-            return answer
-    model = Model()
+    model = ChatOllama(
+        model="EEVE-Korean-10.8B:latest"
+        )
+
+    prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            "You are a helpful assistant. Answer all questions to the best of your ability.",
+        ),
+        MessagesPlaceholder(variable_name="messages"),
+    ]
+    )
+
+    chain = prompt | model
+
+    response = chain.invoke({"messages": [HumanMessage(content=generate_answer_request.question)]})
+    answer = response.content
     ###############
-    if generate_answer_request.context:
-        answer = model(generate_answer_request.question, generate_answer_request.context)
-    else:
-        answer = model(generate_answer_request.question)
 
     chat_session_create = chat_schema.ChatSessionCreate(
         chat_id = generate_answer_request.chat_id,

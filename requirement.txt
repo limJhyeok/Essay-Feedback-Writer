@@ -166,6 +166,8 @@ python-multipart==0.0.9
     # via
     #   -r requirement.in
     #   fastapi
+pytz==2024.1
+    # via -r requirement.in
 pyyaml==6.0.1
     # via
     #   huggingface-hub

@@ -6,10 +6,8 @@ from domain.chat import chat_schema
 from domain.user import user_router
 from models import User
 from langchain_community.chat_models import ChatOllama
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-from langchain_core.callbacks.manager import CallbackManager
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.messages import HumanMessage
 
 
 router = APIRouter(
@@ -84,31 +82,15 @@ def post_chat_session(user_chat_session_create_request: chat_schema.UserChatSess
         _chat_session_create=_chat_session_create
     )
 
-from langchain_core.messages import HumanMessage
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 @router.post("/generate-answer", status_code=status.HTTP_201_CREATED)
 def generate_answer(generate_answer_request: chat_schema.GenerateAnswerRequest, db: Session = Depends(get_db)):
+    # TODO: bot에 따라 다르게 모델 불러오는 Logic 필요
     bot = chat_crud.get_bot(db, generate_answer_request.bot_id)
-    ####### You should replace the Model to AI model
-    model = ChatOllama(
-        model="EEVE-Korean-10.8B:latest"
-        )
 
-    prompt = ChatPromptTemplate.from_messages(
-    [
-        (
-            "system",
-            "You are a helpful assistant. Answer all questions to the best of your ability.",
-        ),
-        MessagesPlaceholder(variable_name="messages"),
-    ]
-    )
-
-    chain = prompt | model
-
-    response = chain.invoke({"messages": [HumanMessage(content=generate_answer_request.question)]})
+    llm = get_llm()
+    prompt = get_prompt()
+    response = get_response_from_bot(llm, prompt, generate_answer_request.question)
     answer = response.content
-    ###############
 
     chat_session_create = chat_schema.ChatSessionCreate(
         chat_id = generate_answer_request.chat_id,
@@ -119,4 +101,27 @@ def generate_answer(generate_answer_request: chat_schema.GenerateAnswerRequest, 
     chat_crud.create_chat_session(db, chat_session_create)
     return answer
 
-    
+
+def get_prompt():
+    prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            "You are a helpful assistant. Answer all questions to the best of your ability.",
+        ),
+        MessagesPlaceholder(variable_name="messages"),
+    ]
+    )
+    return prompt
+
+def get_llm():
+    llm = ChatOllama(
+        model="EEVE-Korean-10.8B:latest"
+        )
+    return llm
+
+def get_response_from_bot(llm, prompt, question):
+    chain = prompt | llm
+
+    response = chain.invoke({"messages": [HumanMessage(content=question)]})
+    return response

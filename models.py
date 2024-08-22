@@ -3,7 +3,8 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 import enum
-
+import pytz
+from datetime import datetime
 Base = declarative_base()
 naming_convention = {
     "ix": 'ix_%(column_0_label)s',
@@ -14,6 +15,7 @@ naming_convention = {
 }
 Base.metadata = MetaData(naming_convention=naming_convention)
 
+KST = pytz.timezone('Asia/Seoul')
 class User(Base):
     __tablename__ = "user"
 
@@ -35,8 +37,8 @@ class Chat(Base):
     id = Column(Integer, primary_key = True, index= True)
     user_id = Column(Integer, ForeignKey("user.id"))
     title = Column(String, nullable = True)
-    created_at = Column(DateTime, default=func.now(), nullable=False)
-    updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(KST), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(KST), onupdate=lambda: datetime.now(KST), nullable=False)
     user = relationship("User", backref="chats")
 
 class ChatSessionSenderType(enum.Enum):
@@ -50,8 +52,8 @@ class ChatSession(Base):
     sender = Column(Enum(ChatSessionSenderType), nullable=False)  
     sender_id = Column(Integer, nullable=False, default = -1)
     message = Column(String, nullable=True)
-    created_at = Column(DateTime, default=func.now(), nullable=False)
-    updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(KST), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(KST), onupdate=lambda: datetime.now(KST), nullable=False)
     chat = relationship("Chat", backref="sessions")
     def get_sender(self):
         if self.sender == ChatSessionSenderType.user:
@@ -66,5 +68,5 @@ class Bot(Base):
     name = Column(String, nullable=False)  # 예: GPT
     version = Column(String, nullable=True)  # 예: 4.0
     description = Column(String, nullable=True)  # AI 모델에 대한 설명
-    created_at = Column(DateTime, default=func.now(), nullable=False)  # 생성일
-    updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)  # 업데이트일
+    created_at = Column(DateTime, default=lambda: datetime.now(KST), nullable=False)  # 생성일
+    updated_at = Column(DateTime, default=lambda: datetime.now(KST), onupdate=lambda: datetime.now(KST), nullable=False)  # 업데이트일

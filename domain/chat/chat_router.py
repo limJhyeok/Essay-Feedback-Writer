@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from database import get_db
 from domain.chat import chat_crud
@@ -82,25 +83,36 @@ def post_chat_session(user_chat_session_create_request: chat_schema.UserChatSess
         _chat_session_create=_chat_session_create
     )
 
+
 @router.post("/generate-answer", status_code=status.HTTP_201_CREATED)
-def generate_answer(generate_answer_request: chat_schema.GenerateAnswerRequest, db: Session = Depends(get_db)):
+async def generate_answer(generate_answer_request: chat_schema.GenerateAnswerRequest, db: Session = Depends(get_db)):
     # TODO: bot에 따라 다르게 모델 불러오는 Logic 필요
     bot = chat_crud.get_bot(db, generate_answer_request.bot_id)
 
     llm = get_llm()
     prompt = get_prompt()
-    response = get_response_from_bot(llm, prompt, generate_answer_request.question)
-    answer = response.content
-
-    chat_session_create = chat_schema.ChatSessionCreate(
-        chat_id = generate_answer_request.chat_id,
-        sender = 'bot',
-        message = answer,
-        sender_id = bot.id
-    )
-    chat_crud.create_chat_session(db, chat_session_create)
-    return answer
-
+    final_response = ""
+    async def stream_answer(llm, prompt, question):
+        chain = prompt | llm
+        nonlocal final_response
+        async for response in chain.astream({"messages": [HumanMessage(content=question)]}):
+            final_response += response.content
+            yield response.content + "\n"
+            # await asyncio.sleep(0.05) # 타이핑 효과를 위해 지연
+    streaming_response = StreamingResponse(stream_answer(llm, prompt, generate_answer_request.question),
+                                           media_type="text/event-stream")
+    async def save_chat_session_in_streaming(streaming_response: StreamingResponse):
+        async for chunk in streaming_response.body_iterator:
+            yield chunk
+        chat_session_create = chat_schema.ChatSessionCreate(
+            chat_id=generate_answer_request.chat_id,
+            sender='bot',
+            message=final_response,
+            sender_id=bot.id
+        )
+        chat_crud.create_chat_session(db, chat_session_create)
+    
+    return StreamingResponse(save_chat_session_in_streaming(streaming_response), media_type="text/event-stream")
 
 def get_prompt():
     prompt = ChatPromptTemplate.from_messages(
@@ -119,9 +131,3 @@ def get_llm():
         model="EEVE-Korean-10.8B:latest"
         )
     return llm
-
-def get_response_from_bot(llm, prompt, question):
-    chain = prompt | llm
-
-    response = chain.invoke({"messages": [HumanMessage(content=question)]})
-    return response

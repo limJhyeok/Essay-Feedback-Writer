@@ -87,9 +87,9 @@ def generate_answer(generate_answer_request: chat_schema.GenerateAnswerRequest, 
     # TODO: bot에 따라 다르게 모델 불러오는 Logic 필요
     bot = chat_crud.get_bot(db, generate_answer_request.bot_id)
 
-    model = get_model()
+    llm = get_llm()
     prompt = get_prompt()
-    response = get_response_from_bot(model, prompt, generate_answer_request.question)
+    response = get_response_from_bot(llm, prompt, generate_answer_request.question)
     answer = response.content
 
     chat_session_create = chat_schema.ChatSessionCreate(
@@ -101,7 +101,7 @@ def generate_answer(generate_answer_request: chat_schema.GenerateAnswerRequest, 
     chat_crud.create_chat_session(db, chat_session_create)
     return answer
 
-    
+
 def get_prompt():
     prompt = ChatPromptTemplate.from_messages(
     [
@@ -114,14 +114,14 @@ def get_prompt():
     )
     return prompt
 
-def get_model():
-    model = ChatOllama(
+def get_llm():
+    llm = ChatOllama(
         model="EEVE-Korean-10.8B:latest"
         )
-    return model
+    return llm
 
-def get_response_from_bot(model, prompt, question):
-    chain = prompt | model
+def get_response_from_bot(llm, prompt, question):
+    chain = prompt | llm
 
     response = chain.invoke({"messages": [HumanMessage(content=question)]})
     return response

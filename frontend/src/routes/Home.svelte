@@ -11,7 +11,8 @@
   let isSidebarVisible = true;
   let newChatTitle = '';
   let isNewChatModalOpen = false;
-
+  let answer = '';
+  let generateLoading = false;
   function openNewChatModal() {
     isNewChatModalOpen = true;
   }
@@ -47,29 +48,82 @@
       )
     }
   }
-  function generateAnswer(){
-    let url = '/api/chat/generate-answer'
+
+  function generateAnswer() {
+    generateLoading = true;
+    let _url = "/api/chat/generate-answer"
+    let url = import.meta.env.VITE_SERVER_URL + _url
+    let method = "POST"
+    let headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'text/event-stream'
+        }
     let params = {
-      chat_id: activeChatId,
-      // TODO: bot id 변경
-      bot_id: 1,
-      question: userMessage,
-      context: $sessionMessages.messages
-    }
-    fastapi('post', url, params, 
-      (json) => {
-        sessionMessages.update(state => {
-          return {
-            ...state,
-            messages: [...state.messages, { sender: 'bot', text: json }]
-          };
-        });
-      },
-      (json_error) => {
-        error = json_error
-      }
-    )
+            chat_id: activeChatId,
+            bot_id: 1,
+            question: userMessage,
+            context: $sessionMessages.messages
+        }
+
+    fetch(url, {
+        method: method,
+        headers: headers,
+        body: JSON.stringify(params)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+
+        function read() {
+            reader.read().then(({ done, value }) => {
+              try {
+                generateLoading = false;
+                if (done) {
+                      sessionMessages.update(state => {
+                                    return {
+                                        ...state,
+                                        messages: [...state.messages, { sender: 'bot', text: answer }]
+                                    };
+                                });
+                      answer = '';
+                      return;
+                }
+
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split('\n');
+                lines.forEach(line => {
+                    if (line.trim()) {
+                        const parsedLine = JSON.parse(line);
+                        const status = parsedLine.status;
+                        const data = parsedLine.data;
+                        if (status === 'processing') {
+                            answer = (answer ?? '') + data;                        
+                        }
+                    }
+                });
+                read(); 
+              } catch (err) {
+                handleGenerateError(err)
+              }
+            }
+          );
+        }
+        read();
+    })
+    .catch(error => {
+        console.error('Fetch error:', error);
+    });
   }
+  
+  function handleGenerateError(err){
+    answer = ''
+    generateLoading = false;
+    console.error(err)
+  }
+
   function getChatTitles() {
     let url = "/api/chat/titles"
     let params = {}
@@ -102,6 +156,8 @@
     fastapi('post', url, params, 
         (json) => {
             newChatTitle=''
+            getChatTitles();
+            closeNewChatModal(); 
         },
         (json_error) => {
             error = json_error
@@ -368,11 +424,23 @@
     </div>
     <!-- TODO: Active Chat ID 가 -1일 경우 비어있는 chatting으로 화면 rendering(store 변수 때문에 계속 남아있음) -->
     <div class="messages">
-      {#each $sessionMessages.messages as message}
-        <div class="message {message.sender}">
-          {message.text}
-        </div>
-      {/each}
+      {#if activeChatId !== -1}
+        {#each $sessionMessages.messages as message }
+          <div class="message {message.sender}">
+            {message.text}
+          </div>
+        {/each}
+        {#if answer !== ''}
+          <div class="message bot">
+            {answer}
+          </div>
+        {/if}
+        {#if generateLoading === true}
+          <div class="message bot">
+            loading...
+          </div>
+        {/if}
+      {/if}
     </div>
     <div class="input-container">
       <textarea

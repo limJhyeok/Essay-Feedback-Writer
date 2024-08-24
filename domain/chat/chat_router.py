@@ -9,13 +9,15 @@ from models import User
 from langchain_community.chat_models import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage
-
+import asyncio
+import json
 
 router = APIRouter(
     prefix = "/api/chat"
 )
 
 EMPTY_CHAT_ID = -1
+DELEAY_SECONDS_FOR_STREAM = 0.01
 
 @router.get("/titles")
 def get_chat_history_titles(current_user: User = Depends(user_router.get_current_user), db: Session = Depends(get_db)):
@@ -91,28 +93,29 @@ async def generate_answer(generate_answer_request: chat_schema.GenerateAnswerReq
 
     llm = get_llm()
     prompt = get_prompt()
-    final_response = ""
     async def stream_answer(llm, prompt, question):
         chain = prompt | llm
-        nonlocal final_response
-        async for response in chain.astream({"messages": [HumanMessage(content=question)]}):
+        final_response = ""
+        for response in chain.stream({"messages": [HumanMessage(content=question)]}):
             final_response += response.content
-            yield response.content + "\n"
-            # await asyncio.sleep(0.05) # 타이핑 효과를 위해 지연
-    streaming_response = StreamingResponse(stream_answer(llm, prompt, generate_answer_request.question),
-                                           media_type="text/event-stream")
-    async def save_chat_session_in_streaming(streaming_response: StreamingResponse):
-        async for chunk in streaming_response.body_iterator:
-            yield chunk
-        chat_session_create = chat_schema.ChatSessionCreate(
-            chat_id=generate_answer_request.chat_id,
-            sender='bot',
-            message=final_response,
-            sender_id=bot.id
-        )
-        chat_crud.create_chat_session(db, chat_session_create)
-    
-    return StreamingResponse(save_chat_session_in_streaming(streaming_response), media_type="text/event-stream")
+            yield json.dumps({"status": "processing", "data": response.content}, ensure_ascii=False) + "\n"
+            await asyncio.sleep(DELEAY_SECONDS_FOR_STREAM) # 모델 처리속도가 한번에 너무 빨라서 글을 쓰는것 같은 효과를 주지 못함
+        await save_chat_session(db = db,
+                          chat_id = generate_answer_request.chat_id,
+                          message = final_response,
+                          sender_id = bot.id)
+        yield json.dumps({"status": "complete", "data": "Stream finished"}, ensure_ascii=False) + "\n"
+    return StreamingResponse(stream_answer(llm, prompt, generate_answer_request.question),
+                             media_type = "text/event-stream")
+
+async def save_chat_session(db, chat_id, message, sender_id):
+    chat_session_create = chat_schema.ChatSessionCreate(
+        chat_id=chat_id,
+        sender='bot',
+        message=message,
+        sender_id=sender_id
+    )
+    chat_crud.create_chat_session(db, chat_session_create)
 
 def get_prompt():
     prompt = ChatPromptTemplate.from_messages(

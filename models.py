@@ -32,34 +32,34 @@ class SocialAccount(Base):
     provider = Column(String, nullable = False)
     provider_user_id = Column(String, unique=True, nullable = False)
 
-class Chat(Base):
-    __tablename__ = "chat"
+class ChatSession(Base):
+    __tablename__ = "chat_session"
     id = Column(Integer, primary_key = True, index= True)
     user_id = Column(Integer, ForeignKey("user.id"))
     title = Column(String, nullable = True)
     created_at = Column(DateTime, default=lambda: datetime.now(KST), nullable=False)
     updated_at = Column(DateTime, default=lambda: datetime.now(KST), onupdate=lambda: datetime.now(KST), nullable=False)
-    user = relationship("User", backref="chats")
+    user = relationship("User", backref="chat_sessions")
 
-class ChatSessionSenderType(enum.Enum):
+class ConversationSenderType(enum.Enum):
     user = "user"
     bot = "bot"
 
-class ChatSession(Base):
-    __tablename__ = "chat_session"
+class Conversation(Base):
+    __tablename__ = "conversation"
     id = Column(Integer, primary_key=True, index=True)
-    chat_id = Column(Integer, ForeignKey("chat.id"), nullable=False) 
-    sender = Column(Enum(ChatSessionSenderType), nullable=False)  
+    chat_session_id = Column(Integer, ForeignKey("chat_session.id"), nullable=False) 
+    sender = Column(Enum(ConversationSenderType), nullable=False)  
     sender_id = Column(Integer, nullable=False, default = -1)
     message = Column(String, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(KST), nullable=False)
     updated_at = Column(DateTime, default=lambda: datetime.now(KST), onupdate=lambda: datetime.now(KST), nullable=False)
-    chat = relationship("Chat", backref="sessions")
+    chat_session = relationship("ChatSession", backref="conversations")
     def get_sender(self):
-        if self.sender == ChatSessionSenderType.user:
-            return self.session.query(User).get(self.sender_id)
-        elif self.sender == ChatSessionSenderType.bot:
-            return self.session.query(Bot).get(self.sender_id)
+        if self.sender == ConversationSenderType.user:
+            return self.conversation.query(User).get(self.sender_id)
+        elif self.sender == ConversationSenderType.bot:
+            return self.conversation.query(Bot).get(self.sender_id)
     
 class Bot(Base):
     __tablename__ = "bot"

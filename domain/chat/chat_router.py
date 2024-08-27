@@ -16,73 +16,73 @@ router = APIRouter(
     prefix = "/api/chat"
 )
 
-EMPTY_CHAT_ID = -1
+EMPTY_CHAT_SESSION_ID = -1
 DELEAY_SECONDS_FOR_STREAM = 0.01
 
 @router.get("/titles")
 def get_chat_history_titles(current_user: User = Depends(user_router.get_current_user), db: Session = Depends(get_db)):
-    db_chat_titles = chat_crud.get_chat_histories(db, current_user.id)
-    if not db_chat_titles:
+    db_chat_sessions = chat_crud.get_chat_session_histories(db, current_user.id)
+    if not db_chat_sessions:
         return []
     
-    chat_titles = [{'id': db_chat_title.id, 'name': db_chat_title.title} for db_chat_title in db_chat_titles]
-    return chat_titles
+    chat_session_titles = [{'id': db_chat_session.id, 'name': db_chat_session.title} for db_chat_session in db_chat_sessions]
+    return chat_session_titles
 
-@router.get("/session/{chat_id}")
-def get_chat_session_messages(chat_id: int, db: Session = Depends(get_db), current_user: User = Depends(user_router.get_current_user)):
+@router.get("/session/{chat_session_id}")
+def get_conversations(chat_session_id: int, db: Session = Depends(get_db), current_user: User = Depends(user_router.get_current_user)):
     res = {"message_history": {
         "messages": []
         }
     }
-    if chat_id == EMPTY_CHAT_ID:
+    if chat_session_id == EMPTY_CHAT_SESSION_ID:
         return res
 
-    db_chat_sessions = chat_crud.get_chat_sessions(db, chat_id)
-    if db_chat_sessions:
-        res["message_history"]["messages"] = [{"sender": db_chat_session.sender, "text": db_chat_session.message} for db_chat_session in db_chat_sessions]
+    db_conversations = chat_crud.get_conversations(db, chat_session_id)
+    if db_conversations:
+        res["message_history"]["messages"] = [{"sender": db_conversation.sender, "text": db_conversation.message} for db_conversation in db_conversations]
     return res
 
 
 @router.post("/create", status_code=status.HTTP_201_CREATED)
-def create_chat(chat_create_request: chat_schema.ChatCreateRequest,
+def create_chat(chat_session_create_request: chat_schema.ChatSessionCreateRequest,
                 db: Session = Depends(get_db),
                 current_user: User = Depends(user_router.get_current_user)):
-    _chat_create = chat_schema.ChatCreate(
+    chat_session_create = chat_schema.ChatSessionCreate(
         user_id = current_user.id,
-        title = chat_create_request.title
+        title = chat_session_create_request.title
     )
-    chat_crud.create_chat(
+    chat_crud.create_chat_session(
         db = db,
-        _chat_create = _chat_create
+        chat_session_create = chat_session_create
     )
 
 
 @router.post("/session", status_code=status.HTTP_201_CREATED)
-def post_chat_session(user_chat_session_create_request: chat_schema.UserChatSessionCreateRequest,
+def post_user_conversation(user_chat_session_create_request: chat_schema.UserChatSessionCreateRequest,
                       db: Session = Depends(get_db),
                       current_user: User = Depends(user_router.get_current_user)):
-    chat = chat_crud.get_chat(db, user_chat_session_create_request.chat_id)
-    if not chat:
+    chat_session = chat_crud.get_chat_session(db, user_chat_session_create_request.chat_session_id)
+    if not chat_session:
         # TODO: refactoring?(모듈화): create_chat과 매우 비슷
         # TODO: user_chat_session_create_request.message와 AI를 이용하여 chat의 title 부여한 후에 ChatCreate 만들기
-        _chat_create = chat_schema.ChatCreate(
+        chat_session_create = chat_schema.ChatSessionCreate(
         user_id = current_user.id,
         )
-        db_chat = chat_crud.create_chat(
+        db_chat_session = chat_crud.create_chat_session(
             db=db,
-            _chat_create=_chat_create
+            chat_session_create=chat_session_create
         )
-        user_chat_session_create_request.chat_id = db_chat.id
+        user_chat_session_create_request.chat_session_id = db_chat_session.id
 
-    _chat_session_create = chat_schema.ChatSessionCreate(
+    conversation_create = chat_schema.ConversationCreate(
         sender_id = current_user.id,
-        chat_id = user_chat_session_create_request.chat_id,
+        chat_session_id = user_chat_session_create_request.chat_session_id,
         sender = user_chat_session_create_request.sender,
         message = user_chat_session_create_request.message
     )
-    chat_crud.create_chat_session(
+    chat_crud.create_conversation(
         db=db,
-        _chat_session_create=_chat_session_create
+        conversation_create=conversation_create
     )
 
 
@@ -100,22 +100,22 @@ async def generate_answer(generate_answer_request: chat_schema.GenerateAnswerReq
             final_response += response.content
             yield json.dumps({"status": "processing", "data": response.content}, ensure_ascii=False) + "\n"
             await asyncio.sleep(DELEAY_SECONDS_FOR_STREAM) # 모델 처리속도가 한번에 너무 빨라서 글을 쓰는것 같은 효과를 주지 못함
-        await save_chat_session(db = db,
-                          chat_id = generate_answer_request.chat_id,
+        await save_bot_conversation(db = db,
+                          chat_id = generate_answer_request.chat_session_id,
                           message = final_response,
                           sender_id = bot.id)
         yield json.dumps({"status": "complete", "data": "Stream finished"}, ensure_ascii=False) + "\n"
     return StreamingResponse(stream_answer(llm, prompt, generate_answer_request.question),
                              media_type = "text/event-stream")
 
-async def save_chat_session(db, chat_id, message, sender_id):
-    chat_session_create = chat_schema.ChatSessionCreate(
-        chat_id=chat_id,
+async def save_bot_conversation(db, chat_id, message, sender_id):
+    chat_session_create = chat_schema.ConversationCreate(
+        chat_session_id=chat_id,
         sender='bot',
         message=message,
         sender_id=sender_id
     )
-    chat_crud.create_chat_session(db, chat_session_create)
+    chat_crud.create_conversation(db, chat_session_create)
 
 def get_prompt():
     prompt = ChatPromptTemplate.from_messages(

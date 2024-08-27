@@ -7,7 +7,7 @@
   $: chatTitles, sessionMessages
   let activeMessages = []
   let userMessage = '';
-  let activeChatId = -1;
+  let activeChatSessionId = -1;
   let isSidebarVisible = true;
   let newChatTitle = '';
   let isNewChatModalOpen = false;
@@ -26,7 +26,7 @@
     if (userMessage.trim()) {
       let url = '/api/chat/session'
       let params = {
-        chat_id: activeChatId,
+        chat_session_id: activeChatSessionId,
         sender: 'user',
         message: userMessage
       }
@@ -59,7 +59,7 @@
             'Accept': 'text/event-stream'
         }
     let params = {
-            chat_id: activeChatId,
+            chat_session_id: activeChatSessionId,
             bot_id: 1,
             question: userMessage,
             context: $sessionMessages.messages
@@ -165,7 +165,7 @@
     )
   }
   function selectChat(id) {
-    activeChatId = id
+    activeChatSessionId = id
     getSessionMessages(id)
   }
   function toggleSidebar() {
@@ -363,7 +363,7 @@
           {#each $chatTitles as chatTitle}
             <button
               on:click={() => selectChat(chatTitle.id)}
-              class:active={chatTitle.id === activeChatId}
+              class:active={chatTitle.id === activeChatSessionId}
             >
               {chatTitle.name}
             </button>
@@ -424,7 +424,7 @@
     </div>
     <!-- TODO: Active Chat ID 가 -1일 경우 비어있는 chatting으로 화면 rendering(store 변수 때문에 계속 남아있음) -->
     <div class="messages">
-      {#if activeChatId !== -1}
+      {#if activeChatSessionId !== -1}
         {#each $sessionMessages.messages as message }
           <div class="message {message.sender}">
             {message.text}

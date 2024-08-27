@@ -1,32 +1,29 @@
 from pydantic import BaseModel
 from typing import Optional
 
-class ChatCreate(BaseModel):
+class ChatSessionCreate(BaseModel):
     user_id: int
-    title: Optional[str] = "임시 chat"
+    title: Optional[str] = "New chat"
 
 
-class ChatCreateRequest(BaseModel):
+class ChatSessionCreateRequest(BaseModel):
     title: str
 
 
-class Chat(BaseModel):
-  pass
-
-class ChatSessionCreate(BaseModel):
-    chat_id: int
+class ConversationCreate(BaseModel):
+    chat_session_id: int
     sender: str
     message: str
     sender_id: int
 
 class UserChatSessionCreateRequest(BaseModel):
-    chat_id: int
+    chat_session_id: int
     sender: str
     message: str
    
 
 class GenerateAnswerRequest(BaseModel):
-   chat_id: int
+   chat_session_id: int
    bot_id: int
    question: str
    context: Optional[list]

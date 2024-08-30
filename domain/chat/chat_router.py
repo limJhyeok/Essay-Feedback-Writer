@@ -2,8 +2,7 @@ from fastapi import APIRouter, Depends, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from database import get_db
-from domain.chat import chat_crud
-from domain.chat import chat_schema
+from domain.chat import chat_crud, chat_schema, chat_utils
 from domain.user import user_router
 from models import User
 from langchain_community.chat_models import ChatOllama
@@ -11,13 +10,14 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage
 import asyncio
 import json
-
+from operator import itemgetter
+from langchain_core.runnables import RunnablePassthrough
 router = APIRouter(
     prefix = "/api/chat"
 )
 
 EMPTY_CHAT_SESSION_ID = -1
-DELEAY_SECONDS_FOR_STREAM = 0.01
+DELEAY_SECONDS_FOR_STREAM = 0.0001
 
 @router.get("/titles")
 def get_chat_history_titles(current_user: User = Depends(user_router.get_current_user), db: Session = Depends(get_db)):
@@ -85,7 +85,7 @@ def post_user_conversation(user_chat_session_create_request: chat_schema.UserCha
         conversation_create=conversation_create
     )
 
-
+from langchain_core.runnables.history import RunnableWithMessageHistory
 @router.post("/generate-answer", status_code=status.HTTP_201_CREATED)
 async def generate_answer(generate_answer_request: chat_schema.GenerateAnswerRequest, db: Session = Depends(get_db)):
     # TODO: bot에 따라 다르게 모델 불러오는 Logic 필요
@@ -93,29 +93,43 @@ async def generate_answer(generate_answer_request: chat_schema.GenerateAnswerReq
 
     llm = get_llm()
     prompt = get_prompt()
+    # token_trimmer = chat_utils.get_token_trimmer()
     async def stream_answer(llm, prompt, question):
+        if str(generate_answer_request.chat_session_id) in chat_utils.chat_session_store:
+            if not chat_utils.chat_session_store[str(generate_answer_request.chat_session_id)].messages:
+                chat_utils.get_chat_session_history_from_db(chat_utils.chat_session_store, db, generate_answer_request.chat_session_id)
+        
+        config = {"configurable": {"session_id": f"{generate_answer_request.chat_session_id}"}}        
         chain = prompt | llm
+        # chain = (
+        #         RunnablePassthrough.assign(messages=itemgetter("messages") | token_trimmer)
+        #         | prompt
+        #         | llm
+        #     )
+        with_message_history = RunnableWithMessageHistory(chain, chat_utils.get_chat_session_history_from_dict)
         final_response = ""
-        for response in chain.stream({"messages": [HumanMessage(content=question)]}):
+        for response in with_message_history.stream({"messages": [HumanMessage(content=question)]},
+                                                    config = config):
             final_response += response.content
             yield json.dumps({"status": "processing", "data": response.content}, ensure_ascii=False) + "\n"
             await asyncio.sleep(DELEAY_SECONDS_FOR_STREAM) # 모델 처리속도가 한번에 너무 빨라서 글을 쓰는것 같은 효과를 주지 못함
         await save_bot_conversation(db = db,
-                          chat_id = generate_answer_request.chat_session_id,
+                          chat_session_id = generate_answer_request.chat_session_id,
                           message = final_response,
                           sender_id = bot.id)
         yield json.dumps({"status": "complete", "data": "Stream finished"}, ensure_ascii=False) + "\n"
     return StreamingResponse(stream_answer(llm, prompt, generate_answer_request.question),
                              media_type = "text/event-stream")
 
-async def save_bot_conversation(db, chat_id, message, sender_id):
-    chat_session_create = chat_schema.ConversationCreate(
-        chat_session_id=chat_id,
+
+async def save_bot_conversation(db, chat_session_id, message, sender_id):
+    bot_conversation_create = chat_schema.ConversationCreate(
+        chat_session_id=chat_session_id,
         sender='bot',
         message=message,
         sender_id=sender_id
     )
-    chat_crud.create_conversation(db, chat_session_create)
+    chat_crud.create_conversation(db, bot_conversation_create)
 
 def get_prompt():
     prompt = ChatPromptTemplate.from_messages(

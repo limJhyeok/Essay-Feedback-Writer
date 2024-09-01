@@ -24,7 +24,7 @@ class InMemoryHistory(BaseChatMessageHistory, BaseModel):
 
 chat_session_store = {}
 
-def get_chat_session_history_from_dict(chat_session_id: str) -> BaseChatMessageHistory:
+def get_chat_session_history_from_dict(chat_session_id: int) -> BaseChatMessageHistory:
     if chat_session_id not in chat_session_store:
         chat_session_store[chat_session_id] = InMemoryChatMessageHistory()
     return chat_session_store[chat_session_id]
@@ -32,12 +32,13 @@ def get_chat_session_history_from_dict(chat_session_id: str) -> BaseChatMessageH
 
 def get_chat_session_history_from_db(chat_session_store: dict, db: Session, chat_session_id: int):
     conversations = chat_crud.get_conversations(db, chat_session_id = chat_session_id)
+    get_chat_session_history_from_dict(chat_session_id)
     if conversations:
         for conversation in conversations:
             if conversation.sender.value == "user":
-                chat_session_store.add_message(HumanMessage(content = conversation.message))
+                chat_session_store[chat_session_id].add_message(HumanMessage(content = conversation.message))
             elif conversation.sender.value == "bot":
-                chat_session_store.add_message(AIMessage(content=conversation.message))
+                chat_session_store[chat_session_id].add_message(AIMessage(content=conversation.message))
 
 def get_token_trimmer(model, max_tokens):
     return trim_messages(

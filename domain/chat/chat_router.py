@@ -89,17 +89,18 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 @router.post("/generate-answer", status_code=status.HTTP_201_CREATED)
 async def generate_answer(generate_answer_request: chat_schema.GenerateAnswerRequest, db: Session = Depends(get_db)):
     # TODO: bot에 따라 다르게 모델 불러오는 Logic 필요
-    bot = chat_crud.get_bot(db, generate_answer_request.bot_id)
+    chat_session_id = generate_answer_request.chat_session_id
+    question = generate_answer_request.question
 
+    bot = chat_crud.get_bot(db, generate_answer_request.bot_id)
     llm = get_llm()
     prompt = get_prompt()
-    # token_trimmer = chat_utils.get_token_trimmer()
+    # token_trimmer = chat_utils.get_token_trimmer(model = llm, max_tokens = 65)
     async def stream_answer(llm, prompt, question):
-        if str(generate_answer_request.chat_session_id) in chat_utils.chat_session_store:
-            if not chat_utils.chat_session_store[str(generate_answer_request.chat_session_id)].messages:
-                chat_utils.get_chat_session_history_from_db(chat_utils.chat_session_store, db, generate_answer_request.chat_session_id)
+        if chat_session_id not in chat_utils.chat_session_store or not chat_utils.chat_session_store[chat_session_id].messages:
+            chat_utils.get_chat_session_history_from_db(chat_utils.chat_session_store, db, chat_session_id)
         
-        config = {"configurable": {"session_id": f"{generate_answer_request.chat_session_id}"}}        
+        config = {"configurable": {"session_id": f"{chat_session_id}"}}        
         chain = prompt | llm
         # chain = (
         #         RunnablePassthrough.assign(messages=itemgetter("messages") | token_trimmer)
@@ -114,11 +115,11 @@ async def generate_answer(generate_answer_request: chat_schema.GenerateAnswerReq
             yield json.dumps({"status": "processing", "data": response.content}, ensure_ascii=False) + "\n"
             await asyncio.sleep(DELEAY_SECONDS_FOR_STREAM) # 모델 처리속도가 한번에 너무 빨라서 글을 쓰는것 같은 효과를 주지 못함
         await save_bot_conversation(db = db,
-                          chat_session_id = generate_answer_request.chat_session_id,
+                          chat_session_id = chat_session_id,
                           message = final_response,
                           sender_id = bot.id)
         yield json.dumps({"status": "complete", "data": "Stream finished"}, ensure_ascii=False) + "\n"
-    return StreamingResponse(stream_answer(llm, prompt, generate_answer_request.question),
+    return StreamingResponse(stream_answer(llm, prompt,question),
                              media_type = "text/event-stream")
 
 

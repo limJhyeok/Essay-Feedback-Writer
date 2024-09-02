@@ -106,6 +106,7 @@ langchain-text-splitters==0.2.2
     # via langchain
 langsmith==0.1.99
     # via
+    #   -r requirement.in
     #   langchain
     #   langchain-community
     #   langchain-core

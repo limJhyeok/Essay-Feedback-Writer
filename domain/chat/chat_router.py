@@ -99,19 +99,11 @@ async def generate_answer(generate_answer_request: chat_schema.GenerateAnswerReq
     llm = get_llm()
     prompt = get_prompt()
     token_trimmer = chat_utils.get_token_trimmer(model = llm, max_tokens = EEVE_KOREAN_MAX_TOKENS - EEVE_KOREAN_BUFFER_TOKENS)
-    async def stream_answer(llm, prompt, question):
-        if chat_session_id not in chat_utils.chat_session_store or not chat_utils.chat_session_store[chat_session_id].messages:
-            chat_utils.get_chat_session_history_from_db(chat_utils.chat_session_store, db, chat_session_id)
-            messages = chat_utils.chat_session_store[chat_session_id].messages
-        else:
-            messages = [HumanMessage(content=question)]
-        
+    async def stream_answer(llm, prompt, question, chat_session_id, db, bot, token_trimmer, delay_seconds_for_stream):
+        messages = await load_or_initialize_messages(chat_session_id, question, db)        
         config = {"configurable": {"session_id": f"{chat_session_id}"}}        
-        chain = (
-                RunnablePassthrough.assign(messages= itemgetter("messages") | token_trimmer)
-                | prompt
-                | llm
-            )
+
+        chain = create_chain_with_trimmer(token_trimmer, prompt, llm)
         with_message_history = RunnableWithMessageHistory(chain, chat_utils.get_chat_session_history_from_dict, 
                                                           input_messages_key="messages")
         
@@ -120,15 +112,30 @@ async def generate_answer(generate_answer_request: chat_schema.GenerateAnswerReq
                                                     config = config):
             final_response += response.content
             yield json.dumps({"status": "processing", "data": response.content}, ensure_ascii=False) + "\n"
-            await asyncio.sleep(DELEAY_SECONDS_FOR_STREAM) # 모델 처리속도가 한번에 너무 빨라서 글을 쓰는것 같은 효과를 주지 못함
+            await asyncio.sleep(delay_seconds_for_stream) # 모델 처리속도가 한번에 너무 빨라서 글을 쓰는것 같은 효과를 주지 못함
         await save_bot_conversation(db = db,
                           chat_session_id = chat_session_id,
                           message = final_response,
                           sender_id = bot.id)
         yield json.dumps({"status": "complete", "data": "Stream finished"}, ensure_ascii=False) + "\n"
-    return StreamingResponse(stream_answer(llm, prompt,question),
+    return StreamingResponse(stream_answer(llm, prompt, question, chat_session_id, db, bot, token_trimmer, DELEAY_SECONDS_FOR_STREAM),
                              media_type = "text/event-stream")
 
+
+async def load_or_initialize_messages(chat_session_id, question, db):
+    if chat_session_id not in chat_utils.chat_session_store or not chat_utils.chat_session_store[chat_session_id].messages:
+        chat_utils.get_chat_session_history_from_db(chat_utils.chat_session_store, db, chat_session_id)
+        return chat_utils.chat_session_store[chat_session_id].messages
+    else:
+        return [HumanMessage(content=question)]
+
+def create_chain_with_trimmer(token_trimmer, prompt, llm):
+    chain = (
+        RunnablePassthrough.assign(messages=itemgetter("messages") | token_trimmer)
+        | prompt
+        | llm
+    )
+    return chain
 
 async def save_bot_conversation(db, chat_session_id, message, sender_id):
     bot_conversation_create = chat_schema.ConversationCreate(

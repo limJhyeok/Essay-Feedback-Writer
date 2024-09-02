@@ -19,6 +19,9 @@ router = APIRouter(
 EMPTY_CHAT_SESSION_ID = -1
 DELEAY_SECONDS_FOR_STREAM = 0.0001
 
+EEVE_KOREAN_MAX_TOKENS = 4096
+EEVE_KOREAN_BUFFER_TOKENS = 96
+
 @router.get("/titles")
 def get_chat_history_titles(current_user: User = Depends(user_router.get_current_user), db: Session = Depends(get_db)):
     db_chat_sessions = chat_crud.get_chat_session_histories(db, current_user.id)
@@ -95,21 +98,25 @@ async def generate_answer(generate_answer_request: chat_schema.GenerateAnswerReq
     bot = chat_crud.get_bot(db, generate_answer_request.bot_id)
     llm = get_llm()
     prompt = get_prompt()
-    # token_trimmer = chat_utils.get_token_trimmer(model = llm, max_tokens = 65)
+    token_trimmer = chat_utils.get_token_trimmer(model = llm, max_tokens = EEVE_KOREAN_MAX_TOKENS - EEVE_KOREAN_BUFFER_TOKENS)
     async def stream_answer(llm, prompt, question):
         if chat_session_id not in chat_utils.chat_session_store or not chat_utils.chat_session_store[chat_session_id].messages:
             chat_utils.get_chat_session_history_from_db(chat_utils.chat_session_store, db, chat_session_id)
+            messages = chat_utils.chat_session_store[chat_session_id].messages
+        else:
+            messages = [HumanMessage(content=question)]
         
         config = {"configurable": {"session_id": f"{chat_session_id}"}}        
-        chain = prompt | llm
-        # chain = (
-        #         RunnablePassthrough.assign(messages=itemgetter("messages") | token_trimmer)
-        #         | prompt
-        #         | llm
-        #     )
-        with_message_history = RunnableWithMessageHistory(chain, chat_utils.get_chat_session_history_from_dict)
+        chain = (
+                RunnablePassthrough.assign(messages= itemgetter("messages") | token_trimmer)
+                | prompt
+                | llm
+            )
+        with_message_history = RunnableWithMessageHistory(chain, chat_utils.get_chat_session_history_from_dict, 
+                                                          input_messages_key="messages")
+        
         final_response = ""
-        for response in with_message_history.stream({"messages": [HumanMessage(content=question)]},
+        for response in with_message_history.stream({"messages": messages},
                                                     config = config):
             final_response += response.content
             yield json.dumps({"status": "processing", "data": response.content}, ensure_ascii=False) + "\n"

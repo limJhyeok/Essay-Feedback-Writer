@@ -50,7 +50,7 @@
     ```
     
     ```
-    # .env 파일에 아래 사항들을 적으세요
+    # ~/.env
     
     # front 서버 url
     DEV_FRONTEND_URL=http://127.0.0.1:8000
@@ -63,15 +63,15 @@
     
     SMTP_HOST = "smtp.gmail.com" # SMTP 발송 서버
     SMTP_PORT = 587
-    SMTP_USERNAME = "ljh6887@gmail.com" # your gmail
+    SMTP_USERNAME = "YOUR_EMAIL@gmail.com" # your gmail
     SMTP_PASSWORD = "YOUR_SMTP_PASSWORD"
     ```
     
 2. back 서버 구축
-    1. python 환경 구축
+    
+    a. python 환경 구축
     
     ```bash
-    cd /ChatGPT-Cloning
     apt install python3.11
     pip install virtualenv
     virtualenv -p /usr/bin/python3.11 {virtualenv_name}
@@ -90,7 +90,7 @@
       --local-dir-use-symlinks False
     ```
     
-    c. ollama 설치(AI)
+    c. ollama 설치
     
     ```bash
     bash -c "$(curl -fsSL https://ollama.com/install.sh)"
@@ -99,7 +99,8 @@
     ```
     
 3. Database 구축
-    1. alembic 초기 설정
+    
+    a. alembic 초기 설정
     
     ```bash
     alembic init migrations
@@ -116,8 +117,7 @@
     
     ```
     
-    > alembic이 사용할 데이터베이스의 접속주소를 설정했다.
-    > 
+ 
     
     `[파일명: projects/migrations/env.py]`
     
@@ -146,7 +146,8 @@
     ```
     
 4. front 서버 구축
-    1. nvm & nodejs 설치
+
+    a. nvm & nodejs 설치
     
     ```bash
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
@@ -166,9 +167,9 @@
 
 5. front 환경 변수 설정
 
-```bash
-# .env 파일
-# back 서버 url
-VITE_SERVER_URL=http://127.0.0.1:8000
-```
+    ```bash
+    # ~/frontend/.env
+    # back 서버 url
+    VITE_SERVER_URL=http://127.0.0.1:8000
+    ```
 

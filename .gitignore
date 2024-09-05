@@ -21,3 +21,6 @@ __pycache__/
 alembic.ini
 migrations
 *.db
+
+# document(test for rag)
+*.pdf

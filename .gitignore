@@ -2,14 +2,15 @@
 *.pyc
 __pycache__/
 *.ipynb
-
+venv
 # Deep Learning Model Parameter
 *.gguf
 *.gguf
 *.gguf.lock
 *.gguf.metadata
 
-
+# hugginface cache
+*.cache
 
 # env, config
 .env

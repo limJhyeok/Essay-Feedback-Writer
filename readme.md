@@ -41,3 +41,134 @@
 ![home page UI in now](frontend/src/assets/home.png)
 
 
+## Project Setting
+
+1. back 환경변수 설정
+    
+    ```bash
+    touch .env
+    ```
+    
+    ```
+    # .env 파일에 아래 사항들을 적으세요
+    
+    # front 서버 url
+    DEV_FRONTEND_URL=http://127.0.0.1:8000
+    
+    # database url
+    SQLALCHEMY_DATABASE_URL = "sqlite:///./myapi.db"
+    
+    # 인증 token 만료 시간(분)
+    ACCESS_TOKEN_EXPIRE_MINUTES = 60
+    
+    SMTP_HOST = "smtp.gmail.com" # SMTP 발송 서버
+    SMTP_PORT = 587
+    SMTP_USERNAME = "ljh6887@gmail.com" # your gmail
+    SMTP_PASSWORD = "YOUR_SMTP_PASSWORD"
+    ```
+    
+2. back 서버 구축
+    1. python 환경 구축
+    
+    ```bash
+    cd /ChatGPT-Cloning
+    apt install python3.11
+    pip install virtualenv
+    virtualenv -p /usr/bin/python3.11 {virtualenv_name}
+    source {virtualenv_name}/bin/activate
+    
+    pip install -r requirement.txt
+    ```
+    
+    b. 모델 checkpoint 설치
+    
+    ```bash
+    huggingface-cli download \
+      heegyu/EEVE-Korean-Instruct-10.8B-v1.0-GGUF \
+      ggml-model-Q5_K_M.gguf \
+      --local-dir EEVE-Korean-Instruct-10.8B-v1.0-GGUF \
+      --local-dir-use-symlinks False
+    ```
+    
+    c. ollama 설치(AI)
+    
+    ```bash
+    bash -c "$(curl -fsSL https://ollama.com/install.sh)"
+    ollama serve &
+    ollama create EEVE-Korean-10.8B -f EEVE-Korean-Instruct-10.8B-v1.0-GGUF/Modelfile
+    ```
+    
+3. Database 구축
+    1. alembic 초기 설정
+    
+    ```bash
+    alembic init migrations
+    ```
+    
+    b. alembic 환경파일 수정
+    
+    `[파일명: projects/alembic.ini]`
+    
+    ```
+    (... 생략 ...)
+    sqlalchemy.url =sqlite:///./{db_name}.db
+    (... 생략 ...)
+    
+    ```
+    
+    > alembic이 사용할 데이터베이스의 접속주소를 설정했다.
+    > 
+    
+    `[파일명: projects/migrations/env.py]`
+    
+    ```python
+    (... 생략 ...)
+    import models
+    (... 생략 ...)
+    # add your model's MetaData object here
+    # for 'autogenerate' support
+    # from myapp import mymodel
+    # target_metadata = mymodel.Base.metadata
+    target_metadata =models.Base.metadata
+    (... 생략 ...)
+    ```
+    
+    c. 리비전 파일 생성
+    
+    ```bash
+    alembic revision --autogenerate
+    ```
+    
+    d. 리비전 파일 실행
+    
+    ```bash
+    alembic upgrade head
+    ```
+    
+4. front 서버 구축
+    1. nvm & nodejs 설치
+    
+    ```bash
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
+    source ~/.bashrc
+    nvm install 18.18.0
+    nvm use 18.18.0
+    nvm alias default 18.18.0
+    ```
+    
+    b. frontend 패키지 설치
+    
+    ```bash
+    cd frontend
+    npm install
+    ```
+    
+
+5. front 환경 변수 설정
+
+```bash
+# .env 파일
+# back 서버 url
+VITE_SERVER_URL=http://127.0.0.1:8000
+```
+

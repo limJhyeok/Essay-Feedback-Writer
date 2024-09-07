@@ -192,40 +192,39 @@
     $userEmail=""
     window.location.reload();
   }
+  function autoResizeTextArea(event) {
+        const textarea = event.target;
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
+    }
 </script>
 
-<!-- TODO: faRobot으로 import하면 왜 안되는지 모르겠음 -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-<!-- TODO: style sheet 부트스트랩으로 변경 -->
 <style>
-  .full-container {
-    display: flex;
-    height: 100vh;
-  }
   .sidebar {
     width: 200px;
-    border-right: 1px solid #ccc;
+    height: 90vh;
     display: flex;
     flex-direction: column;
     transition: width 0.3s;
-    overflow-y: auto;
   }
   .sidebar.hidden {
     width: 0;
     overflow: hidden;
     transition: width 0.3s;
   }
-  .sidebar button {
-    display: block;
-    width: 100%;
-    padding: 10px;
-    background: none;
-    border: none;
-    text-align: left;
-    cursor: pointer;
+  .fa-bars-comments-container {
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
   }
-
+  .sidebar button{
+    transition: background-color 0.3s ease; 
+  }
   .sidebar button.active {
+    background-color: #eee;
+  }
+  .sidebar button:hover {
     background-color: #eee;
   }
 
@@ -239,12 +238,7 @@
     justify-content: flex-end;
     padding: 10px;
   }
-  .chat-container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-  }
+
   .messages {
     display: flex;
     flex-direction: column;
@@ -261,6 +255,10 @@
     flex: 1;
     padding: 0.5rem;
     font-size: 1rem;
+    min-height: 5vh;
+    max-height: 30vh;
+    overflow-y: auto;
+    resize: none;
   }
   .input-container button {
     margin-left: 0.5rem;
@@ -280,6 +278,8 @@
     padding: 0.75rem 1rem;
     border-radius: 10px;
     white-space: pre-wrap;
+    margin-right: 20vh;
+    margin-left: 20vh;
   }
   .message.user {
     text-align: right;
@@ -300,7 +300,6 @@
     display: inline-block;
     font-size: 1.3rem;
   }
-
   .toggle-button {
     color: black;
     border: white;
@@ -345,7 +344,7 @@
   }
 </style>
 
-<div class="full-container">
+<div class="d-flex">
   <nav class="h-full w-full {isSidebarVisible ? 'nav-bg-grey' : ''}">
     <div class="h-14 d-flex justify-content-between items-center px-4 align-items-center">
       <div>
@@ -357,19 +356,17 @@
         <FontAwesomeIcon icon={faComments} />
       </button>
     </div>
-    <div class="h-full w-full">
-      <div class="sidebar {isSidebarVisible ? '' : 'hidden'}">
-        <ul>
-          {#each $chatTitles as chatTitle}
-            <button
-              on:click={() => selectChat(chatTitle.id)}
-              class:active={chatTitle.id === activeChatSessionId}
-            >
-              {chatTitle.name}
-            </button>
-          {/each}
-        </ul>
-      </div>
+    <div class="sidebar overflow-auto border-end {isSidebarVisible ? '' : 'hidden'}">
+      <ul>
+        {#each $chatTitles as chatTitle}
+          <button
+            on:click={() => selectChat(chatTitle.id)}
+            class="btn w-100 text-start py-2 {chatTitle.id === activeChatSessionId ? 'active' : ''}"
+          >
+            {chatTitle.name}
+          </button>
+        {/each}
+      </ul>
     </div>
     <!-- TODO: 새 채팅 생성 후 자동으로 채팅 목록에 추가한 화면 rendering -->
     {#if isNewChatModalOpen}
@@ -397,11 +394,10 @@
       </div>
     {/if}
   </nav>
-    
-  <!-- TODO: user와 bot의 채팅이 좌우로 넓게 배열되어있어서 유저가 읽기 불편함
-   (ChatGPT처럼 가운데에 몰려있는 형식으로 변환 필요해보임) -->
-  <div class="chat-container">
+
+  <div class="flex-grow-1 d-flex flex-column vh-100">
     <div class="top-bar">
+
       {#if $isLogin == false}
       <button class="btn relative btn-primary btn-small mr-6" on:click|preventDefault={goToLogin}>
         <div class="flex items-center justify-center">
@@ -446,6 +442,7 @@
       <textarea
         bind:value={userMessage}
         on:keydown={handleKeyDown}
+        on:input={autoResizeTextArea}
         placeholder="Type your message here..."
         class="message-input"
       ></textarea>
@@ -456,3 +453,4 @@
     </div>
   </div>
 </div>
+

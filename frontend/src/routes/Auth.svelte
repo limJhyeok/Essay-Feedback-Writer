@@ -101,7 +101,7 @@
       </div>
       <div class="mb-3">
         <label for="password" class="form-label">Password</label>
-        <input type="password" id="password" class="form-control" bind:value={user_password} required />
+        <input type="password" id="password" class="form-control" bind:value={user_password} autoComplete = "off" required />
       </div>
       <button type="submit" class="btn btn-primary w-100">{$isSignUpPage ? '회원가입' : '로그인'}</button>
     </form>

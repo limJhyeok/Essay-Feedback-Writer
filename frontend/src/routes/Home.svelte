@@ -199,9 +199,7 @@
     }
 </script>
 
-<!-- TODO: faRobot으로 import하면 왜 안되는지 모르겠음 -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-<!-- TODO: style sheet 부트스트랩으로 변경 -->
 <style>
   .sidebar {
     width: 200px;

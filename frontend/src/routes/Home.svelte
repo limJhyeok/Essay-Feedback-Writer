@@ -203,35 +203,30 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <!-- TODO: style sheet 부트스트랩으로 변경 -->
 <style>
-  .full-container {
-    display: flex;
-    height: 100vh;
-  }
   .sidebar {
     width: 200px;
     height: 90vh;
-    border-right: 1px solid #ccc;
     display: flex;
     flex-direction: column;
     transition: width 0.3s;
-    overflow-y: auto;
   }
   .sidebar.hidden {
     width: 0;
     overflow: hidden;
     transition: width 0.3s;
   }
-  .sidebar button {
-    display: block;
-    width: 100%;
-    padding: 10px;
-    background: none;
-    border: none;
-    text-align: left;
-    cursor: pointer;
+  .fa-bars-comments-container {
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
   }
-
+  .sidebar button{
+    transition: background-color 0.3s ease; 
+  }
   .sidebar button.active {
+    background-color: #eee;
+  }
+  .sidebar button:hover {
     background-color: #eee;
   }
 
@@ -244,17 +239,6 @@
     display: flex;
     justify-content: flex-end;
     padding: 10px;
-  }
-  .chat-container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    transition: margin-left 0.3s ease, width 0.3s ease;
-    height: 100vh;
-    width: 100vh;
-  }
-  .chat-container.sidebar-hidden {
-    margin-left: 0;
   }
 
   .messages {
@@ -318,7 +302,6 @@
     display: inline-block;
     font-size: 1.3rem;
   }
-
   .toggle-button {
     color: black;
     border: white;
@@ -363,9 +346,7 @@
   }
 </style>
 
-
-
-<div class="full-container">
+<div class="d-flex">
   <nav class="h-full w-full {isSidebarVisible ? 'nav-bg-grey' : ''}">
     <div class="h-14 d-flex justify-content-between items-center px-4 align-items-center">
       <div>
@@ -377,12 +358,12 @@
         <FontAwesomeIcon icon={faComments} />
       </button>
     </div>
-    <div class="sidebar {isSidebarVisible ? '' : 'hidden'}">
+    <div class="sidebar overflow-auto border-end {isSidebarVisible ? '' : 'hidden'}">
       <ul>
         {#each $chatTitles as chatTitle}
           <button
             on:click={() => selectChat(chatTitle.id)}
-            class:active={chatTitle.id === activeChatSessionId}
+            class="btn w-100 text-start py-2 {chatTitle.id === activeChatSessionId ? 'active' : ''}"
           >
             {chatTitle.name}
           </button>
@@ -415,8 +396,8 @@
       </div>
     {/if}
   </nav>
-      
-  <div class="chat-container">
+
+  <div class="flex-grow-1 d-flex flex-column vh-100">
     <div class="top-bar">
 
       {#if $isLogin == false}

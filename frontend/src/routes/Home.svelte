@@ -250,6 +250,8 @@
     display: flex;
     padding: 1rem;
     background-color: #fff;
+    margin-right: 20vh;
+    margin-left: 20vh;
   }
   .input-container textarea {
     flex: 1;

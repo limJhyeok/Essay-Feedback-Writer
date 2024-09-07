@@ -9,3 +9,6 @@ langchain-community
 transformers
 pytz
 langsmith
+langchain_chroma
+pypdf
+sentence_transformers

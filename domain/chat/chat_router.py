@@ -173,7 +173,7 @@ def create_rag_chain(llm, retriever):
 
 async def stream_answer(llm, question, chat_session_id, db, bot, token_trimmer, delay_seconds_for_stream):
     # TODO: use rag shuole be requested from frontend
-    use_rag = True
+    use_rag = False
     chat_session_messages = chat_utils.chat_session_store[chat_session_id].messages
     config = {"configurable": {"session_id": f"{chat_session_id}"}}
     if use_rag:

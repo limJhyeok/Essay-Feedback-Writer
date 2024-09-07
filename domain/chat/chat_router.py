@@ -12,6 +12,16 @@ import asyncio
 import json
 from operator import itemgetter
 from langchain_core.runnables import RunnablePassthrough
+from langchain.tools.retriever import create_retriever_tool
+from langchain_chroma import Chroma
+from langchain_community.embeddings import HuggingFaceBgeEmbeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import PyPDFLoader
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.chains import create_history_aware_retriever, create_retrieval_chain
+from langchain_core.runnables.history import RunnableWithMessageHistory
+
+
 router = APIRouter(
     prefix = "/api/chat"
 )
@@ -88,35 +98,122 @@ def post_user_conversation(user_chat_session_create_request: chat_schema.UserCha
         conversation_create=conversation_create
     )
 
-from langchain_core.runnables.history import RunnableWithMessageHistory
 @router.post("/generate-answer", status_code=status.HTTP_201_CREATED)
 async def generate_answer(generate_answer_request: chat_schema.GenerateAnswerRequest, db: Session = Depends(get_db)):
     # TODO: bot에 따라 다르게 모델 불러오는 Logic 필요
-    
     chat_session_id = generate_answer_request.chat_session_id
     question = generate_answer_request.question
+    await ensure_chat_session_initialized(chat_session_id, question, db)
 
     bot = chat_crud.get_bot(db, generate_answer_request.bot_id)
     llm = get_llm()
-    prompt = get_prompt()
+
     token_trimmer = chat_utils.get_token_trimmer(model = llm, max_tokens = EEVE_KOREAN_MAX_TOKENS - EEVE_KOREAN_BUFFER_TOKENS)
-    return StreamingResponse(stream_answer(llm, prompt, question, chat_session_id, db, bot, token_trimmer, DELEAY_SECONDS_FOR_STREAM),
-                             media_type = "text/event-stream")
+    return StreamingResponse(stream_answer(llm, question, chat_session_id, db, bot, token_trimmer, DELEAY_SECONDS_FOR_STREAM),
+                            media_type = "text/event-stream")
 
-async def stream_answer(llm, prompt, question, chat_session_id, db, bot, token_trimmer, delay_seconds_for_stream):
-    messages = await load_or_initialize_messages(chat_session_id, question, db)        
-    config = {"configurable": {"session_id": f"{chat_session_id}"}}        
 
-    chain = create_chain_with_trimmer(token_trimmer, prompt, llm)
+def load_and_split_documents(pdf_path: str, chunk_size=1000, chunk_overlap=200):
+    loader = PyPDFLoader(pdf_path)
+    documents = loader.load()
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+    splits = text_splitter.split_documents(documents)
+    return splits
+
+def create_vectorstore_and_retriever(splits):
+    vectorstore = Chroma.from_documents(documents=splits, embedding=HuggingFaceBgeEmbeddings())
+    return vectorstore.as_retriever()
+
+def create_history_aware_retriever_chain(llm, retriever):
+    contextualize_q_system_prompt = (
+        "Given a chat history and the latest user question "
+        "which might reference context in the chat history, "
+        "formulate a standalone question which can be understood "
+        "without the chat history. Do NOT answer the question, "
+        "just reformulate it if needed and otherwise return it as is."
+    )
+
+    contextualize_q_prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", contextualize_q_system_prompt),
+            MessagesPlaceholder("chat_history"),
+            ("human", "{input}"),
+        ]
+    )
+    
+    history_aware_retriever = create_history_aware_retriever(llm, retriever, contextualize_q_prompt)
+    return history_aware_retriever
+
+def create_question_answer_chain(llm):
+    system_prompt = (
+        "You are an assistant for question-answering tasks. "
+        "Use the following pieces of retrieved context to answer "
+        "the question. If you don't know the answer, say that you "
+        "don't know. Use three sentences maximum and keep the "
+        "answer concise."
+        "\n\n"
+        "{context}"
+    )
+    
+    qa_prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", system_prompt),
+            MessagesPlaceholder("chat_history"),
+            ("human", "{input}"),
+        ]
+    )
+
+    question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
+    return question_answer_chain
+
+def create_rag_chain(llm, retriever):
+    question_answer_chain = create_question_answer_chain(llm)
+    rag_chain = create_retrieval_chain(retriever, question_answer_chain)
+    return rag_chain
+
+async def stream_answer(llm, question, chat_session_id, db, bot, token_trimmer, delay_seconds_for_stream):
+    # TODO: use rag shuole be requested from frontend
+    use_rag = True
+    chat_session_messages = chat_utils.chat_session_store[chat_session_id].messages
+    config = {"configurable": {"session_id": f"{chat_session_id}"}}
+    if use_rag:
+        retriever = None
+        # TODO: pdf should be served from frontend
+        pdf_path = "some_document.pdf"
+        splits = load_and_split_documents(pdf_path)
+        retriever = create_vectorstore_and_retriever(splits)
+
+        history_aware_retriever = create_history_aware_retriever_chain(llm, retriever)
+        chain = create_rag_chain(llm, history_aware_retriever)
+        with_message_history_keys = {
+            "input_messages_key": "input",
+            "history_messages_key": "chat_history",
+            "output_messages_key": "answer"
+        }
+        message_history_inputs = {
+            "input": question,
+        }
+    else:
+        prompt = get_prompt()
+        with_message_history_keys = {
+            "input_messages_key":"messages",
+        }
+        chain = create_chain_with_trimmer(token_trimmer, prompt, llm)
+        message_history_inputs = {
+        "messages": chat_session_messages
+        }
+
     with_message_history = RunnableWithMessageHistory(chain, chat_utils.get_chat_session_history_from_dict, 
-                                                        input_messages_key="messages")
+                                                        **with_message_history_keys)
     
     final_response = ""
-    for response in with_message_history.stream({"messages": messages},
+    for response in with_message_history.stream(message_history_inputs,
                                                 config = config):
-        final_response += response.content
-        yield json.dumps({"status": "processing", "data": response.content}, ensure_ascii=False) + "\n"
-        await asyncio.sleep(delay_seconds_for_stream) # 모델 처리속도가 한번에 너무 빨라서 글을 쓰는것 같은 효과를 주지 못함
+        answer = response.get("answer") if use_rag else response.content
+        if answer:
+            final_response += answer
+            yield json.dumps({"status": "processing", "data": answer}, ensure_ascii=False) + "\n"
+            await asyncio.sleep(delay_seconds_for_stream) 
     await save_bot_conversation(db = db,
                         chat_session_id = chat_session_id,
                         message = final_response,
@@ -124,12 +221,9 @@ async def stream_answer(llm, prompt, question, chat_session_id, db, bot, token_t
     yield json.dumps({"status": "complete", "data": "Stream finished"}, ensure_ascii=False) + "\n"
 
 
-async def load_or_initialize_messages(chat_session_id: int, question: str, db) -> list:
+async def ensure_chat_session_initialized(chat_session_id: int, question: str, db) -> list:
     if chat_session_id not in chat_utils.chat_session_store or not chat_utils.chat_session_store[chat_session_id].messages:
         chat_utils.get_chat_session_history_from_db(chat_utils.chat_session_store, db, chat_session_id)
-        return chat_utils.chat_session_store[chat_session_id].messages
-    else:
-        return [HumanMessage(content=question)]
 
 def create_chain_with_trimmer(token_trimmer, prompt, llm):
     chain = (

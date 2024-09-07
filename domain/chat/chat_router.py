@@ -103,7 +103,7 @@ async def generate_answer(generate_answer_request: chat_schema.GenerateAnswerReq
     # TODO: bot에 따라 다르게 모델 불러오는 Logic 필요
     chat_session_id = generate_answer_request.chat_session_id
     question = generate_answer_request.question
-    await load_or_initialize_messages(chat_session_id, question, db)
+    await ensure_chat_session_initialized(chat_session_id, question, db)
 
     bot = chat_crud.get_bot(db, generate_answer_request.bot_id)
     llm = get_llm()
@@ -221,7 +221,7 @@ async def stream_answer(llm, question, chat_session_id, db, bot, token_trimmer, 
     yield json.dumps({"status": "complete", "data": "Stream finished"}, ensure_ascii=False) + "\n"
 
 
-async def load_or_initialize_messages(chat_session_id: int, question: str, db) -> list:
+async def ensure_chat_session_initialized(chat_session_id: int, question: str, db) -> list:
     if chat_session_id not in chat_utils.chat_session_store or not chat_utils.chat_session_store[chat_session_id].messages:
         chat_utils.get_chat_session_history_from_db(chat_utils.chat_session_store, db, chat_session_id)
 

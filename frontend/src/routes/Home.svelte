@@ -349,7 +349,8 @@
     formData.append('file', file);
 
     try {
-      let _url = '/api/chat/upload-pdf/'
+      // TODO: activeChatSessionId가 -1일 때 처리
+      let _url = `/api/chat/${activeChatSessionId}/upload-pdf/`
       let url = import.meta.env.VITE_SERVER_URL + _url
       const response = await fetch(url, {
         method: 'POST',
@@ -358,7 +359,6 @@
 
       if (response.ok) {
         alert('PDF uploaded and processed successfully');
-        question = `PDF "${file.name}" has been uploaded. You can now ask questions about it.`;
         fileInput.value = '';
       } else {
         alert('Error uploading PDF');

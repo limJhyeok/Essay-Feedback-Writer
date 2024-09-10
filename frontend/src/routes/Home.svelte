@@ -17,6 +17,7 @@
   let generateLoading = false;
   let checkDeleteChatModalOpen = false;
   let selectedChatId = null;
+  let fileInput;
     
   function openNewChatModal() {
     isNewChatModalOpen = true;
@@ -337,7 +338,35 @@
       closePopup();
     }
   }
+  function handleFileIconClick() {
+    fileInput.click();
+  }
+  async function uploadPDF() {
+    const file = fileInput.files[0];
+    if (!file) return;
 
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      let _url = '/api/chat/upload-pdf/'
+      let url = import.meta.env.VITE_SERVER_URL + _url
+      const response = await fetch(url, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (response.ok) {
+        alert('PDF uploaded and processed successfully');
+        question = `PDF "${file.name}" has been uploaded. You can now ask questions about it.`;
+        fileInput.value = '';
+      } else {
+        alert('Error uploading PDF');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  }
   onMount(() => {
     document.addEventListener('click', handleClickOutside);
     return () => {
@@ -731,6 +760,16 @@
         placeholder="Type your message here..."
         class="message-input"
       ></textarea>
+      <button class="file-upload-icon" on:click={handleFileIconClick}>
+        📁
+      </button>
+      <input 
+      type="file" 
+      accept=".pdf" 
+      style="display: none;" 
+      bind:this={fileInput} 
+      on:change={uploadPDF}
+      />
       <button on:click="{sendMessage}">Send</button>
     </div>
     <div class="center-text">

@@ -295,6 +295,7 @@
         activeChatSessionId = -1;
         closeCheckDeleteChatModal();
         getChatTitles();
+        selectChat(activeChatSessionId)
       },
       (json_error) => {
         error = json_error;

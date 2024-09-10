@@ -7,12 +7,10 @@ from domain.user import user_router
 from models import User
 from langchain_community.chat_models import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.messages import HumanMessage
 import asyncio
 import json
 from operator import itemgetter
 from langchain_core.runnables import RunnablePassthrough
-from langchain.tools.retriever import create_retriever_tool
 from langchain_chroma import Chroma
 from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -41,6 +39,12 @@ def get_chat_history_titles(current_user: User = Depends(user_router.get_current
     chat_session_titles = [{'id': db_chat_session.id, 'name': db_chat_session.title} for db_chat_session in db_chat_sessions]
     return chat_session_titles
 
+@router.get("/recent")
+def get_recent_chat_session_id(current_user: User = Depends(user_router.get_current_user), db: Session = Depends(get_db)):
+    recent_chat_session = chat_crud.get_recent_chat_session(db, current_user.id)
+    return {
+        "id": recent_chat_session.id
+    }
 @router.get("/session/{chat_session_id}")
 def get_conversations(chat_session_id: int, db: Session = Depends(get_db), current_user: User = Depends(user_router.get_current_user)):
     res = {"message_history": {

@@ -23,6 +23,7 @@ class InMemoryHistory(BaseChatMessageHistory, BaseModel):
         self.messages = []
 
 chat_session_store = {}
+retriever_store = {}
 
 def get_chat_session_history_from_dict(chat_session_id: int) -> BaseChatMessageHistory:
     if chat_session_id not in chat_session_store:

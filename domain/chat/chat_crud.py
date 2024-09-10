@@ -8,6 +8,10 @@ def get_chat_session_histories(db: Session, user_id: int) -> list[ChatSession]:
     chat_sessions = db.query(ChatSession).filter(ChatSession.user_id == user_id).order_by(ChatSession.updated_at.desc()).all()
     return chat_sessions
 
+def get_recent_chat_session(db: Session, user_id: int) -> ChatSession:
+    chat_sessions = get_chat_session_histories(db, user_id)
+    return chat_sessions[0]
+
 def get_conversations(db: Session, chat_session_id: int):
     conversations = db.query(Conversation).filter(Conversation.chat_session_id == chat_session_id).order_by(Conversation.id.asc()).all()
     return conversations
@@ -30,6 +34,7 @@ def create_chat_session(db: Session, chat_session_create: chat_schema.ChatSessio
     db.add(chat_session)
     db.commit()
     return chat_session
+
 
 def update_chat_session(db: Session, chat_session_id, chat_session_update_request):
     chat_session = get_chat_session(db, chat_session_id)

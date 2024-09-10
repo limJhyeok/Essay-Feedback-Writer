@@ -4,6 +4,8 @@
   import { isLogin, isSignUpPage, chatTitles, sessionMessages, accessToken, userEmail } from "../lib/store"
   import fastapi from "../lib/api";
   import { onMount, tick } from 'svelte';
+  import { marked } from 'marked'
+  
   $: chatTitles, sessionMessages
   let activeMessages = []
   let userMessage = '';
@@ -75,7 +77,6 @@
             question: userMessage,
             context: $sessionMessages.messages
         }
-
     fetch(url, {
         method: method,
         headers: headers,
@@ -295,7 +296,7 @@
         activeChatSessionId = -1;
         closeCheckDeleteChatModal();
         getChatTitles();
-        selectChat(activeChatSessionId)
+        selectChat(activeChatSessionId);
       },
       (json_error) => {
         error = json_error;
@@ -469,11 +470,14 @@
     white-space: pre-wrap;
     margin-right: 20vh;
     margin-left: 20vh;
+    display: flex;
+    justify-content: flex-start;
   }
   .message.user {
     text-align: right;
     background-color: #eee;
     align-self: flex-end;
+    border-radius: 0.5rem;
   }
   .message.bot {
     text-align: left;
@@ -551,6 +555,19 @@
   }
   .options-popup button:hover {
     background-color: #eee;
+  }
+  :global(.message-content p) {
+    margin: 0 0 0 0;
+  }
+  :global(.message-content pre) {
+    background-color: #eee;
+    padding: 0.5rem;
+    margin: 0;
+    border-radius: 0.5rem;
+  }
+  :global(.message code) {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.9em;
   }
 </style>
 
@@ -634,7 +651,6 @@
         {/each}
       </ul>
     </div>
-    <!-- TODO: 새 채팅 생성 후 자동으로 채팅 목록에 추가한 화면 rendering -->
     {#if isNewChatModalOpen}
       <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0, 0, 0, 0.5);">
         <div class="modal-dialog modal-dialog-centered">
@@ -684,17 +700,20 @@
       {/if}
       
     </div>
-    <!-- TODO: Active Chat ID 가 -1일 경우 비어있는 chatting으로 화면 rendering(store 변수 때문에 계속 남아있음) -->
     <div class="messages">
       {#if activeChatSessionId !== -1}
         {#each $sessionMessages.messages as message }
           <div class="message {message.sender}">
-            {message.text}
+            <div class="message-content">
+              {@html marked.parse(message.text)}
+            </div>
           </div>
         {/each}
         {#if answer !== ''}
           <div class="message bot">
-            {answer}
+            <div class="message-content">
+              {@html marked.parse(answer)}
+            </div>
           </div>
         {/if}
         {#if generateLoading === true}

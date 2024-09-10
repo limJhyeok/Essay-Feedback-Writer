@@ -141,6 +141,20 @@
     )
   }
   getChatTitles()
+
+  function setRecentChatSessionAsActive() {
+    let url = "/api/chat/recent";
+    let params = {}
+
+    fastapi('get', url, params, 
+        (json) => {
+          activeChatSessionId = json.id
+        },
+        (json_error) => {
+            error = json_error
+        }
+    )
+  }
   function getSessionMessages(chat_id) {
     let url = "/api/chat/session/" + chat_id
     let params = {}
@@ -156,11 +170,13 @@
   function createNewChat(){
     let url = "/api/chat/create"
     let params = {title: newChatTitle}
+    let recentChatSessionId = -1;
     fastapi('post', url, params, 
         (json) => {
             newChatTitle=''
             getChatTitles();
             closeNewChatModal(); 
+            setRecentChatSessionAsActive();
         },
         (json_error) => {
             error = json_error

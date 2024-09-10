@@ -1,9 +1,9 @@
 <script>
-  import { faBars, faComments, faUpRightAndDownLeftFromCenter } from '@fortawesome/free-solid-svg-icons';
+  import { faBars, faComments, faEllipsis } from '@fortawesome/free-solid-svg-icons';
   import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
   import { isLogin, isSignUpPage, chatTitles, sessionMessages, accessToken, userEmail } from "../lib/store"
   import fastapi from "../lib/api";
-
+  import { onMount, tick } from 'svelte';
   $: chatTitles, sessionMessages
   let activeMessages = []
   let userMessage = '';
@@ -13,6 +13,9 @@
   let isNewChatModalOpen = false;
   let answer = '';
   let generateLoading = false;
+  let checkDeleteChatModalOpen = false;
+  let selectedChatId = null;
+  
   function openNewChatModal() {
     isNewChatModalOpen = true;
   }
@@ -197,9 +200,125 @@
         textarea.style.height = 'auto';
         textarea.style.height = textarea.scrollHeight + 'px';
     }
+
+  let editingChatTitleId = null;
+  let inputElement = null;
+  function handleRenameChatButton(chatId){
+    editingChatTitleId = chatId
+    closePopup();
+    tick().then(() => {
+      if (inputElement) {
+        inputElement.focus();  // 인풋 요소에 포커스
+      }
+    });
+  }
+  function openCheckDeleteChatModal(chatId){
+    closePopup();
+    checkDeleteChatModalOpen = true;
+    selectedChatId = chatId;
+  }
+  function closeCheckDeleteChatModal(){
+    checkDeleteChatModalOpen = false;
+  }
+  function deleteChat(chatId){
+    openCheckDeleteChatModal(chatId);
+  }
+  function renameChatTitle(chatId) {
+    let url = `/api/chat/${chatId}/rename`;  // TODO: url 및 inDTO 변경
+    let params = { name: newChatTitle };     
+    // fastapi('put', url, params,
+    //   (json) => {
+    //     console.log("Chat title updated:", json);
+    //     chatTitles.update(titles => titles.map(title => {
+    //       if (title.id === chatId) {
+    //         return { ...title, name: newChatTitle };  // 제목을 새로 입력된 값으로 업데이트
+    //       }
+    //       return title;
+    //     }));
+    //     editingChatId = null;  // 수정 완료 후 상태 초기화
+    //   },
+    //   (json_error) => {
+    //     console.error("Error updating chat title:", json_error);
+    //   }
+    // );
+  }
+  function cancelEdit() {
+    newChatTitle = '';
+    inputElement=null;
+    editingChatTitleId = null;
+    
+  }
+
+  function handleKeyPress(event, chatId) {
+    if (event.key === 'Enter') {
+      renameChatTitle(chatId);
+    } else if (event.key === 'Escape') {
+      cancelEdit();
+    } 
+  }
+  
+  function confirmDeleteChat() {
+    let url = `/api/chat/${selectedChatId}`  
+    let params = {}  
+    // TODO: backend(url 및 inDTO 변경) 호출
+
+    // fastapi('delete', url, params,
+    //   (json) => {
+    //     console.log("Chat deleted:", json);
+    //     // 삭제 후 채팅 목록 갱신
+    //     chatTitles.update(titles => titles.filter(title => title.id !== selectedChatId));
+    //     closeCheckDeleteChatModal();
+    //   },
+    //   (json_error) => {
+    //     error = json_error;
+    //     console.log("Error deleting chat:", error);
+    //     closeCheckDeleteChatModal();
+    //   }
+    // );
+  }
+  let activePopupId = null
+  let popupContainer;
+
+  function togglePopup(chatId, event) {
+    event.stopPropagation();
+    const button = event.currentTarget;
+    const buttonRect = button.getBoundingClientRect();
+
+    if (activePopupId === chatId) {
+      closePopup();
+    } else {
+      activePopupId = chatId;
+      if (popupContainer) {
+        popupContainer.style.display = 'block';
+        popupContainer.style.top = `${buttonRect.bottom}px`;
+        popupContainer.style.left = `${buttonRect.right}px`;
+      }
+    }
+  }
+
+  function closePopup() {
+    activePopupId = null;
+    if (popupContainer) {
+      popupContainer.style.display = 'none';
+    }
+  }
+
+  function handleClickOutside(event) {
+    if (popupContainer && !popupContainer.contains(event.target) && !event.target.closest('.options-container')) {
+      closePopup();
+    }
+  }
+
+  onMount(() => {
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  });
 </script>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<!-- TODO: refactoring style sheet -->
 <style>
   .sidebar {
     width: 200px;
@@ -218,8 +337,48 @@
     align-items: center;
     transition: all 0.3s ease;
   }
-  .sidebar button{
-    transition: background-color 0.3s ease; 
+  .chat-item {
+  position: relative;
+  }
+
+  .chat-button-container {
+    display: flex;
+    align-items: center;
+    transition: background-color 0.3s ease;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .chat-button-container:hover,
+  .chat-button-container.active {
+    background-color: #eee;
+  }
+
+  .sidebar button {
+    flex-grow: 1;
+    background: transparent;
+    border: none;
+    text-align: left;
+    padding: 0.5rem 1rem;
+  }
+  .options-container {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .chat-button-container:hover .options-container,
+  .chat-button-container.active .options-container {
+    opacity: 1;
+  }
+
+  .options-popup {
+    position: fixed;
+    background-color: white;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    z-index: 9999;
+    width: 150px;
   }
   .sidebar button.active {
     background-color: #eee;
@@ -344,7 +503,58 @@
   .mr-6 {
     margin-right: 6px;
   }
+  
+
+  .options-icon {
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    color: #bbb;
+  }
+
+  .options-popup button {
+    display: block;
+    width: 100%;
+    padding: 5px 10px;
+    border: none;
+    background-color: #fff;
+  }
+  .options-popup button:hover {
+    background-color: #eee;
+  }
 </style>
+
+<!-- TODO: Component -->
+
+<div bind:this={popupContainer} class="options-popup" style="display: none;">
+  <button on:click={() => handleRenameChatButton(activePopupId)}>Rename</button>
+  <button on:click={() => openCheckDeleteChatModal(activePopupId)} class="text-danger">Delete</button>
+</div>
+
+<!-- TODO: modal refactoring -->
+<!-- delete chat modal -->
+{#if checkDeleteChatModalOpen}
+  <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0, 0, 0, 0.5);">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">해당 채팅을 삭제하고 싶습니까? 돌이킬 수 없습니다.</h5>
+          <button type="button" class="btn-close" aria-label="Close" on:click="{closeCheckDeleteChatModal}"></button>
+        </div>
+        <div class="modal-body">
+          <p>정말로 이 채팅을 삭제하시겠습니까?</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" on:click="{closeCheckDeleteChatModal}">취소</button>
+          <button type="button" class="btn btn-danger" on:click="{confirmDeleteChat}">삭제</button>
+        </div>
+      </div>
+    </div>
+  </div>
+{/if}
+
 
 <div class="d-flex">
   <nav class="h-full w-full {isSidebarVisible ? 'nav-bg-grey' : ''}">
@@ -361,12 +571,38 @@
     <div class="sidebar overflow-auto border-end {isSidebarVisible ? '' : 'hidden'}">
       <ul>
         {#each $chatTitles as chatTitle}
-          <button
-            on:click={() => selectChat(chatTitle.id)}
-            class="btn w-100 text-start py-2 {chatTitle.id === activeChatSessionId ? 'active' : ''}"
-          >
-            {chatTitle.name}
-          </button>
+        <li class="chat-item">
+          <div class="chat-button-container p-2 rounded 
+          {activeChatSessionId === chatTitle.id ? 'active' : ''}
+          {activePopupId === chatTitle.id ? 'active' : ''}">
+          {#if editingChatTitleId === chatTitle.id}
+            <input 
+              bind:this={inputElement}
+              type="text" 
+              class="form-control"
+              bind:value={newChatTitle}
+              on:keydown={(event) => handleKeyPress(event, chatTitle.id)}
+              on:blur={(cancelEdit)}  
+              placeholder={chatTitle.name}
+            />
+          {:else}
+            <button
+              on:click={() => selectChat(chatTitle.id)}
+              class="btn w-100 text-start py-2 {chatTitle.id === activeChatSessionId ? 'active' : ''}"
+            >
+              {chatTitle.name}
+            </button>
+          {/if}
+            <div class="options-container">
+              <button
+                class="options-icon btn btn-link p-0 border-0"
+                on:click={(event) => togglePopup(chatTitle.id, event)}
+              >
+                <FontAwesomeIcon icon={faEllipsis} />
+              </button>
+            </div>
+          </div>
+        </li>
         {/each}
       </ul>
     </div>
@@ -455,4 +691,3 @@
     </div>
   </div>
 </div>
-

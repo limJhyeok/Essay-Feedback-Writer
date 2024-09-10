@@ -3,6 +3,7 @@
 __pycache__/
 *.ipynb
 venv
+
 # Deep Learning Model Parameter
 *.gguf
 *.gguf
@@ -23,5 +24,5 @@ alembic.ini
 migrations
 *.db
 
-# document(test for rag)
-*.pdf
+# user upload files
+user-upload

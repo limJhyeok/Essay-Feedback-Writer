@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, UploadFile, File, HTTPException
+import os
+import shutil
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from database import get_db
@@ -19,6 +21,7 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.messages import HumanMessage
+from definitions import ROOT_DIR
 
 router = APIRouter(
     prefix = "/api/chat"
@@ -29,6 +32,8 @@ DELEAY_SECONDS_FOR_STREAM = 0.0001
 
 EEVE_KOREAN_MAX_TOKENS = 4096
 EEVE_KOREAN_BUFFER_TOKENS = 96
+
+UPLOAD_DIRECTORY = os.path.join(ROOT_DIR, "user-upload")
 
 @router.get("/titles")
 def get_chat_history_titles(current_user: User = Depends(user_router.get_current_user), db: Session = Depends(get_db)):
@@ -130,6 +135,23 @@ async def generate_answer(generate_answer_request: chat_schema.GenerateAnswerReq
                             media_type = "text/event-stream")
 
 
+@router.post("/{chat_session_id}/upload-pdf/")
+async def upload_pdf(chat_session_id: int, file: UploadFile = File(...)):
+    if not file.filename.endswith('.pdf'):
+        raise HTTPException(status_code=400, detail="Only PDF files are allowed")
+    
+    os.makedirs(UPLOAD_DIRECTORY, exist_ok=True)
+    file_path = os.path.join(UPLOAD_DIRECTORY, file.filename)
+
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    
+    splits = load_and_split_documents(file_path)
+    retriever = create_vectorstore_and_retriever(splits)
+    chat_utils.retriever_store[chat_session_id] = retriever
+    return {"filename": file.filename, "status": "processed"} 
+
+
 def load_and_split_documents(pdf_path: str, chunk_size=1000, chunk_overlap=200):
     loader = PyPDFLoader(pdf_path)
     documents = loader.load()
@@ -189,17 +211,10 @@ def create_rag_chain(llm, retriever):
     return rag_chain
 
 async def stream_answer(llm, question, chat_session_id, db, bot, token_trimmer, delay_seconds_for_stream):
-    # TODO: use rag shuole be requested from frontend
     chat_session_init_result = await ensure_chat_session_initialized(chat_session_id, db)
-    use_rag = False
+    retriever = chat_utils.retriever_store.get(chat_session_id)
     config = {"configurable": {"session_id": f"{chat_session_id}"}}
-    if use_rag:
-        retriever = None
-        # TODO: pdf should be served from frontend
-        pdf_path = "some_document.pdf"
-        splits = load_and_split_documents(pdf_path)
-        retriever = create_vectorstore_and_retriever(splits)
-
+    if retriever is not None:
         history_aware_retriever = create_history_aware_retriever_chain(llm, retriever)
         chain = create_rag_chain(llm, history_aware_retriever)
         with_message_history_keys = {
@@ -231,7 +246,7 @@ async def stream_answer(llm, question, chat_session_id, db, bot, token_trimmer, 
     final_response = ""
     for response in with_message_history.stream(message_history_inputs,
                                                 config = config):
-        answer = response.get("answer") if use_rag else response.content
+        answer = response.get("answer") if retriever is not None else response.content
         if answer:
             final_response += answer
             yield json.dumps({"status": "processing", "data": answer}, ensure_ascii=False) + "\n"

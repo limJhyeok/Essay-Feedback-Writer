@@ -15,7 +15,7 @@
   let generateLoading = false;
   let checkDeleteChatModalOpen = false;
   let selectedChatId = null;
-  
+    
   function openNewChatModal() {
     isNewChatModalOpen = true;
   }
@@ -41,7 +41,15 @@
               messages: [...state.messages, { sender: 'user', text: userMessage }]
             };
           });
-          generateAnswer();
+          if (activeChatSessionId === -1){
+            getChatTitles();
+            setRecentChatSessionAsActive(() => {
+              selectChat(activeChatSessionId);
+              generateAnswer();
+            })
+          } else {
+            generateAnswer();
+          }
           userMessage = '';
           
         },
@@ -94,7 +102,6 @@
                       answer = '';
                       return;
                 }
-
                 const chunk = decoder.decode(value, { stream: true });
                 const lines = chunk.split('\n');
                 lines.forEach(line => {
@@ -142,13 +149,16 @@
   }
   getChatTitles()
 
-  function setRecentChatSessionAsActive() {
+  function setRecentChatSessionAsActive(callback) {
     let url = "/api/chat/recent";
     let params = {}
 
     fastapi('get', url, params, 
         (json) => {
           activeChatSessionId = json.id
+        if (callback) {
+          callback(); 
+          }
         },
         (json_error) => {
             error = json_error
@@ -176,7 +186,9 @@
             newChatTitle=''
             getChatTitles();
             closeNewChatModal(); 
-            setRecentChatSessionAsActive();
+            setRecentChatSessionAsActive(() => {
+              selectChat(activeChatSessionId);
+            })
         },
         (json_error) => {
             error = json_error

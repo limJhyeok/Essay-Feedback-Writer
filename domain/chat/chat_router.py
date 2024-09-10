@@ -18,7 +18,7 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
 from langchain_core.runnables.history import RunnableWithMessageHistory
-
+from langchain_core.messages import HumanMessage
 
 router = APIRouter(
     prefix = "/api/chat"
@@ -120,7 +120,7 @@ async def generate_answer(generate_answer_request: chat_schema.GenerateAnswerReq
     # TODO: bot에 따라 다르게 모델 불러오는 Logic 필요
     chat_session_id = generate_answer_request.chat_session_id
     question = generate_answer_request.question
-    await ensure_chat_session_initialized(chat_session_id, question, db)
+    
 
     bot = chat_crud.get_bot(db, generate_answer_request.bot_id)
     llm = get_llm()
@@ -190,8 +190,8 @@ def create_rag_chain(llm, retriever):
 
 async def stream_answer(llm, question, chat_session_id, db, bot, token_trimmer, delay_seconds_for_stream):
     # TODO: use rag shuole be requested from frontend
+    chat_session_init_result = await ensure_chat_session_initialized(chat_session_id, db)
     use_rag = False
-    chat_session_messages = chat_utils.chat_session_store[chat_session_id].messages
     config = {"configurable": {"session_id": f"{chat_session_id}"}}
     if use_rag:
         retriever = None
@@ -216,8 +216,13 @@ async def stream_answer(llm, question, chat_session_id, db, bot, token_trimmer, 
             "input_messages_key":"messages",
         }
         chain = create_chain_with_trimmer(token_trimmer, prompt, llm)
+        # TODO: 대화이력 기반 chatbot refactoring 필요
+        if chat_session_init_result == "initialized":
+            messages = chat_utils.chat_session_store[chat_session_id].messages
+        else:
+            messages = [HumanMessage(content=question)]
         message_history_inputs = {
-        "messages": chat_session_messages
+            "messages": messages
         }
 
     with_message_history = RunnableWithMessageHistory(chain, chat_utils.get_chat_session_history_from_dict, 
@@ -238,9 +243,11 @@ async def stream_answer(llm, question, chat_session_id, db, bot, token_trimmer, 
     yield json.dumps({"status": "complete", "data": "Stream finished"}, ensure_ascii=False) + "\n"
 
 
-async def ensure_chat_session_initialized(chat_session_id: int, question: str, db) -> list:
+async def ensure_chat_session_initialized(chat_session_id: int, db) -> str:
     if chat_session_id not in chat_utils.chat_session_store or not chat_utils.chat_session_store[chat_session_id].messages:
         chat_utils.get_chat_session_history_from_db(chat_utils.chat_session_store, db, chat_session_id)
+        return "initialized"
+    return ""
 
 def create_chain_with_trimmer(token_trimmer, prompt, llm):
     chain = (

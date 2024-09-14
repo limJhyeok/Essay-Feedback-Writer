@@ -348,9 +348,12 @@
     isFileUploading = true;
     const formData = new FormData();
     formData.append('file', file);
-
     try {
-      // TODO: activeChatSessionId가 -1일 때 처리
+      // TODO: activeChatSessionId가 -1일 때 새로운 chat session 생성 후 select
+      if (activeChatSessionId === -1){
+        alert("왼쪽 sidebar에서 chat을 선택하거나 새로운 chat을 생성해주세요.")
+        return;
+      }
       let _url = `/api/chat/${activeChatSessionId}/upload-pdf/`
       let url = import.meta.env.VITE_SERVER_URL + _url
       const response = await fetch(url, {
@@ -770,11 +773,11 @@
         class="message-input"
         disabled = {isFileUploading}
       ></textarea>
-      <button class="file-upload-icon" on:click={handleFileIconClick} disabled={isFileUploading}>
+      <button class="file-upload-icon" on:click={handleFileIconClick} disabled={isFileUploading || activeChatSessionId === -1}>
         {isFileUploading? '⏳' : '📁'}
       </button>
       <input 
-      type="file" 
+      type="file"
       accept=".pdf" 
       style="display: none;" 
       bind:this={fileInput} 

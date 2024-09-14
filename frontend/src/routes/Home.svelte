@@ -351,7 +351,7 @@
     try {
       // TODO: activeChatSessionId가 -1일 때 새로운 chat session 생성 후 select
       if (activeChatSessionId === -1){
-        alert("왼쪽 sidebar에서 chat을 선택해주세요.")
+        alert("왼쪽 sidebar에서 chat을 선택하거나 새로운 chat을 생성해주세요.")
         return;
       }
       let _url = `/api/chat/${activeChatSessionId}/upload-pdf/`

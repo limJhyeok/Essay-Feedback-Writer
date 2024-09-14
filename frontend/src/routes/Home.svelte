@@ -5,6 +5,7 @@
   import fastapi from "../lib/api";
   import { onMount, tick } from 'svelte';
   import { marked } from 'marked'
+    import active from 'svelte-spa-router/active';
   
   $: chatTitles, sessionMessages
   let activeMessages = []
@@ -18,7 +19,7 @@
   let checkDeleteChatModalOpen = false;
   let selectedChatId = null;
   let fileInput;
-    
+  let isFileUploading = false;    
   function openNewChatModal() {
     isNewChatModalOpen = true;
   }
@@ -238,7 +239,7 @@
     closePopup();
     tick().then(() => {
       if (inputElement) {
-        inputElement.focus();  // 인풋 요소에 포커스
+        inputElement.focus(); 
       }
     });
   }
@@ -344,7 +345,7 @@
   async function uploadPDF() {
     const file = fileInput.files[0];
     if (!file) return;
-
+    isFileUploading = true;
     const formData = new FormData();
     formData.append('file', file);
 
@@ -365,6 +366,8 @@
       }
     } catch (error) {
       console.error('Error:', error);
+    } finally {
+      isFileUploading = false;
     }
   }
   onMount(() => {
@@ -478,6 +481,12 @@
     max-height: 30vh;
     overflow-y: auto;
     resize: none;
+    transition: all 0.3s ease;
+  }
+  .input-container textarea:disabled {
+    background-color: #f0f0f0;
+    color: #a0a0a0;
+    opacity: 1;
   }
   .input-container button {
     margin-left: 0.5rem;
@@ -759,9 +768,10 @@
         on:input={autoResizeTextArea}
         placeholder="Type your message here..."
         class="message-input"
+        disabled = {isFileUploading}
       ></textarea>
-      <button class="file-upload-icon" on:click={handleFileIconClick}>
-        📁
+      <button class="file-upload-icon" on:click={handleFileIconClick} disabled={isFileUploading}>
+        {isFileUploading? '⏳' : '📁'}
       </button>
       <input 
       type="file" 
@@ -770,7 +780,7 @@
       bind:this={fileInput} 
       on:change={uploadPDF}
       />
-      <button on:click="{sendMessage}">Send</button>
+      <button on:click="{sendMessage}" disabled={isFileUploading}>Send</button>
     </div>
     <div class="center-text">
       LLM은 실수할 수 있습니다. 중요한 정보를 확인하세요.

@@ -672,6 +672,31 @@
   </div>
 {/if}
 
+<!-- 새 채팅 생성 modal -->
+{#if isNewChatModalOpen}
+  <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0, 0, 0, 0.5);">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">새 채팅 생성</h5>
+          <button type="button" class="btn-close" aria-label="Close" on:click="{closeNewChatModal}"></button>
+        </div>
+        <div class="modal-body">
+          <input
+            type="text"
+            class="form-control"
+            bind:value={newChatTitle}
+            placeholder="채팅 제목을 입력하세요"
+          />
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" on:click="{closeNewChatModal}">취소</button>
+          <button type="button" class="btn btn-primary" on:click="{createNewChat}">생성</button>
+        </div>
+      </div>
+    </div>
+  </div>
+{/if}
 
 <div class="d-flex">
   <nav class="h-full w-full {isSidebarVisible ? 'nav-bg-grey' : ''}">
@@ -723,30 +748,6 @@
         {/each}
       </ul>
     </div>
-    {#if isNewChatModalOpen}
-      <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0, 0, 0, 0.5);">
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">새 채팅 생성</h5>
-              <button type="button" class="btn-close" aria-label="Close" on:click="{closeNewChatModal}"></button>
-            </div>
-            <div class="modal-body">
-              <input
-                type="text"
-                class="form-control"
-                bind:value={newChatTitle}
-                placeholder="채팅 제목을 입력하세요"
-              />
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" on:click="{closeNewChatModal}">취소</button>
-              <button type="button" class="btn btn-primary" on:click="{createNewChat}">생성</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    {/if}
   </nav>
 
   <div class="flex-grow-1 d-flex flex-column vh-100">

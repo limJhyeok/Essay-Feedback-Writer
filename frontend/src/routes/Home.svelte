@@ -492,7 +492,6 @@
     opacity: 1;
   }
   .input-container button {
-    margin-left: 0.5rem;
     padding: 0.5rem 1rem;
     font-size: 1rem;
     border: none;
@@ -609,6 +608,38 @@
   :global(.message code) {
     font-family: 'Courier New', Courier, monospace;
     font-size: 0.9em;
+  }
+
+
+  .upload-tooltip {
+    position: relative;
+    display: inline-block;
+    margin: 0 5px;
+  }
+  
+  .upload-tooltip .tooltiptext {
+    width: 15rem;
+    background-color: #555;
+    color: #fff;
+    text-align: center;
+    border-radius: 5px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%; 
+    left: 50%;
+    margin-left: -110px; 
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .upload-tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+  }
+
+  .upload-tooltip.disabled .tooltiptext {
+    background-color: #aaa; 
   }
 </style>
 
@@ -773,9 +804,16 @@
         class="message-input"
         disabled = {isFileUploading}
       ></textarea>
-      <button class="file-upload-icon" on:click={handleFileIconClick} disabled={isFileUploading || activeChatSessionId === -1}>
-        {isFileUploading? '⏳' : '📁'}
-      </button>
+    
+      <div class="upload-tooltip {isFileUploading || activeChatSessionId === -1 ? 'disabled' : ''}">
+        <button class="file-upload-icon h-100" on:click={handleFileIconClick} disabled={isFileUploading || activeChatSessionId === -1}>
+          {isFileUploading? '⏳' : '📁'}
+        </button>
+        <span class="tooltiptext">
+          {isFileUploading || activeChatSessionId === -1 ? 'Please create or select a chat from the sidebar to upload PDF file.' : 'Upload PDF file to retrieval'}
+        </span>
+      </div>
+
       <input 
       type="file"
       accept=".pdf" 

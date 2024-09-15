@@ -468,6 +468,7 @@
     overflow-y: auto;
     padding: 1rem;
     height: 100vh;
+    overflow-x: hidden;
   }
   .input-container {
     display: flex;
@@ -508,10 +509,13 @@
     padding: 0.75rem 1rem;
     border-radius: 10px;
     white-space: pre-wrap;
-    margin-right: 20vh;
-    margin-left: 20vh;
+    margin-right: 20%;
+    margin-left: 20%;
+    max-width: 60%;
     display: flex;
     justify-content: flex-start;
+    word-wrap: break-word;
+    word-break: break-word;
   }
   .message.user {
     text-align: right;
@@ -597,13 +601,16 @@
     background-color: #eee;
   }
   :global(.message-content p) {
-    margin: 0 0 0 0;
+    margin: 0;
   }
   :global(.message-content pre) {
     background-color: #eee;
     padding: 0.5rem;
     margin: 0;
     border-radius: 0.5rem;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    word-break: break-word;
   }
   :global(.message code) {
     font-family: 'Courier New', Courier, monospace;

@@ -9,7 +9,8 @@ from starlette import status
 from jose import jwt, JWTError
 from dotenv import load_dotenv
 import os
-from pydantic import EmailStr
+from typing import Annotated
+from fastapi.security import OAuth2PasswordRequestForm
 
 router = APIRouter(
     prefix = "/api/user"
@@ -22,16 +23,14 @@ ALGORITHM = os.getenv("ALGORITHM")
 TOKEN_URL = "/api/user/login"
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=TOKEN_URL)
 
-class OAuth2EmailPasswordRequestForm:
-    def __init__(self, email: str = Form(...), password: str = Form(...)):
-        self.email = email
-        self.password = password
 
 @router.post("/login", response_model=user_schema.Token)
-def login_for_access_token(form_data: OAuth2EmailPasswordRequestForm = Depends(),
+def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
                            db: Session = Depends(get_db)):
-    user = user_crud.get_user(db, form_data.email)
-    if not user or not pwd_context.verify(form_data.password, user.password):
+    user_email = form_data.username
+    user_password = form_data.password
+    user = user_crud.get_user(db, user_email)
+    if not user or not pwd_context.verify(user_password, user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect user email or password",

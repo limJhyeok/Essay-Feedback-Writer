@@ -8,11 +8,12 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
-      - ./backend/gpt_cloning.db:/app/gpt_cloning.db
     environment:
       - DEV_FRONTEND_URL=${DEV_FRONTEND_URL}
       - SQLALCHEMY_DATABASE_URL=${SQLALCHEMY_DATABASE_URL}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALGORITHM=${ALGORITHM}
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_PORT=${SMTP_PORT}
       - SMTP_USERNAME=${SMTP_USERNAME}

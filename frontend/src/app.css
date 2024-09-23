@@ -1,0 +1,14 @@
+/* Webkit 기반 브라우저 (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+display: none;
+}
+
+/* Firefox */
+html {
+scrollbar-width: none; /* 스크롤바 너비를 없앰 */
+}
+
+
+#app {
+    overflow: auto;
+}

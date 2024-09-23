@@ -411,6 +411,8 @@
     transition: background-color 0.3s ease;
     margin-top: 0.5rem;
     margin-bottom: 0.5rem;
+    padding: 10px 10px 5px 0;
+    text-align: center;
   }
 
   .chat-button-container:hover,
@@ -423,7 +425,6 @@
     background: transparent;
     border: none;
     text-align: left;
-    padding: 0.5rem 1rem;
   }
   .options-container {
     opacity: 0;
@@ -450,16 +451,16 @@
   .sidebar button:hover {
     background-color: #eee;
   }
-
   .sidebar ul {
-    list-style: none;
-    padding: 15px 20px;
+    list-style-type: none; /* 불릿(점) 제거 */
+    padding: 0; /* 기본 패딩 제거 */
+    margin: 15px 20px;
     cursor: pointer;
   }
   .top-bar {
     display: flex;
     justify-content: flex-end;
-    padding: 10px;
+    margin: 10px;
   }
 
   .messages {
@@ -472,10 +473,9 @@
   }
   .input-container {
     display: flex;
-    padding: 1rem;
+    justify-content: center;
+    margin: 10px 10vw;
     background-color: #fff;
-    margin-right: 20vh;
-    margin-left: 20vh;
   }
   .input-container textarea {
     flex: 1;
@@ -486,6 +486,7 @@
     overflow-y: auto;
     resize: none;
     transition: all 0.3s ease;
+    min-width: 30vw;
   }
   .input-container textarea:disabled {
     background-color: #f0f0f0;
@@ -537,15 +538,27 @@
     display: inline-block;
     font-size: 1.3rem;
   }
+  .toggle-button-box {
+    position: sticky;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 15px 10px;
+  }
+  .toggle-button-box.off {
+    position: absolute;
+    top: 0;
+  }
   .toggle-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     color: black;
-    border: white;
     border: none;
-    top: 20px;
-    left: 20px;
     padding: 10px;
     border-radius: 4px;
     cursor: pointer;
+    margin: 0 10px;
   }
   .toggle-button:hover {
     background-color: #f5f5f5;
@@ -706,13 +719,11 @@
 {/if}
 
 <div class="d-flex">
-  <nav class="h-full w-full {isSidebarVisible ? 'nav-bg-grey' : ''}">
-    <div class="h-14 d-flex justify-content-between items-center px-4 align-items-center">
-      <div>
-        <button class="toggle-button" on:click="{toggleSidebar}">
-          <FontAwesomeIcon icon={faBars} />
-        </button>
-      </div>
+  <nav class="{isSidebarVisible ? 'nav-bg-grey' : ''}">
+    <div class="{isSidebarVisible ? 'toggle-button-box' : 'toggle-button-box off'}">
+      <button class="toggle-button" on:click="{toggleSidebar}">
+        <FontAwesomeIcon icon={faBars} />
+      </button>
       <button class="toggle-button" on:click="{openNewChatModal}">
         <FontAwesomeIcon icon={faComments} />
       </button>
@@ -721,7 +732,7 @@
       <ul>
         {#each $chatTitles as chatTitle}
         <li class="chat-item">
-          <div class="chat-button-container p-2 rounded 
+          <div class="chat-button-container rounded 
           {activeChatSessionId === chatTitle.id ? 'active' : ''}
           {activePopupId === chatTitle.id ? 'active' : ''}">
           {#if editingChatTitleId === chatTitle.id}
@@ -757,7 +768,7 @@
     </div>
   </nav>
 
-  <div class="flex-grow-1 d-flex flex-column vh-100">
+  <div class="d-flex flex-column vh-100 flex-row vw-100">
     <div class="top-bar">
 
       {#if $isLogin == false}

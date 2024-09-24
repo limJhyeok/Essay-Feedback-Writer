@@ -254,7 +254,7 @@ async def stream_answer(llm, question, chat_session_id, db, bot, token_trimmer, 
     await save_bot_conversation(db = db,
                         chat_session_id = chat_session_id,
                         message = final_response,
-                        sender_id = bot.id)
+                        sender_id = bot.id if bot else 1)
     yield json.dumps({"status": "complete", "data": "Stream finished"}, ensure_ascii=False) + "\n"
 
 

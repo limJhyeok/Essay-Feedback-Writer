@@ -32,8 +32,3 @@ RUN ollama serve & \
 
 # Expose the port that the app will run on
 EXPOSE 8000
-
-# Command to run the app
-RUN chmod +x /app/prestart.sh
-
-ENTRYPOINT ["/app/prestart.sh"]

@@ -20,8 +20,6 @@ venv
 .vscode/
 
 # DB
-alembic.ini
-migrations
 *.db
 
 # user upload files

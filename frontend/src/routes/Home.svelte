@@ -12,7 +12,7 @@
   let userMessage = '';
   let activeChatSessionId = -1;
   let isSidebarVisible = true;
-  let newChatTitle = '';
+  let newChatTitle = '새 채팅';
   let isNewChatModalOpen = false;
   let answer = '';
   let generateLoading = false;
@@ -386,7 +386,7 @@
 <style>
   .sidebar {
     width: 200px;
-    height: 90vh;
+    height: calc(100vh - 66px);
     display: flex;
     flex-direction: column;
     transition: width 0.3s;
@@ -395,6 +395,16 @@
     width: 0;
     overflow: hidden;
     transition: width 0.3s;
+  }
+  .message-container {
+    position: relative;
+    display: grid;
+    grid-template-rows: fit-content(100%) 1fr fit-content(100%);
+    width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    margin: 0 5vw;
+    overflow-y: hidden;
   }
   .fa-bars-comments-container {
     display: flex;
@@ -458,35 +468,34 @@
     cursor: pointer;
   }
   .top-bar {
+    padding: 15px 0;
     display: flex;
     justify-content: flex-end;
-    margin: 10px;
+    width: 100%;
+    background-color: white;
   }
-
   .messages {
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    padding: 1rem;
-    height: 100vh;
-    overflow-x: hidden;
+    max-height: 100%;
   }
   .input-container {
-    display: flex;
-    justify-content: center;
-    margin: 10px 10vw;
+    display: grid;
+    grid-template-columns: 1fr fit-content(100%) fit-content(100%);
+    grid-template-rows: fit-content(100%) fit-content(100%);
+    width: 100%;
+    height: fit-content;
+    padding: 10px 0 0 0;
     background-color: #fff;
   }
   .input-container textarea {
-    flex: 1;
     padding: 0.5rem;
     font-size: 1rem;
-    min-height: 5vh;
-    max-height: 30vh;
     overflow-y: auto;
     resize: none;
     transition: all 0.3s ease;
-    min-width: 30vw;
+    max-height: 30vh;
   }
   .input-container textarea:disabled {
     background-color: #f0f0f0;
@@ -494,35 +503,36 @@
     opacity: 1;
   }
   .input-container button {
-    padding: 0.5rem 1rem;
     font-size: 1rem;
     border: none;
     background-color: #007bff;
     color: white;
     border-radius: 4px;
     cursor: pointer;
+    padding: 20px 18px;
+    height: fit-content;
+    width: fit-content;
   }
   .input-container button:hover {
     background-color: #0056b3;
   }
   .message {
     margin-bottom: 1rem;
-    padding: 0.75rem 1rem;
     border-radius: 10px;
     white-space: pre-wrap;
-    margin-right: 20%;
-    margin-left: 20%;
-    max-width: 60%;
+    /* margin-right: 20%; */
+    /* margin-left: 20%; */
+    max-width: 70%;
     display: flex;
     justify-content: flex-start;
-    word-wrap: break-word;
-    word-break: break-word;
+    overflow-wrap: break-word;
+    height: fit-content;
   }
   .message.user {
-    text-align: right;
     background-color: #eee;
     align-self: flex-end;
     border-radius: 0.5rem;
+    padding: 1rem;
   }
   .message.bot {
     text-align: left;
@@ -544,6 +554,7 @@
     align-items: center;
     justify-content: space-between;
     margin: 15px 10px;
+    z-index: 2;
   }
   .toggle-button-box.off {
     position: absolute;
@@ -570,11 +581,9 @@
     background-color: #e3e3e3;
   }
   .message-input {
-    width: 100%;
-    min-height: 50px;
+    min-width: 30vw;
     padding: 10px;
-    box-sizing: border-box;
-    font-size: 16px;
+    font-size: 1rem;
     border: 1px solid #ccc;
     border-radius: 5px;
     resize: none;
@@ -584,10 +593,15 @@
     border-color: #007BFF;
   }
   .center-text {
-    display: flex;
-    justify-content: center;
-    align-items: center;
     text-align: center;
+    grid-column-start: 1;
+    grid-column-end: 4;
+    background-color: white;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    padding: 10px;
+    overflow: hidden;
+    font-size: 0.8rem;
   }
   .mr-6 {
     margin-right: 6px;
@@ -613,17 +627,21 @@
   .options-popup button:hover {
     background-color: #eee;
   }
+  .message-content{
+    display: flex;
+    flex-direction: column;
+    height: fit-content;
+    overflow: auto;
+  }
   :global(.message-content p) {
     margin: 0;
   }
   :global(.message-content pre) {
     background-color: #eee;
-    padding: 0.5rem;
+    padding: 1rem;
     margin: 0;
     border-radius: 0.5rem;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    word-break: break-word;
+    overflow-x: auto;
   }
   :global(.message code) {
     font-family: 'Courier New', Courier, monospace;
@@ -638,19 +656,23 @@
   }
   
   .upload-tooltip .tooltiptext {
-    width: 15rem;
-    background-color: #555;
-    color: #fff;
-    text-align: center;
-    border-radius: 5px;
-    padding: 5px 0;
     position: absolute;
     z-index: 1;
-    bottom: 125%; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #555;
+    border-radius: 5px;
+    padding: 7px 10px 5px 10px;
+    bottom: calc(100% + 10px);
     left: 50%;
-    margin-left: -110px; 
+    transform: translate(-55%, 0);
     opacity: 0;
     transition: opacity 0.3s;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    color: #fff;
+
   }
 
   .upload-tooltip:hover .tooltiptext {
@@ -768,7 +790,7 @@
     </div>
   </nav>
 
-  <div class="d-flex flex-column vh-100 flex-row vw-100">
+  <div class="message-container">
     <div class="top-bar">
 
       {#if $isLogin == false}
@@ -783,7 +805,7 @@
         </div>
       </button>
       {:else}
-        <button class="btn relative btn-primary btn-small mr-6" on:click|preventDefault={handleLogOut}>
+        <button class="btn relative btn-primary btn-small" on:click|preventDefault={handleLogOut}>
           <div class="flex items-center justify-center">
             로그아웃
           </div>
@@ -819,17 +841,17 @@
         bind:value={userMessage}
         on:keydown={handleKeyDown}
         on:input={autoResizeTextArea}
-        placeholder="Type your message here..."
+        placeholder="대화를 입력하세요..."
         class="message-input"
         disabled = {isFileUploading}
       ></textarea>
     
       <div class="upload-tooltip {isFileUploading || activeChatSessionId === -1 ? 'disabled' : ''}">
-        <button class="file-upload-icon h-100" on:click={handleFileIconClick} disabled={isFileUploading || activeChatSessionId === -1}>
+        <button class="file-upload-icon" on:click={handleFileIconClick} disabled={isFileUploading || activeChatSessionId === -1}>
           {isFileUploading? '⏳' : '📁'}
         </button>
         <span class="tooltiptext">
-          {isFileUploading || activeChatSessionId === -1 ? 'Please create or select a chat from the sidebar to upload PDF file.' : 'Upload PDF file to retrieval'}
+          {isFileUploading || activeChatSessionId === -1 ? '대화를 시작한 후 파일을 올려주세요' : 'PDF 파일을 올려주세요'}
         </span>
       </div>
 
@@ -841,9 +863,9 @@
       on:change={uploadPDF}
       />
       <button on:click="{sendMessage}" disabled={isFileUploading}>Send</button>
-    </div>
-    <div class="center-text">
-      LLM은 실수할 수 있습니다. 중요한 정보를 확인하세요.
+      <div class="center-text">
+        LLM은 실수할 수 있습니다. 중요한 정보를 확인하세요.
+      </div>
     </div>
   </div>
 </div>

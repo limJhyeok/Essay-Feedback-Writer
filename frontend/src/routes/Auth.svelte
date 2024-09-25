@@ -12,7 +12,7 @@
       event.preventDefault()
       let url = "/api/user/login"
       let params = {
-          email: user_email,
+          username: user_email,
           password: user_password,
       }
       fastapi('login', url, params, 

@@ -54,7 +54,7 @@ DEV_FRONTEND_URL=http://localhost:5173
 SQLALCHEMY_DATABASE_URL = "sqlite:///./gpt_cloning.db"
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
-# 인증용 secret key 밑 algorithm
+# 인증용 secret key 및 algorithm
 SECRET_KEY = 
 ALGORITHM = 
 

@@ -2,9 +2,11 @@ from datetime import timedelta, datetime
 from fastapi import APIRouter, Depends, HTTPException, Form
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
-from database import get_db
-from domain.user.user_crud import pwd_context
-from domain.user import user_crud, user_schema, user_utils
+from app.core.db import get_db
+from app.crud.user_crud import pwd_context
+from app.crud import user_crud
+from app.schemas import user_schema
+from app.api.utils import user_utils
 from starlette import status
 from jose import jwt, JWTError
 from dotenv import load_dotenv

@@ -3,10 +3,12 @@ import os
 import shutil
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
-from database import get_db
-from domain.chat import chat_crud, chat_schema, chat_utils
-from domain.user import user_router
-from models import User
+from app.core.db import get_db
+from app.crud import chat_crud
+from app.schemas import chat_schema
+from app.api.utils import chat_utils
+from app.api.routes import user_router
+from app.models import User
 from langchain_community.chat_models import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 import asyncio
@@ -21,7 +23,7 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.messages import HumanMessage
-from definitions import ROOT_DIR
+from app.definitions import ROOT_DIR
 
 router = APIRouter(
     prefix = "/api/chat"

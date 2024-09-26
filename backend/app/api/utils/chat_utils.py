@@ -8,7 +8,7 @@ from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.messages import trim_messages
 from typing import List
 from sqlalchemy.orm import Session
-from domain.chat import chat_crud
+from app.crud import chat_crud
 
 class InMemoryHistory(BaseChatMessageHistory, BaseModel):
     """In memory implementation of chat message history."""

@@ -1,7 +1,7 @@
 FROM pytorch/pytorch:2.2.0-cuda12.1-cudnn8-devel
 
 # Set the working directory
-WORKDIR /app
+WORKDIR /app/
 
 # 기본 패키지 업데이트 및 필수 패키지 설치
 RUN apt-get update && apt-get install -y \

@@ -1,6 +1,6 @@
-from models import ChatSession, Conversation, Bot
+from app.models import ChatSession, Conversation, Bot
 from sqlalchemy.orm import Session
-from domain.chat import chat_schema
+from app.schemas import chat_schema
 from fastapi import HTTPException
 
 def get_chat_session_histories(db: Session, user_id: int) -> list[ChatSession]:

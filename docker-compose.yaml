@@ -5,10 +5,10 @@ services:
       dockerfile: Dockerfile
     container_name: backend
     ports:
-      - "6000:6000"
+      - "8000:8000"
     volumes:
       - ./backend:/app
-    command: bash prestart.sh
+    command: bash /app/scripts/prestart.sh
     environment:
       - DEV_FRONTEND_URL=${DEV_FRONTEND_URL}
       - SQLALCHEMY_DATABASE_URL=${SQLALCHEMY_DATABASE_URL}
@@ -19,6 +19,9 @@ services:
       - SMTP_PORT=${SMTP_PORT}
       - SMTP_USERNAME=${SMTP_USERNAME}
       - SMTP_PASSWORD=${SMTP_PASSWORD}
+      # TODO: override를 통해 아래 LANGCHAIN 관련 환경변수 dev계만 적용?
+      - LANGCHAIN_TRACING_V2=${LANGCHAIN_TRACING_V2}
+      - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
     deploy:
       resources:
         reservations:
@@ -34,7 +37,7 @@ services:
       dockerfile: Dockerfile
     container_name: frontend
     ports:
-      - "4000:4000"
+      - "5173:5173"
     volumes:
       - ./frontend:/app
     depends_on:

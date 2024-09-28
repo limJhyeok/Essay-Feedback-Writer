@@ -51,7 +51,6 @@ VITE_SERVER_URL=http://127.0.0.1:8000
 
 # backend .env
 DEV_FRONTEND_URL=http://localhost:5173
-SQLALCHEMY_DATABASE_URL = "sqlite:///./gpt_cloning.db"
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 # 인증용 secret key 및 algorithm
@@ -62,6 +61,13 @@ SMTP_HOST = "smtp.gmail.com"
 SMTP_PORT = 587
 SMTP_USERNAME = "your gmail@gmail.com"
 SMTP_PASSWORD = "your smtp password"
+
+# Postgres
+POSTGRES_SERVER=localhost
+POSTGRES_PORT=5432
+POSTGRES_DB=app
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=changethis
 
 # langsmith
 LANGCHAIN_TRACING_V2 = 'true'

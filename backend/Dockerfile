@@ -18,6 +18,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the application code
 COPY . .
 
+ENV PYTHONPATH=/app
+
 RUN huggingface-cli download heegyu/EEVE-Korean-Instruct-10.8B-v1.0-GGUF ggml-model-Q5_K_M.gguf --local-dir ./EEVE-Korean-Instruct-10.8B-v1.0-GGUF --local-dir-use-symlinks False
 
 # Ollama 설치

@@ -12,3 +12,5 @@ langsmith
 langchain_chroma
 pypdf
 sentence_transformers
+pydantic-settings
+psycopg[binary, pool]

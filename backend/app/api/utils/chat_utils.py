@@ -1,21 +1,21 @@
+
 from langchain_core.chat_history import (
     BaseChatMessageHistory,
     InMemoryChatMessageHistory,
 )
-from langchain_core.messages import BaseMessage, AIMessage, HumanMessage
-from langchain_core.chat_history import BaseChatMessageHistory
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, trim_messages
 from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain_core.messages import trim_messages
-from typing import List
 from sqlalchemy.orm import Session
+
 from app.crud import chat_crud
+
 
 class InMemoryHistory(BaseChatMessageHistory, BaseModel):
     """In memory implementation of chat message history."""
 
-    messages: List[BaseMessage] = Field(default_factory=list)
+    messages: list[BaseMessage] = Field(default_factory=list)
 
-    def add_messages(self, messages: List[BaseMessage]) -> None:
+    def add_messages(self, messages: list[BaseMessage]) -> None:
         """Add a list of messages to the store"""
         self.messages.extend(messages)
 
@@ -44,8 +44,8 @@ def get_chat_session_history_from_db(chat_session_store: dict, db: Session, chat
 def get_token_trimmer(model, max_tokens):
     return trim_messages(
     max_tokens=max_tokens,
-    strategy="last",  
+    strategy="last",
     token_counter=model,
     include_system=True,
-    allow_partial=False, 
+    allow_partial=False,
     start_on="human",  )

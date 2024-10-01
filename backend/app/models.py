@@ -1,10 +1,20 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, MetaData, DateTime, Enum
-from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
 import enum
-import pytz
 from datetime import datetime
+
+import pytz
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Integer,
+    MetaData,
+    String,
+)
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
+
 Base = declarative_base()
 naming_convention = {
     "ix": 'ix_%(column_0_label)s',
@@ -48,8 +58,8 @@ class ConversationSenderType(enum.Enum):
 class Conversation(Base):
     __tablename__ = "conversation"
     id = Column(Integer, primary_key=True, index=True)
-    chat_session_id = Column(Integer, ForeignKey("chat_session.id"), nullable=False) 
-    sender = Column(Enum(ConversationSenderType), nullable=False)  
+    chat_session_id = Column(Integer, ForeignKey("chat_session.id"), nullable=False)
+    sender = Column(Enum(ConversationSenderType), nullable=False)
     sender_id = Column(Integer, nullable=False, default = -1)
     message = Column(String, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(KST), nullable=False)
@@ -60,7 +70,7 @@ class Conversation(Base):
             return self.conversation.query(User).get(self.sender_id)
         elif self.sender == ConversationSenderType.bot:
             return self.conversation.query(Bot).get(self.sender_id)
-    
+
 class Bot(Base):
     __tablename__ = "bot"
 

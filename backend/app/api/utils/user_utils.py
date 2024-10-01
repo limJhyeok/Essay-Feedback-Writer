@@ -1,13 +1,12 @@
-import secrets
 import os
-from dotenv import load_dotenv
-
-from pydantic import EmailStr
-from fastapi import HTTPException
-
+import secrets
 import smtplib
-from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
+from dotenv import load_dotenv
+from fastapi import HTTPException
+from pydantic import EmailStr
 
 load_dotenv()
 SMTP_HOST = os.getenv("SMTP_HOST")

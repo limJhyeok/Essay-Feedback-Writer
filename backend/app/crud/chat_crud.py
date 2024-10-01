@@ -1,7 +1,9 @@
-from app.models import ChatSession, Conversation, Bot
-from sqlalchemy.orm import Session
-from app.schemas import chat_schema
 from fastapi import HTTPException
+from sqlalchemy.orm import Session
+
+from app.models import Bot, ChatSession, Conversation
+from app.schemas import chat_schema
+
 
 def get_chat_session_histories(db: Session, user_id: int) -> list[ChatSession]:
     # 쿼리 작성 및 실행
@@ -21,9 +23,9 @@ def get_chat_session(db: Session, session_id: int):
     return chat_session
 
 def create_conversation(db: Session, conversation_create: chat_schema.ConversationCreate):
-    chat_session = Conversation(chat_session_id=conversation_create.chat_session_id, 
-                               sender=conversation_create.sender, 
-                               message=conversation_create.message, 
+    chat_session = Conversation(chat_session_id=conversation_create.chat_session_id,
+                               sender=conversation_create.sender,
+                               message=conversation_create.message,
                                sender_id = conversation_create.sender_id)
     db.add(chat_session)
     db.commit()
@@ -38,7 +40,7 @@ def create_chat_session(db: Session, chat_session_create: chat_schema.ChatSessio
 
 def update_chat_session(db: Session, chat_session_id, chat_session_update_request):
     chat_session = get_chat_session(db, chat_session_id)
-    chat_session.title = chat_session_update_request.renamed_title 
+    chat_session.title = chat_session_update_request.renamed_title
     db.add(chat_session)
     db.commit()
 
@@ -47,7 +49,7 @@ def delete_chat_session(db: Session, chat_session_id):
     if chat_session is None:
         raise HTTPException(status_code=404, detail="Chat session not found")
     db.query(Conversation).filter(Conversation.chat_session_id == chat_session_id).delete()
-    
+
     # Delete the chat session
     db.delete(chat_session)
     db.commit()

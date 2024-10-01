@@ -1,29 +1,31 @@
-from fastapi import APIRouter, Depends, status, UploadFile, File, HTTPException
-import os
-import shutil
-from fastapi.responses import StreamingResponse
-from sqlalchemy.orm import Session
-from app.core.db import get_db
-from app.crud import chat_crud
-from app.schemas import chat_schema
-from app.api.utils import chat_utils
-from app.api.routes import user_router
-from app.models import User
-from langchain_community.chat_models import ChatOllama
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 import asyncio
 import json
+import os
+import shutil
 from operator import itemgetter
-from langchain_core.runnables import RunnablePassthrough
-from langchain_chroma import Chroma
-from langchain_community.embeddings import HuggingFaceBgeEmbeddings
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import PyPDFLoader
-from langchain.chains.combine_documents import create_stuff_documents_chain
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi.responses import StreamingResponse
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
-from langchain_core.runnables.history import RunnableWithMessageHistory
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain_chroma import Chroma
+from langchain_community.chat_models import ChatOllama
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 from langchain_core.messages import HumanMessage
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.runnables.history import RunnableWithMessageHistory
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from sqlalchemy.orm import Session
+
+from app.api.routes import user_router
+from app.api.utils import chat_utils
+from app.core.db import get_db
+from app.crud import chat_crud
 from app.definitions import ROOT_DIR
+from app.models import User
+from app.schemas import chat_schema
 
 router = APIRouter(
     prefix = "/api/chat"
@@ -42,7 +44,7 @@ def get_chat_history_titles(current_user: User = Depends(user_router.get_current
     db_chat_sessions = chat_crud.get_chat_session_histories(db, current_user.id)
     if not db_chat_sessions:
         return []
-    
+
     chat_session_titles = [{'id': db_chat_session.id, 'name': db_chat_session.title} for db_chat_session in db_chat_sessions]
     return chat_session_titles
 
@@ -53,7 +55,7 @@ def get_recent_chat_session_id(current_user: User = Depends(user_router.get_curr
         "id": recent_chat_session.id
     }
 @router.get("/session/{chat_session_id}")
-def get_conversations(chat_session_id: int, db: Session = Depends(get_db), current_user: User = Depends(user_router.get_current_user)):
+def get_conversations(chat_session_id: int, db: Session = Depends(get_db)):
     res = {"message_history": {
         "messages": []
         }
@@ -127,7 +129,7 @@ async def generate_answer(generate_answer_request: chat_schema.GenerateAnswerReq
     # TODO: bot에 따라 다르게 모델 불러오는 Logic 필요
     chat_session_id = generate_answer_request.chat_session_id
     question = generate_answer_request.question
-    
+
 
     bot = chat_crud.get_bot(db, generate_answer_request.bot_id)
     llm = get_llm()
@@ -141,17 +143,17 @@ async def generate_answer(generate_answer_request: chat_schema.GenerateAnswerReq
 async def upload_pdf(chat_session_id: int, file: UploadFile = File(...)):
     if not file.filename.endswith('.pdf'):
         raise HTTPException(status_code=400, detail="Only PDF files are allowed")
-    
+
     os.makedirs(UPLOAD_DIRECTORY, exist_ok=True)
     file_path = os.path.join(UPLOAD_DIRECTORY, file.filename)
 
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
-    
+
     splits = load_and_split_documents(file_path)
     retriever = create_vectorstore_and_retriever(splits)
     chat_utils.retriever_store[chat_session_id] = retriever
-    return {"filename": file.filename, "status": "processed"} 
+    return {"filename": file.filename, "status": "processed"}
 
 
 def load_and_split_documents(pdf_path: str, chunk_size=1000, chunk_overlap=200):
@@ -181,7 +183,7 @@ def create_history_aware_retriever_chain(llm, retriever):
             ("human", "{input}"),
         ]
     )
-    
+
     history_aware_retriever = create_history_aware_retriever(llm, retriever, contextualize_q_prompt)
     return history_aware_retriever
 
@@ -195,7 +197,7 @@ def create_question_answer_chain(llm):
         "\n\n"
         "{context}"
     )
-    
+
     qa_prompt = ChatPromptTemplate.from_messages(
         [
             ("system", system_prompt),
@@ -242,9 +244,9 @@ async def stream_answer(llm, question, chat_session_id, db, bot, token_trimmer, 
             "messages": messages
         }
 
-    with_message_history = RunnableWithMessageHistory(chain, chat_utils.get_chat_session_history_from_dict, 
+    with_message_history = RunnableWithMessageHistory(chain, chat_utils.get_chat_session_history_from_dict,
                                                         **with_message_history_keys)
-    
+
     final_response = ""
     for response in with_message_history.stream(message_history_inputs,
                                                 config = config):
@@ -252,7 +254,7 @@ async def stream_answer(llm, question, chat_session_id, db, bot, token_trimmer, 
         if answer:
             final_response += answer
             yield json.dumps({"status": "processing", "data": answer}, ensure_ascii=False) + "\n"
-            await asyncio.sleep(delay_seconds_for_stream) 
+            await asyncio.sleep(delay_seconds_for_stream)
     await save_bot_conversation(db = db,
                         chat_session_id = chat_session_id,
                         message = final_response,

@@ -1,9 +1,9 @@
-from app.models import User, SocialAccount
-from sqlalchemy.orm import Session
 from passlib.context import CryptContext
-from app.schemas import user_schema
-
 from pydantic import EmailStr
+from sqlalchemy.orm import Session
+
+from app.models import User
+from app.schemas import user_schema
 
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 

@@ -1,9 +1,10 @@
+
 from pydantic import BaseModel
-from typing import Optional
+
 
 class ChatSessionCreate(BaseModel):
     user_id: int
-    title: Optional[str] = "New chat"
+    title: str | None = "New chat"
 
 
 class ChatSessionCreateRequest(BaseModel):
@@ -23,10 +24,10 @@ class UserChatSessionCreateRequest(BaseModel):
     chat_session_id: int
     sender: str
     message: str
-   
+
 
 class GenerateAnswerRequest(BaseModel):
    chat_session_id: int
    bot_id: int
    question: str
-   context: Optional[list]
+   context: list | None

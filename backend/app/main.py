@@ -1,10 +1,11 @@
-from app.api.routes import user_router, chat_router, util_router
+import os
 
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
-from starlette.responses import FileResponse
-from dotenv import load_dotenv
-import os
+
+from app.api.routes import chat_router, user_router, util_router
+
 load_dotenv()
 DEV_FRONTEND_URL = os.getenv("DEV_FRONTEND_URL")
 

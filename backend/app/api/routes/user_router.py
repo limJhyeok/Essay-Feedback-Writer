@@ -1,18 +1,19 @@
-from datetime import timedelta, datetime
-from fastapi import APIRouter, Depends, HTTPException, Form
-from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.orm import Session
-from app.core.db import get_db
-from app.crud.user_crud import pwd_context
-from app.crud import user_crud
-from app.schemas import user_schema
-from app.api.utils import user_utils
-from starlette import status
-from jose import jwt, JWTError
-from dotenv import load_dotenv
 import os
+from datetime import datetime, timedelta
 from typing import Annotated
-from fastapi.security import OAuth2PasswordRequestForm
+
+from dotenv import load_dotenv
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from jose import JWTError, jwt
+from sqlalchemy.orm import Session
+from starlette import status
+
+from app.api.utils import user_utils
+from app.core.db import get_db
+from app.crud import user_crud
+from app.crud.user_crud import pwd_context
+from app.schemas import user_schema
 
 router = APIRouter(
     prefix = "/api/user"
@@ -93,5 +94,5 @@ async def reset_password(
     temp_password = user_utils.generate_temporary_password()
     hashed_password = pwd_context.hash(temp_password)
     user_crud.update_user_password(db, user, hashed_password)
-    
+
     await user_utils.send_temporary_password(user.email, temp_password)

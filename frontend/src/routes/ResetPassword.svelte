@@ -6,7 +6,7 @@
 
 	function handleResetPasswordSubmit(){
 		let user_id = 1
-		let url = "/api/user/reset-password"
+		let url = "/api/v1/user/reset-password"
 		let params = {email: user_email}
 		fastapi('post', url, params, 
 			(json) => {

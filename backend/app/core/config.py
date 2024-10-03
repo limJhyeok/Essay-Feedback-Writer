@@ -44,7 +44,7 @@ class Settings(BaseSettings):
         list[AnyUrl] | str, BeforeValidator(parse_cors)
     ] = []
 
-    # PROJECT_NAME: str
+    PROJECT_NAME: str
     SENTRY_DSN: HttpUrl | None = None
     POSTGRES_SERVER: str
     POSTGRES_PORT: int = 5432
@@ -76,9 +76,7 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def _set_default_emails_from(self) -> Self:
         if not self.EMAILS_FROM_NAME:
-            pass
-            # TODO: uncomment below after setting PROJECT_NAME
-            # self.EMAILS_FROM_NAME = self.PROJECT_NAME
+            self.EMAILS_FROM_NAME = self.PROJECT_NAME
         return self
     EMAIL_RESET_TOKEN_EXPIRE_HOURS: int = 48
     @computed_field  # type: ignore[prop-decorator]

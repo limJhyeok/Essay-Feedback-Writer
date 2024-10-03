@@ -10,7 +10,7 @@
 
   function login(event) {
       event.preventDefault()
-      let url = "/api/user/login"
+      let url = "/api/v1/user/login"
       let params = {
           username: user_email,
           password: user_password,
@@ -29,7 +29,7 @@
   }
   function signup(event) {
       event.preventDefault()
-      let url = "/api/user/create"
+      let url = "/api/v1/user/create"
       let params = {
           email: user_email,
           is_social: false,

@@ -1,30 +1,34 @@
-import os
-
-from dotenv import load_dotenv
 from fastapi import FastAPI
+from fastapi.routing import APIRoute
 from starlette.middleware.cors import CORSMiddleware
 
-from app.api.routes import chat_router, user_router, util_router
+from app.core.config import settings
+from app.api.main import api_router
 
-load_dotenv()
-DEV_FRONTEND_URL = os.getenv("DEV_FRONTEND_URL")
 
-origins = [
-    DEV_FRONTEND_URL
-]
+def custom_generate_unique_id(route: APIRoute) -> str:
+    return f"{route.tags[0]}-{route.name}"
 
-app = FastAPI()
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins = origins,
-    allow_credentials = True,
-    allow_methods = ["*"],
-    allow_headers = ["*"]
+
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+    generate_unique_id_function=custom_generate_unique_id,
 )
 
-app.include_router(user_router.router)
-app.include_router(chat_router.router)
-app.include_router(util_router.router)
+if settings.BACKEND_CORS_ORIGINS:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins = [
+            str(origin).strip("/") for origin in settings.BACKEND_CORS_ORIGINS
+        ],
+        allow_credentials = True,
+        allow_methods = ["*"],
+        allow_headers = ["*"]
+    )
+
+app.include_router(api_router, prefix=settings.API_V1_STR)
+
 # @app.get("/")
 # def index():
 #   return FileResponse("frontend/dist/index.html")

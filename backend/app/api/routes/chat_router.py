@@ -27,9 +27,7 @@ from app.definitions import ROOT_DIR
 from app.models import User
 from app.schemas import chat_schema
 
-router = APIRouter(
-    prefix = "/api/chat"
-)
+router = APIRouter()
 
 EMPTY_CHAT_SESSION_ID = -1
 DELEAY_SECONDS_FOR_STREAM = 0.0001

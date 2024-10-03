@@ -15,9 +15,7 @@ from app.crud import user_crud
 from app.crud.user_crud import pwd_context
 from app.schemas import user_schema
 
-router = APIRouter(
-    prefix = "/api/user"
-)
+router = APIRouter()
 
 load_dotenv()
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))

@@ -31,7 +31,7 @@
 
   function sendMessage() {
     if (userMessage.trim()) {
-      let url = '/api/chat/session'
+      let url = '/api/v1/chat/session'
       let params = {
         chat_session_id: activeChatSessionId,
         sender: 'user',
@@ -66,7 +66,7 @@
 
   function generateAnswer() {
     generateLoading = true;
-    let _url = "/api/chat/generate-answer"
+    let _url = "/api/v1/chat/generate-answer"
     let url = import.meta.env.VITE_SERVER_URL + _url
     let method = "POST"
     let headers = {
@@ -138,7 +138,7 @@
   }
 
   function getChatTitles() {
-    let url = "/api/chat/titles"
+    let url = "/api/v1/chat/titles"
     let params = {}
 
     fastapi('get', url, params, 
@@ -153,7 +153,7 @@
   getChatTitles()
 
   function setRecentChatSessionAsActive(callback) {
-    let url = "/api/chat/recent";
+    let url = "/api/v1/chat/recent";
     let params = {}
 
     fastapi('get', url, params, 
@@ -169,7 +169,7 @@
     )
   }
   function getSessionMessages(chat_id) {
-    let url = "/api/chat/session/" + chat_id
+    let url = "/api/v1/chat/session/" + chat_id
     let params = {}
     fastapi('get', url, params, 
         (json) => {
@@ -181,7 +181,7 @@
     )
   }
   function createNewChat(){
-    let url = "/api/chat/create"
+    let url = "/api/v1/chat/create"
     let params = {title: newChatTitle}
     let recentChatSessionId = -1;
     fastapi('post', url, params, 
@@ -258,7 +258,7 @@
     if (newChatTitle.trim() === '' || newChatTitle === chatTitle.name) {
       return
     }
-    let url = `/api/chat/rename/${chatTitle.id}`;  // TODO: url 및 inDTO 변경
+    let url = `/api/v1/chat/rename/${chatTitle.id}`;  // TODO: url 및 inDTO 변경
     let params = { renamed_title: newChatTitle };
     
     fastapi('put', url, params,
@@ -289,7 +289,7 @@
   }
   
   function confirmDeleteChat() {
-    let url = `/api/chat/delete/${selectedChatId}`  
+    let url = `/api/v1/chat/delete/${selectedChatId}`  
     let params = {}  
 
     fastapi('delete', url, params,
@@ -354,7 +354,7 @@
         alert("왼쪽 sidebar에서 chat을 선택하거나 새로운 chat을 생성해주세요.")
         return;
       }
-      let _url = `/api/chat/${activeChatSessionId}/upload-pdf/`
+      let _url = `/api/v1/chat/${activeChatSessionId}/upload-pdf/`
       let url = import.meta.env.VITE_SERVER_URL + _url
       const response = await fetch(url, {
         method: 'POST',

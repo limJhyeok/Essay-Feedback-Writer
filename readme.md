@@ -72,11 +72,14 @@
 ### .env 파일 setting
 root 폴더 밑에 다음과 같이 .env 파일을 설정해주세요.
 ```
-# frontend .env
+PROJECT_NAME="ChatGPT Clone Project"
+
+# frontend
 VITE_SERVER_URL=http://127.0.0.1:8000
 
-# backend .env
-DEV_FRONTEND_URL=http://localhost:5173
+# backend
+
+BACKEND_CORS_ORIGINS="http://localhost,http://localhost:5173,https://localhost,https://localhost:5173"
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 # 인증용 secret key 및 algorithm

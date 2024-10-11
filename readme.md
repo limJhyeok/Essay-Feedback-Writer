@@ -102,6 +102,16 @@ POSTGRES_PASSWORD=changethis
 LANGCHAIN_TRACING_V2 = 'true'
 LANGCHAIN_API_KEY = 'your langchain api key'
 ```
+### pre-commit setting
+1. pre-commit 설치
+```bash
+apt install -y pre-commit
+```
+2. pre-commit 적용
+```bash
+pre-commit install
+```
+
 ### 컨테이너 실행
 ```bash
 docker-compose up -d

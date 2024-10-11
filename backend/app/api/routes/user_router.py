@@ -26,8 +26,10 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl=TOKEN_URL)
 
 
 @router.post("/login", response_model=user_schema.Token)
-def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-                           db: Session = Depends(get_db)):
+def login_for_access_token(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    db: Session = Depends(get_db),
+):
     user_email = form_data.username
     user_password = form_data.password
     user = user_crud.get_user(db, user_email)
@@ -41,53 +43,56 @@ def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depen
     # make access token
     data = {
         "sub": user.email,
-        "exp": datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        "exp": datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
     }
     access_token = jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
 
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "email": user.email
-    }
+    return {"access_token": access_token, "token_type": "bearer", "email": user.email}
 
-def get_current_user(token: str = Depends(oauth2_scheme),
-                     db: Session = Depends(get_db)):
+
+def get_current_user(
+    token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
+):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail = "Could not validate credentials",
-        headers = {"WWW-Authenticate": "Bearer"}
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload =jwt.decode(token, SECRET_KEY, algorithms = [ALGORITHM])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_email = payload.get("sub")
         if user_email is None:
             raise credentials_exception
     except JWTError:
         raise credentials_exception
-    user = user_crud.get_user(db, email = user_email)
+    user = user_crud.get_user(db, email=user_email)
     if user is None:
         raise credentials_exception
     return user
 
 
-@router.post("/create", status_code = status.HTTP_204_NO_CONTENT)
+@router.post("/create", status_code=status.HTTP_204_NO_CONTENT)
 def user_create(_user_create: user_schema.UserCreate, db: Session = Depends(get_db)):
-  user = user_crud.get_existing_user_for_create(db, user_create = _user_create)
-  if user:
-    raise HTTPException(status_code = status.HTTP_409_CONFLICT, detail='이미 존재하는 사용자입니다.')
-  user_crud.create_user(db = db, user_create = _user_create)
+    user = user_crud.get_existing_user_for_create(db, user_create=_user_create)
+    if user:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="이미 존재하는 사용자입니다."
+        )
+    user_crud.create_user(db=db, user_create=_user_create)
 
 
 @router.post("/reset-password", status_code=status.HTTP_204_NO_CONTENT)
 async def reset_password(
-    _user_email: user_schema.UserEmail,
-    db: Session = Depends(get_db)
+    _user_email: user_schema.UserEmail, db: Session = Depends(get_db)
 ):
-    user = user_crud.get_existing_user_for_reset_password(db, user_email=_user_email.email)
+    user = user_crud.get_existing_user_for_reset_password(
+        db, user_email=_user_email.email
+    )
 
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Email does not exist")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Email does not exist"
+        )
 
     temp_password = user_utils.generate_temporary_password()
     hashed_password = pwd_context.hash(temp_password)

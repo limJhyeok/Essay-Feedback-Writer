@@ -25,15 +25,14 @@ async def send_temporary_password(user_email: EmailStr, temp_password: str):
     message["From"] = "gpt-copy-test"
     message["To"] = user_email
     message["Subject"] = "Your temporary password"
-    message.attach(
-        MIMEText(f"Your temporary password is: {temp_password}",
-                 "plain")
-                   )
+    message.attach(MIMEText(f"Your temporary password is: {temp_password}", "plain"))
     try:
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as  smtp_server:
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as smtp_server:
             smtp_server.starttls()
             smtp_server.login(SMTP_USERNAME, SMTP_PASSWORD)
             smtp_server.sendmail(SMTP_USERNAME, user_email, message.as_string())
 
     except Exception as e:
-        raise HTTPException(status_code = 500, detail = f"Failed to send the email. {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to send the email. {str(e)}"
+        )

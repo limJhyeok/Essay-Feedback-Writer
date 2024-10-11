@@ -60,7 +60,7 @@
 | 30%   30C    P8              --W / 450W |      -MiB / 24564MiB |      0%      Default |
 |                                         |                      |                  N/A |
 +-----------------------------------------+----------------------+----------------------+
-                                                                                         
+
 +---------------------------------------------------------------------------------------+
 | Processes:                                                                            |
 |  GPU   GI   CI        PID   Type   Process name                            GPU Memory |
@@ -83,8 +83,8 @@ BACKEND_CORS_ORIGINS="http://localhost,http://localhost:5173,https://localhost,h
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 # 인증용 secret key 및 algorithm
-SECRET_KEY = 
-ALGORITHM = 
+SECRET_KEY =
+ALGORITHM =
 
 SMTP_HOST = "smtp.gmail.com"
 SMTP_PORT = 587
@@ -102,6 +102,16 @@ POSTGRES_PASSWORD=changethis
 LANGCHAIN_TRACING_V2 = 'true'
 LANGCHAIN_API_KEY = 'your langchain api key'
 ```
+### pre-commit setting
+1. pre-commit 설치
+```bash
+apt install -y pre-commit
+```
+2. pre-commit 적용
+```bash
+pre-commit install
+```
+
 ### 컨테이너 실행
 ```bash
 docker-compose up -d

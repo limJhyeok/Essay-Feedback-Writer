@@ -6,7 +6,7 @@ WORKDIR /app/
 # 기본 패키지 업데이트 및 필수 패키지 설치
 RUN apt-get update && apt-get install -y \
     curl \
-    && apt-get clean 
+    && apt-get clean
 
 RUN pip uninstall -y torchvision
 

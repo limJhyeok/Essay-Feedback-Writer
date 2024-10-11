@@ -15,7 +15,7 @@
           username: user_email,
           password: user_password,
       }
-      fastapi('login', url, params, 
+      fastapi('login', url, params,
           (json) => {
               $accessToken = json.access_token
               $userEmail = json.user_email
@@ -35,7 +35,7 @@
           is_social: false,
           password: user_password
       }
-      fastapi('post', url, params, 
+      fastapi('post', url, params,
           (json) => {
               // TODO: 회원가입 후 자동으로 로그인한 상태로 만들 것인지 고려
               // $accessToken = json.access_token
@@ -63,7 +63,7 @@
   :global(body) {
     background-color: #f8f9fa;
   }
-  
+
   main {
     background-color: white;
     border-radius: 8px;
@@ -125,6 +125,5 @@
         </button>
       {/each}
     </div>
-    
-</main>
 
+</main>

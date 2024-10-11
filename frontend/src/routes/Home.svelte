@@ -6,7 +6,7 @@
   import { onMount, tick } from 'svelte';
   import { marked } from 'marked'
     import active from 'svelte-spa-router/active';
-  
+
   $: chatTitles, sessionMessages
   let activeMessages = []
   let userMessage = '';
@@ -19,7 +19,7 @@
   let checkDeleteChatModalOpen = false;
   let selectedChatId = null;
   let fileInput;
-  let isFileUploading = false;    
+  let isFileUploading = false;
   function openNewChatModal() {
     isNewChatModalOpen = true;
   }
@@ -37,7 +37,7 @@
         sender: 'user',
         message: userMessage
       }
-      fastapi('post', url, params, 
+      fastapi('post', url, params,
         (json) => {
           sessionMessages.update(state => {
             return {
@@ -55,7 +55,7 @@
             generateAnswer();
           }
           userMessage = '';
-          
+
         },
         (json_error) => {
           error = json_error
@@ -113,11 +113,11 @@
                         const status = parsedLine.status;
                         const data = parsedLine.data;
                         if (status === 'processing') {
-                            answer = (answer ?? '') + data;                        
+                            answer = (answer ?? '') + data;
                         }
                     }
                 });
-                read(); 
+                read();
               } catch (err) {
                 handleGenerateError(err)
               }
@@ -130,7 +130,7 @@
         console.error('Fetch error:', error);
     });
   }
-  
+
   function handleGenerateError(err){
     answer = ''
     generateLoading = false;
@@ -141,7 +141,7 @@
     let url = "/api/v1/chat/titles"
     let params = {}
 
-    fastapi('get', url, params, 
+    fastapi('get', url, params,
         (json) => {
           chatTitles.set(json);
         },
@@ -156,11 +156,11 @@
     let url = "/api/v1/chat/recent";
     let params = {}
 
-    fastapi('get', url, params, 
+    fastapi('get', url, params,
         (json) => {
           activeChatSessionId = json.id
         if (callback) {
-          callback(); 
+          callback();
           }
         },
         (json_error) => {
@@ -171,7 +171,7 @@
   function getSessionMessages(chat_id) {
     let url = "/api/v1/chat/session/" + chat_id
     let params = {}
-    fastapi('get', url, params, 
+    fastapi('get', url, params,
         (json) => {
           sessionMessages.set(json.message_history)
         },
@@ -184,11 +184,11 @@
     let url = "/api/v1/chat/create"
     let params = {title: newChatTitle}
     let recentChatSessionId = -1;
-    fastapi('post', url, params, 
+    fastapi('post', url, params,
         (json) => {
             newChatTitle=''
             getChatTitles();
-            closeNewChatModal(); 
+            closeNewChatModal();
             setRecentChatSessionAsActive(() => {
               selectChat(activeChatSessionId);
             })
@@ -207,11 +207,11 @@
   }
   function handleKeyDown(event) {
     if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault(); 
+      event.preventDefault();
       sendMessage();
     }
   }
-  
+
   function goToSignUp(){
     $isSignUpPage = true
     window.location.hash = '#/authorize';
@@ -239,7 +239,7 @@
     closePopup();
     tick().then(() => {
       if (inputElement) {
-        inputElement.focus(); 
+        inputElement.focus();
       }
     });
   }
@@ -260,7 +260,7 @@
     }
     let url = `/api/v1/chat/rename/${chatTitle.id}`;  // TODO: url 및 inDTO 변경
     let params = { renamed_title: newChatTitle };
-    
+
     fastapi('put', url, params,
       (json) => {
         editingChatTitleId = null;
@@ -276,7 +276,7 @@
     newChatTitle = '';
     inputElement=null;
     editingChatTitleId = null;
-    
+
   }
 
   function handleKeyPress(event, chatTitle) {
@@ -285,15 +285,15 @@
       cancelEdit();
     } else if (event.key === 'Escape') {
       cancelEdit();
-    } 
+    }
   }
-  
+
   function confirmDeleteChat() {
-    let url = `/api/v1/chat/delete/${selectedChatId}`  
-    let params = {}  
+    let url = `/api/v1/chat/delete/${selectedChatId}`
+    let params = {}
 
     fastapi('delete', url, params,
-      (json) => { 
+      (json) => {
         selectedChatId = null;
         activeChatSessionId = -1;
         closeCheckDeleteChatModal();
@@ -536,14 +536,14 @@
   }
   .message.bot {
     text-align: left;
-    align-self: flex-start; 
+    align-self: flex-start;
     display: flex;
   }
   .message.bot::before {
-    content: "\f544"; 
-    font-family: "Font Awesome 5 Free"; 
-    font-weight: 900; 
-    color: black; 
+    content: "\f544";
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    color: black;
     margin-right: 18px;
     display: inline-block;
     font-size: 1.3rem;
@@ -606,7 +606,7 @@
   .mr-6 {
     margin-right: 6px;
   }
-  
+
 
   .options-icon {
     cursor: pointer;
@@ -654,7 +654,7 @@
     display: inline-block;
     margin: 0 5px;
   }
-  
+
   .upload-tooltip .tooltiptext {
     position: absolute;
     z-index: 1;
@@ -681,7 +681,7 @@
   }
 
   .upload-tooltip.disabled .tooltiptext {
-    background-color: #aaa; 
+    background-color: #aaa;
   }
 </style>
 
@@ -754,17 +754,17 @@
       <ul>
         {#each $chatTitles as chatTitle}
         <li class="chat-item">
-          <div class="chat-button-container rounded 
+          <div class="chat-button-container rounded
           {activeChatSessionId === chatTitle.id ? 'active' : ''}
           {activePopupId === chatTitle.id ? 'active' : ''}">
           {#if editingChatTitleId === chatTitle.id}
-            <input 
+            <input
               bind:this={inputElement}
-              type="text" 
+              type="text"
               class="form-control"
               bind:value={newChatTitle}
               on:keydown={(event) => handleKeyPress(event, chatTitle)}
-              on:blur={(cancelEdit)}  
+              on:blur={(cancelEdit)}
               placeholder={chatTitle.name}
             />
           {:else}
@@ -811,7 +811,7 @@
           </div>
         </button>
       {/if}
-      
+
     </div>
     <div class="messages">
       {#if activeChatSessionId !== -1}
@@ -845,7 +845,7 @@
         class="message-input"
         disabled = {isFileUploading}
       ></textarea>
-    
+
       <div class="upload-tooltip {isFileUploading || activeChatSessionId === -1 ? 'disabled' : ''}">
         <button class="file-upload-icon" on:click={handleFileIconClick} disabled={isFileUploading || activeChatSessionId === -1}>
           {isFileUploading? '⏳' : '📁'}
@@ -855,11 +855,11 @@
         </span>
       </div>
 
-      <input 
+      <input
       type="file"
-      accept=".pdf" 
-      style="display: none;" 
-      bind:this={fileInput} 
+      accept=".pdf"
+      style="display: none;"
+      bind:this={fileInput}
       on:change={uploadPDF}
       />
       <button on:click="{sendMessage}" disabled={isFileUploading}>Send</button>

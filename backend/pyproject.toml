@@ -26,6 +26,9 @@ psycopg = {version = "^3.2.2", extras = ["binary", "pool"]}
 ruff = "^0.6.8"
 
 
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^4.0.1"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

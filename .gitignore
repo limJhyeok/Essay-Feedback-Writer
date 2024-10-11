@@ -3,7 +3,7 @@
 __pycache__/
 *.ipynb
 venv
-
+.ruff_cache
 # Deep Learning Model Parameter
 *.gguf
 *.gguf

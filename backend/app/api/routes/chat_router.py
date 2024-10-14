@@ -4,7 +4,7 @@ import os
 import shutil
 from operator import itemgetter
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from fastapi.responses import StreamingResponse
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
@@ -17,14 +17,11 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from sqlalchemy.orm import Session
 
-from app.api.routes import user_router
+from app.api.deps import CurrentUser, SessionDep
 from app.api.utils import chat_utils
-from app.core.db import get_db
 from app.crud import chat_crud
 from app.definitions import ROOT_DIR
-from app.models import User
 from app.schemas import chat_schema
 
 router = APIRouter()
@@ -40,8 +37,8 @@ UPLOAD_DIRECTORY = os.path.join(ROOT_DIR, "user-upload")
 
 @router.get("/titles")
 def get_chat_history_titles(
-    current_user: User = Depends(user_router.get_current_user),
-    db: Session = Depends(get_db),
+    db: SessionDep,
+    current_user: CurrentUser,
 ):
     db_chat_sessions = chat_crud.get_chat_session_histories(db, current_user.id)
     if not db_chat_sessions:
@@ -56,15 +53,15 @@ def get_chat_history_titles(
 
 @router.get("/recent")
 def get_recent_chat_session_id(
-    current_user: User = Depends(user_router.get_current_user),
-    db: Session = Depends(get_db),
+    db: SessionDep,
+    current_user: CurrentUser,
 ):
     recent_chat_session = chat_crud.get_recent_chat_session(db, current_user.id)
     return {"id": recent_chat_session.id}
 
 
 @router.get("/session/{chat_session_id}")
-def get_conversations(chat_session_id: int, db: Session = Depends(get_db)):
+def get_conversations(chat_session_id: int, db: SessionDep):
     res = {"message_history": {"messages": []}}
     if chat_session_id == EMPTY_CHAT_SESSION_ID:
         return res
@@ -81,8 +78,8 @@ def get_conversations(chat_session_id: int, db: Session = Depends(get_db)):
 @router.post("/create", status_code=status.HTTP_201_CREATED)
 def create_chat(
     chat_session_create_request: chat_schema.ChatSessionCreateRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(user_router.get_current_user),
+    db: SessionDep,
+    current_user: CurrentUser,
 ):
     chat_session_create = chat_schema.ChatSessionCreate(
         user_id=current_user.id, title=chat_session_create_request.title
@@ -94,21 +91,21 @@ def create_chat(
 def update_chat(
     chat_session_id: int,
     chat_session_update_request: chat_schema.ChatSessionUpdateRequest,
-    db: Session = Depends(get_db),
+    db: SessionDep,
 ):
     chat_crud.update_chat_session(db, chat_session_id, chat_session_update_request)
 
 
 @router.delete("/delete/{chat_session_id}")
-def delete_chat(chat_session_id: int, db: Session = Depends(get_db)):
+def delete_chat(chat_session_id: int, db: SessionDep):
     chat_crud.delete_chat_session(db, chat_session_id)
 
 
 @router.post("/session", status_code=status.HTTP_201_CREATED)
 def post_user_conversation(
     user_chat_session_create_request: chat_schema.UserChatSessionCreateRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(user_router.get_current_user),
+    db: SessionDep,
+    current_user: CurrentUser,
 ):
     chat_session = chat_crud.get_chat_session(
         db, user_chat_session_create_request.chat_session_id
@@ -136,7 +133,7 @@ def post_user_conversation(
 @router.post("/generate-answer", status_code=status.HTTP_201_CREATED)
 async def generate_answer(
     generate_answer_request: chat_schema.GenerateAnswerRequest,
-    db: Session = Depends(get_db),
+    db: SessionDep,
 ):
     # TODO: bot에 따라 다르게 모델 불러오는 Logic 필요
     chat_session_id = generate_answer_request.chat_session_id

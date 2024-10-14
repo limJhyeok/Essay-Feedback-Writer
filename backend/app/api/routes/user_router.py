@@ -1,27 +1,18 @@
-import os
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Annotated
 
-from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from jose import jwt
+from fastapi.security import OAuth2PasswordRequestForm
 from starlette import status
 
 from app.api.deps import SessionDep
 from app.api.utils import user_utils
+from app.core import security
+from app.core.config import settings
 from app.crud import user_crud
-from app.crud.user_crud import pwd_context
 from app.schemas import user_schema
 
 router = APIRouter()
-
-load_dotenv()
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
-TOKEN_URL = "/api/user/login"
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=TOKEN_URL)
 
 
 @router.post("/login", response_model=user_schema.Token)
@@ -32,19 +23,17 @@ def login_for_access_token(
     user_email = form_data.username
     user_password = form_data.password
     user = user_crud.get_user(db, user_email)
-    if not user or not pwd_context.verify(user_password, user.password):
+    if not user or not security.verify_password(user_password, user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect user email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # make access token
-    data = {
-        "sub": user.email,
-        "exp": datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
-    }
-    access_token = jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = security.create_access_token(
+        subject=user.email, expires_delta=access_token_expires
+    )
 
     return {"access_token": access_token, "token_type": "bearer", "email": user.email}
 
@@ -71,7 +60,7 @@ async def reset_password(_user_email: user_schema.UserEmail, db: SessionDep):
         )
 
     temp_password = user_utils.generate_temporary_password()
-    hashed_password = pwd_context.hash(temp_password)
+    hashed_password = security.get_password_hash(temp_password)
     user_crud.update_user_password(db, user, hashed_password)
 
     await user_utils.send_temporary_password(user.email, temp_password)

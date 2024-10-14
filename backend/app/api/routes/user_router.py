@@ -5,12 +5,11 @@ from typing import Annotated
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from jose import JWTError, jwt
-from sqlalchemy.orm import Session
+from jose import jwt
 from starlette import status
 
+from app.api.deps import SessionDep
 from app.api.utils import user_utils
-from app.core.db import get_db
 from app.crud import user_crud
 from app.crud.user_crud import pwd_context
 from app.schemas import user_schema
@@ -28,7 +27,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl=TOKEN_URL)
 @router.post("/login", response_model=user_schema.Token)
 def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    db: Session = Depends(get_db),
+    db: SessionDep,
 ):
     user_email = form_data.username
     user_password = form_data.password
@@ -50,29 +49,8 @@ def login_for_access_token(
     return {"access_token": access_token, "token_type": "bearer", "email": user.email}
 
 
-def get_current_user(
-    token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
-):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_email = payload.get("sub")
-        if user_email is None:
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
-    user = user_crud.get_user(db, email=user_email)
-    if user is None:
-        raise credentials_exception
-    return user
-
-
 @router.post("/create", status_code=status.HTTP_204_NO_CONTENT)
-def user_create(_user_create: user_schema.UserCreate, db: Session = Depends(get_db)):
+def user_create(_user_create: user_schema.UserCreate, db: SessionDep):
     user = user_crud.get_existing_user_for_create(db, user_create=_user_create)
     if user:
         raise HTTPException(
@@ -82,9 +60,7 @@ def user_create(_user_create: user_schema.UserCreate, db: Session = Depends(get_
 
 
 @router.post("/reset-password", status_code=status.HTTP_204_NO_CONTENT)
-async def reset_password(
-    _user_email: user_schema.UserEmail, db: Session = Depends(get_db)
-):
+async def reset_password(_user_email: user_schema.UserEmail, db: SessionDep):
     user = user_crud.get_existing_user_for_reset_password(
         db, user_email=_user_email.email
     )

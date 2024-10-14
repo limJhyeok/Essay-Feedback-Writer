@@ -84,15 +84,13 @@ class Bot(Base):
     __tablename__ = "bot"
 
     id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)  # 예: GPT
-    version = Column(String, nullable=True)  # 예: 4.0
-    description = Column(String, nullable=True)  # AI 모델에 대한 설명
-    created_at = Column(
-        DateTime, default=lambda: datetime.now(KST), nullable=False
-    )  # 생성일
+    name = Column(String, nullable=False)
+    version = Column(String, nullable=True)
+    description = Column(String, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(KST), nullable=False)
     updated_at = Column(
         DateTime,
         default=lambda: datetime.now(KST),
         onupdate=lambda: datetime.now(KST),
         nullable=False,
-    )  # 업데이트일
+    )

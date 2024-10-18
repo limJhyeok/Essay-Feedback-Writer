@@ -19,7 +19,7 @@ router = APIRouter()
 def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: SessionDep,
-):
+) -> dict:
     user_email = form_data.username
     user_password = form_data.password
     user = user_crud.get_user(db, user_email)
@@ -39,7 +39,7 @@ def login_for_access_token(
 
 
 @router.post("/create", status_code=status.HTTP_204_NO_CONTENT)
-def user_create(_user_create: user_schema.UserCreate, db: SessionDep):
+def user_create(_user_create: user_schema.UserCreate, db: SessionDep) -> None:
     user = user_crud.get_existing_user_for_create(db, user_create=_user_create)
     if user:
         raise HTTPException(
@@ -49,7 +49,7 @@ def user_create(_user_create: user_schema.UserCreate, db: SessionDep):
 
 
 @router.post("/reset-password", status_code=status.HTTP_204_NO_CONTENT)
-async def reset_password(_user_email: user_schema.UserEmail, db: SessionDep):
+async def reset_password(_user_email: user_schema.UserEmail, db: SessionDep) -> None:
     user = user_crud.get_existing_user_for_reset_password(
         db, user_email=_user_email.email
     )

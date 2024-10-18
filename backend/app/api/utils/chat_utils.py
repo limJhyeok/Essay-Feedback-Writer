@@ -1,3 +1,4 @@
+from langchain_community.chat_models import ChatOllama
 from langchain_core.chat_history import (
     BaseChatMessageHistory,
     InMemoryChatMessageHistory,
@@ -34,7 +35,7 @@ def get_chat_session_history_from_dict(chat_session_id: int) -> BaseChatMessageH
 
 def get_chat_session_history_from_db(
     chat_session_store: dict, db: Session, chat_session_id: int
-):
+) -> None:
     conversations = chat_crud.get_conversations(db, chat_session_id=chat_session_id)
     get_chat_session_history_from_dict(chat_session_id)
     if conversations:
@@ -49,7 +50,7 @@ def get_chat_session_history_from_db(
                 )
 
 
-def get_token_trimmer(model, max_tokens):
+def get_token_trimmer(model: ChatOllama, max_tokens: int) -> list[BaseMessage]:
     return trim_messages(
         max_tokens=max_tokens,
         strategy="last",

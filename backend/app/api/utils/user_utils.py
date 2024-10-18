@@ -16,11 +16,11 @@ SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 
 
 # 임시 비밀번호 생성 함수
-def generate_temporary_password():
+def generate_temporary_password() -> str:
     return secrets.token_urlsafe(8)  # 8자리 임시 비밀번호 생성
 
 
-async def send_temporary_password(user_email: EmailStr, temp_password: str):
+async def send_temporary_password(user_email: EmailStr, temp_password: str) -> None:
     message = MIMEMultipart()
     message["From"] = "gpt-copy-test"
     message["To"] = user_email

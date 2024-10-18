@@ -12,16 +12,20 @@ from langchain_chroma import Chroma
 from langchain_community.chat_models import ChatOllama
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.embeddings import HuggingFaceBgeEmbeddings
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.retrievers import RetrieverOutputLike
 from langchain_core.runnables import RunnablePassthrough
+from langchain_core.runnables.base import Runnable
 from langchain_core.runnables.history import RunnableWithMessageHistory
+from langchain_core.vectorstores import VectorStoreRetriever
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from app.api.deps import CurrentUser, SessionDep
 from app.api.utils import chat_utils
 from app.crud import chat_crud
 from app.definitions import ROOT_DIR
+from app.models import Bot
 from app.schemas import chat_schema
 
 router = APIRouter()
@@ -39,7 +43,7 @@ UPLOAD_DIRECTORY = os.path.join(ROOT_DIR, "user-upload")
 def get_chat_history_titles(
     db: SessionDep,
     current_user: CurrentUser,
-):
+) -> list:
     db_chat_sessions = chat_crud.get_chat_session_histories(db, current_user.id)
     if not db_chat_sessions:
         return []
@@ -55,13 +59,13 @@ def get_chat_history_titles(
 def get_recent_chat_session_id(
     db: SessionDep,
     current_user: CurrentUser,
-):
+) -> dict:
     recent_chat_session = chat_crud.get_recent_chat_session(db, current_user.id)
     return {"id": recent_chat_session.id}
 
 
 @router.get("/session/{chat_session_id}")
-def get_conversations(chat_session_id: int, db: SessionDep):
+def get_conversations(chat_session_id: int, db: SessionDep) -> dict:
     res = {"message_history": {"messages": []}}
     if chat_session_id == EMPTY_CHAT_SESSION_ID:
         return res
@@ -80,7 +84,7 @@ def create_chat(
     chat_session_create_request: chat_schema.ChatSessionCreateRequest,
     db: SessionDep,
     current_user: CurrentUser,
-):
+) -> None:
     chat_session_create = chat_schema.ChatSessionCreate(
         user_id=current_user.id, title=chat_session_create_request.title
     )
@@ -92,12 +96,12 @@ def update_chat(
     chat_session_id: int,
     chat_session_update_request: chat_schema.ChatSessionUpdateRequest,
     db: SessionDep,
-):
+) -> None:
     chat_crud.update_chat_session(db, chat_session_id, chat_session_update_request)
 
 
 @router.delete("/delete/{chat_session_id}")
-def delete_chat(chat_session_id: int, db: SessionDep):
+def delete_chat(chat_session_id: int, db: SessionDep) -> None:
     chat_crud.delete_chat_session(db, chat_session_id)
 
 
@@ -106,7 +110,7 @@ def post_user_conversation(
     user_chat_session_create_request: chat_schema.UserChatSessionCreateRequest,
     db: SessionDep,
     current_user: CurrentUser,
-):
+) -> None:
     chat_session = chat_crud.get_chat_session(
         db, user_chat_session_create_request.chat_session_id
     )
@@ -134,7 +138,7 @@ def post_user_conversation(
 async def generate_answer(
     generate_answer_request: chat_schema.GenerateAnswerRequest,
     db: SessionDep,
-):
+) -> StreamingResponse:
     # TODO: bot에 따라 다르게 모델 불러오는 Logic 필요
     chat_session_id = generate_answer_request.chat_session_id
     question = generate_answer_request.question
@@ -160,7 +164,7 @@ async def generate_answer(
 
 
 @router.post("/{chat_session_id}/upload-pdf/")
-async def upload_pdf(chat_session_id: int, file: UploadFile = File(...)):
+async def upload_pdf(chat_session_id: int, file: UploadFile = File(...)) -> dict:
     if not file.filename.endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are allowed")
 
@@ -176,7 +180,9 @@ async def upload_pdf(chat_session_id: int, file: UploadFile = File(...)):
     return {"filename": file.filename, "status": "processed"}
 
 
-def load_and_split_documents(pdf_path: str, chunk_size=1000, chunk_overlap=200):
+def load_and_split_documents(
+    pdf_path: str, chunk_size: int = 1000, chunk_overlap: int = 200
+) -> list[str]:
     loader = PyPDFLoader(pdf_path)
     documents = loader.load()
     text_splitter = RecursiveCharacterTextSplitter(
@@ -186,14 +192,16 @@ def load_and_split_documents(pdf_path: str, chunk_size=1000, chunk_overlap=200):
     return splits
 
 
-def create_vectorstore_and_retriever(splits):
+def create_vectorstore_and_retriever(splits: list[str]) -> VectorStoreRetriever:
     vectorstore = Chroma.from_documents(
         documents=splits, embedding=HuggingFaceBgeEmbeddings()
     )
     return vectorstore.as_retriever()
 
 
-def create_history_aware_retriever_chain(llm, retriever):
+def create_history_aware_retriever_chain(
+    llm: ChatOllama, retriever: VectorStoreRetriever
+) -> RetrieverOutputLike:
     contextualize_q_system_prompt = (
         "Given a chat history and the latest user question "
         "which might reference context in the chat history, "
@@ -216,7 +224,7 @@ def create_history_aware_retriever_chain(llm, retriever):
     return history_aware_retriever
 
 
-def create_question_answer_chain(llm):
+def create_question_answer_chain(llm: ChatOllama) -> Runnable:
     system_prompt = (
         "You are an assistant for question-answering tasks. "
         "Use the following pieces of retrieved context to answer "
@@ -239,14 +247,20 @@ def create_question_answer_chain(llm):
     return question_answer_chain
 
 
-def create_rag_chain(llm, retriever):
+def create_rag_chain(llm: ChatOllama, retriever: VectorStoreRetriever) -> Runnable:
     question_answer_chain = create_question_answer_chain(llm)
     rag_chain = create_retrieval_chain(retriever, question_answer_chain)
     return rag_chain
 
 
 async def stream_answer(
-    llm, question, chat_session_id, db, bot, token_trimmer, delay_seconds_for_stream
+    llm: ChatOllama,
+    question: str,
+    chat_session_id: int,
+    db: SessionDep,
+    bot: Bot,
+    token_trimmer: list[BaseMessage],
+    delay_seconds_for_stream: float,
 ):
     chat_session_init_result = await ensure_chat_session_initialized(
         chat_session_id, db
@@ -307,7 +321,7 @@ async def stream_answer(
     )
 
 
-async def ensure_chat_session_initialized(chat_session_id: int, db) -> str:
+async def ensure_chat_session_initialized(chat_session_id: int, db: SessionDep) -> str:
     if (
         chat_session_id not in chat_utils.chat_session_store
         or not chat_utils.chat_session_store[chat_session_id].messages
@@ -319,7 +333,9 @@ async def ensure_chat_session_initialized(chat_session_id: int, db) -> str:
     return ""
 
 
-def create_chain_with_trimmer(token_trimmer, prompt, llm):
+def create_chain_with_trimmer(
+    token_trimmer: list[BaseMessage], prompt: str, llm: ChatOllama
+) -> Runnable:
     chain = (
         RunnablePassthrough.assign(messages=itemgetter("messages") | token_trimmer)
         | prompt
@@ -328,7 +344,9 @@ def create_chain_with_trimmer(token_trimmer, prompt, llm):
     return chain
 
 
-async def save_bot_conversation(db, chat_session_id: int, message: str, sender_id: int):
+async def save_bot_conversation(
+    db: SessionDep, chat_session_id: int, message: str, sender_id: int
+) -> None:
     bot_conversation_create = chat_schema.ConversationCreate(
         chat_session_id=chat_session_id,
         sender="bot",
@@ -338,7 +356,7 @@ async def save_bot_conversation(db, chat_session_id: int, message: str, sender_i
     chat_crud.create_conversation(db, bot_conversation_create)
 
 
-def get_prompt():
+def get_prompt() -> ChatPromptTemplate:
     prompt = ChatPromptTemplate.from_messages(
         [
             (
@@ -351,6 +369,6 @@ def get_prompt():
     return prompt
 
 
-def get_llm():
+def get_llm() -> ChatOllama:
     llm = ChatOllama(model="EEVE-Korean-10.8B:latest")
     return llm

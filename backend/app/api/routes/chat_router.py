@@ -3,6 +3,7 @@ import json
 import os
 import shutil
 from operator import itemgetter
+from typing import Any
 
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from fastapi.responses import StreamingResponse
@@ -39,20 +40,16 @@ EEVE_KOREAN_BUFFER_TOKENS = 96
 UPLOAD_DIRECTORY = os.path.join(ROOT_DIR, "user-upload")
 
 
-@router.get("/titles")
+@router.get("/titles", response_model=chat_schema.ChatSessionPublicList)
 def get_chat_history_titles(
     db: SessionDep,
     current_user: CurrentUser,
-) -> list:
-    db_chat_sessions = chat_crud.get_chat_session_histories(db, current_user.id)
-    if not db_chat_sessions:
-        return []
-
-    chat_session_titles = [
-        {"id": db_chat_session.id, "name": db_chat_session.title}
-        for db_chat_session in db_chat_sessions
+) -> Any:
+    db_chat_sessions = chat_crud.get_chat_sessions(db, current_user.id)
+    chat_sessions_public = [
+        chat_schema.ChatSessionPublic.from_orm(session) for session in db_chat_sessions
     ]
-    return chat_session_titles
+    return chat_schema.ChatSessionPublicList(data=chat_sessions_public)
 
 
 @router.get("/recent")

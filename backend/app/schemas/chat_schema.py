@@ -1,4 +1,21 @@
+from datetime import datetime
+
 from pydantic import BaseModel
+
+
+class ChatSessionPublic(BaseModel):
+    id: int
+    user_id: int
+    title: str | None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ChatSessionPublicList(BaseModel):
+    data: list[ChatSessionPublic]
 
 
 class ChatSessionCreate(BaseModel):

@@ -5,7 +5,7 @@ from app.models import Bot, ChatSession, Conversation
 from app.schemas import chat_schema
 
 
-def get_chat_session_histories(db: Session, user_id: int) -> list[ChatSession]:
+def get_chat_sessions(db: Session, user_id: int) -> list[ChatSession]:
     chat_sessions = (
         db.query(ChatSession)
         .filter(ChatSession.user_id == user_id)
@@ -16,7 +16,7 @@ def get_chat_session_histories(db: Session, user_id: int) -> list[ChatSession]:
 
 
 def get_recent_chat_session(db: Session, user_id: int) -> ChatSession:
-    chat_sessions = get_chat_session_histories(db, user_id)
+    chat_sessions = get_chat_sessions(db, user_id)
     return chat_sessions[0]
 
 

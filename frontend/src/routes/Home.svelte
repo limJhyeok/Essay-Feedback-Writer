@@ -143,7 +143,7 @@
 
     fastapi('get', url, params,
         (json) => {
-          chatTitles.set(json);
+          chatTitles.set(json.data);
         },
         (json_error) => {
             error = json_error
@@ -255,7 +255,7 @@
     openCheckDeleteChatModal(chatId);
   }
   function renameChatTitle(chatTitle) {
-    if (newChatTitle.trim() === '' || newChatTitle === chatTitle.name) {
+    if (newChatTitle.trim() === '' || newChatTitle === chatTitle.title) {
       return
     }
     let url = `/api/v1/chat/rename/${chatTitle.id}`;  // TODO: url 및 inDTO 변경
@@ -765,14 +765,14 @@
               bind:value={newChatTitle}
               on:keydown={(event) => handleKeyPress(event, chatTitle)}
               on:blur={(cancelEdit)}
-              placeholder={chatTitle.name}
+              placeholder={chatTitle.title}
             />
           {:else}
             <button
               on:click={() => selectChat(chatTitle.id)}
               class="btn w-100 text-start py-2 {chatTitle.id === activeChatSessionId ? 'active' : ''}"
             >
-              {chatTitle.name}
+              {chatTitle.title}
             </button>
           {/if}
             <div class="options-container">

@@ -74,11 +74,12 @@ services:
     ports:
       - "5173:5173"
     volumes:
-      - ./frontend:/app
+      - ./frontend/src:/frontend/src
     depends_on:
       - backend
     environment:
       - VITE_SERVER_URL=${VITE_SERVER_URL}
+      - CHOKIDAR_USEPOLLING=true
 volumes:
   app-db-data:
 

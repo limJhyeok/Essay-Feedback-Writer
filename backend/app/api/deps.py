@@ -21,9 +21,7 @@ ALGORITHM = os.getenv("ALGORITHM")
 
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-reusable_oauth2 = OAuth2PasswordBearer(
-    tokenUrl=f"{settings.API_V1_STR}/login/access-token"
-)
+reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/user/login")
 
 
 def get_db() -> Generator[Session, None, None]:

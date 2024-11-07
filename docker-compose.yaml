@@ -79,7 +79,6 @@ services:
       - backend
     environment:
       - VITE_SERVER_URL=${VITE_SERVER_URL}
-      - CHOKIDAR_USEPOLLING=true
 volumes:
   app-db-data:
 

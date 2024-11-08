@@ -107,7 +107,11 @@ def rename_chat_session(
 
 @router.delete("/delete/{chat_session_id}")
 def delete_chat(chat_session_id: int, db: SessionDep) -> None:
-    chat_crud.delete_chat_session(db, chat_session_id)
+    chat_session = chat_crud.get_chat_session(db, chat_session_id)
+    if chat_session is None:
+        raise HTTPException(status_code=404, detail="chat session not found")
+
+    chat_crud.delete_chat_session(db, chat_session)
 
 
 @router.post("/session", status_code=status.HTTP_201_CREATED)

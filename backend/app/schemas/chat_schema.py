@@ -18,6 +18,18 @@ class ChatSessionPublicList(BaseModel):
     data: list[ChatSessionPublic]
 
 
+class ChatSessionTitle(BaseModel):
+    id: int
+    title: str | None
+
+    class Config:
+        from_attributes = True
+
+
+class ChatSessionTitleList(BaseModel):
+    data: list[ChatSessionTitle]
+
+
 class ChatSessionCreate(BaseModel):
     user_id: int
     title: str | None = "New chat"

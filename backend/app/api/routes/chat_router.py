@@ -58,7 +58,7 @@ def get_recent_chat_session_id(
     current_user: CurrentUser,
 ) -> dict:
     recent_chat_session = chat_crud.get_recent_chat_session(db, current_user.id)
-    return chat_schema.ChatSessionId(id=recent_chat_session.id)
+    return recent_chat_session
 
 
 @router.get(

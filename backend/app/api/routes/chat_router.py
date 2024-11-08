@@ -40,16 +40,16 @@ EEVE_KOREAN_BUFFER_TOKENS = 96
 UPLOAD_DIRECTORY = os.path.join(ROOT_DIR, "user-upload")
 
 
-@router.get("/titles", response_model=chat_schema.ChatSessionPublicList)
+@router.get("/titles", response_model=chat_schema.ChatSessionTitleList)
 def get_chat_history_titles(
     db: SessionDep,
     current_user: CurrentUser,
 ) -> Any:
     db_chat_sessions = chat_crud.get_chat_sessions(db, current_user.id)
     chat_sessions_public = [
-        chat_schema.ChatSessionPublic.from_orm(session) for session in db_chat_sessions
+        chat_schema.ChatSessionTitle.from_orm(session) for session in db_chat_sessions
     ]
-    return chat_schema.ChatSessionPublicList(data=chat_sessions_public)
+    return chat_schema.ChatSessionTitleList(data=chat_sessions_public)
 
 
 @router.get("/recent")

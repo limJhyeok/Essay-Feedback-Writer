@@ -15,9 +15,14 @@ def get_chat_sessions(db: Session, user_id: int) -> list[ChatSession]:
     return chat_sessions
 
 
-def get_recent_chat_session(db: Session, user_id: int) -> ChatSession:
-    chat_sessions = get_chat_sessions(db, user_id)
-    return chat_sessions[0]
+def get_recent_chat_session(db: Session, user_id: int) -> ChatSession | None:
+    recent_chat_session = (
+        db.query(ChatSession)
+        .filter(ChatSession.user_id == user_id)
+        .order_by(ChatSession.updated_at.desc())
+        .first()
+    )
+    return recent_chat_session
 
 
 def get_conversations(db: Session, chat_session_id: int) -> list[Conversation]:

@@ -53,7 +53,7 @@ class ChatSessionCreateRequest(BaseModel):
 
 
 class ChatSessionUpdateRequest(BaseModel):
-    renamed_title: str
+    title: str
 
 
 class ConversationCreate(BaseModel):

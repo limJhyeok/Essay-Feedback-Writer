@@ -66,11 +66,12 @@ def create_chat_session(
 
 def update_chat_session(
     db: Session,
-    chat_session_id: int,
+    chat_session: ChatSession,
     chat_session_update_request: chat_schema.ChatSessionUpdateRequest,
 ) -> None:
-    chat_session = get_chat_session(db, chat_session_id)
-    chat_session.title = chat_session_update_request.renamed_title
+    update_dict = chat_session_update_request.model_dump(exclude_unset=True)
+    for key, value in update_dict.items():
+        setattr(chat_session, key, value)
     db.add(chat_session)
     db.commit()
 

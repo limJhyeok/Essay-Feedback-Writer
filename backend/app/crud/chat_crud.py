@@ -1,4 +1,3 @@
-from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.models import Bot, ChatSession, Conversation
@@ -76,12 +75,9 @@ def update_chat_session(
     db.commit()
 
 
-def delete_chat_session(db: Session, chat_session_id: int) -> None:
-    chat_session = get_chat_session(db, chat_session_id)
-    if chat_session is None:
-        raise HTTPException(status_code=404, detail="Chat session not found")
+def delete_chat_session(db: Session, chat_session: ChatSession) -> None:
     db.query(Conversation).filter(
-        Conversation.chat_session_id == chat_session_id
+        Conversation.chat_session_id == chat_session.id
     ).delete()
 
     db.delete(chat_session)

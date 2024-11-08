@@ -52,13 +52,13 @@ def get_chat_history_titles(
     return chat_schema.ChatSessionTitleList(data=chat_sessions_public)
 
 
-@router.get("/recent")
+@router.get("/recent", response_model=chat_schema.ChatSessionId)
 def get_recent_chat_session_id(
     db: SessionDep,
     current_user: CurrentUser,
 ) -> dict:
     recent_chat_session = chat_crud.get_recent_chat_session(db, current_user.id)
-    return {"id": recent_chat_session.id}
+    return chat_schema.ChatSessionId(id=recent_chat_session.id)
 
 
 @router.get("/session/{chat_session_id}")

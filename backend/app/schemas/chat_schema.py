@@ -30,6 +30,10 @@ class ChatSessionTitleList(BaseModel):
     data: list[ChatSessionTitle]
 
 
+class ChatSessionId(BaseModel):
+    id: int
+
+
 class ChatSessionCreate(BaseModel):
     user_id: int
     title: str | None = "New chat"

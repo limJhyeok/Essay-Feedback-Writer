@@ -93,12 +93,16 @@ def create_chat(
 
 
 @router.put("/rename/{chat_session_id}")
-def update_chat(
+def rename_chat_session(
     chat_session_id: int,
     chat_session_update_request: chat_schema.ChatSessionUpdateRequest,
     db: SessionDep,
 ) -> None:
-    chat_crud.update_chat_session(db, chat_session_id, chat_session_update_request)
+    chat_session = chat_crud.get_chat_session(db, chat_session_id)
+    if not chat_session:
+        raise HTTPException(status_code=404, detail="chat session not found")
+
+    chat_crud.update_chat_session(db, chat_session, chat_session_update_request)
 
 
 @router.delete("/delete/{chat_session_id}")

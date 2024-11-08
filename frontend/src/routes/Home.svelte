@@ -258,8 +258,8 @@
     if (newChatTitle.trim() === '' || newChatTitle === chatTitle.title) {
       return
     }
-    let url = `/api/v1/chat/rename/${chatTitle.id}`;  // TODO: url 및 inDTO 변경
-    let params = { renamed_title: newChatTitle };
+    let url = `/api/v1/chat/rename/${chatTitle.id}`;
+    let params = { title: newChatTitle };
 
     fastapi('put', url, params,
       (json) => {

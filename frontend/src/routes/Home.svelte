@@ -1,13 +1,13 @@
 <script>
   import { faBars, faComments, faEllipsis } from '@fortawesome/free-solid-svg-icons';
   import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
-  import { isLogin, isSignUpPage, chatTitles, sessionMessages, accessToken, userEmail } from "../lib/store"
+  import { isLogin, isSignUpPage, chatTitles, chatSessionMessages as chatSessionMessages, accessToken, userEmail } from "../lib/store"
   import fastapi from "../lib/api";
   import { onMount, tick } from 'svelte';
   import { marked } from 'marked'
     import active from 'svelte-spa-router/active';
 
-  $: chatTitles, sessionMessages
+  $: chatTitles, chatSessionMessages
   let activeMessages = []
   let userMessage = '';
   let activeChatSessionId = -1;
@@ -39,11 +39,8 @@
       }
       fastapi('post', url, params,
         (json) => {
-          sessionMessages.update(state => {
-            return {
-              ...state,
-              messages: [...state.messages, { sender: 'user', text: userMessage }]
-            };
+          chatSessionMessages.update(state => {
+            return [...state, { sender: 'user', text: userMessage }];
           });
           if (activeChatSessionId === -1){
             getChatTitles();
@@ -77,7 +74,7 @@
             chat_session_id: activeChatSessionId,
             bot_id: 1,
             question: userMessage,
-            context: $sessionMessages.messages
+            context: $chatSessionMessages
         }
     fetch(url, {
         method: method,
@@ -96,12 +93,15 @@
               try {
                 generateLoading = false;
                 if (done) {
-                      sessionMessages.update(state => {
-                                    return {
-                                        ...state,
-                                        messages: [...state.messages, { sender: 'bot', text: answer }]
-                                    };
-                                });
+                        chatSessionMessages.update(state => {
+                          return [...state, { sender: 'bot', text: answer }];
+                      });
+                      // chatSessionMessages.update(state => {
+                      //               return {
+                      //                   ...state,
+                      //                   messages: [...state.messages, { sender: 'bot', text: answer }]
+                      //               };
+                      //           });
                       answer = '';
                       return;
                 }
@@ -173,7 +173,7 @@
     let params = {}
     fastapi('get', url, params,
         (json) => {
-          sessionMessages.set(json.message_history)
+          chatSessionMessages.set(json.data);
         },
         (json_error) => {
             error = json_error
@@ -815,7 +815,7 @@
     </div>
     <div class="messages">
       {#if activeChatSessionId !== -1}
-        {#each $sessionMessages.messages as message }
+        {#each $chatSessionMessages as message }
           <div class="message {message.sender}">
             <div class="message-content">
               {@html marked.parse(message.text)}

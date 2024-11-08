@@ -61,19 +61,23 @@ def get_recent_chat_session_id(
     return chat_schema.ChatSessionId(id=recent_chat_session.id)
 
 
-@router.get("/session/{chat_session_id}")
-def get_conversations(chat_session_id: int, db: SessionDep) -> dict:
-    res = {"message_history": {"messages": []}}
+@router.get(
+    "/session/{chat_session_id}", response_model=chat_schema.ChatSessionMessageList
+)
+def get_chat_session_message_list(
+    chat_session_id: int, db: SessionDep
+) -> chat_schema.ChatSessionMessageList:
     if chat_session_id == EMPTY_CHAT_SESSION_ID:
-        return res
+        return chat_schema.ChatSessionMessageList(data=[])
 
     db_conversations = chat_crud.get_conversations(db, chat_session_id)
-    if db_conversations:
-        res["message_history"]["messages"] = [
-            {"sender": db_conversation.sender, "text": db_conversation.message}
-            for db_conversation in db_conversations
-        ]
-    return res
+    chat_session_messages = [
+        chat_schema.ChatSessionMessage(
+            sender=db_conversation.sender, text=db_conversation.message
+        )
+        for db_conversation in db_conversations
+    ]
+    return chat_schema.ChatSessionMessageList(data=chat_session_messages)
 
 
 @router.post("/create", status_code=status.HTTP_201_CREATED)

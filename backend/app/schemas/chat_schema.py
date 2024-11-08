@@ -34,6 +34,15 @@ class ChatSessionId(BaseModel):
     id: int
 
 
+class ChatSessionMessage(BaseModel):
+    sender: str
+    text: str
+
+
+class ChatSessionMessageList(BaseModel):
+    data: list[ChatSessionMessage]
+
+
 class ChatSessionCreate(BaseModel):
     user_id: int
     title: str | None = "New chat"

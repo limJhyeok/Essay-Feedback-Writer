@@ -40,13 +40,13 @@ def login_access_token(
 
 
 @router.post("/create", status_code=status.HTTP_204_NO_CONTENT)
-def user_create(_user_create: user_schema.UserCreate, db: SessionDep) -> None:
-    user = user_crud.get_existing_user_for_create(db, user_create=_user_create)
+def user_create(user_in: user_schema.UserCreate, db: SessionDep) -> None:
+    user = user_crud.get_user_by_email(db, email=user_in.email)
     if user:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="이미 존재하는 사용자입니다."
         )
-    user_crud.create_user(db=db, user_create=_user_create)
+    user_crud.create_user(db=db, user_create=user_in)
 
 
 @router.post("/reset-password", status_code=status.HTTP_204_NO_CONTENT)

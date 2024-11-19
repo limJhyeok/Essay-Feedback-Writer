@@ -16,12 +16,6 @@ def create_user(db: Session, user_create: user_schema.UserCreate) -> None:
     db.commit()
 
 
-def get_existing_user_for_create(
-    db: Session, user_create: user_schema.UserCreate
-) -> User | None:
-    return db.query(User).filter(User.email == user_create.email).first()
-
-
 def get_user_by_email(db: Session, email: str) -> User | None:
     return db.query(User).filter(User.email == email).first()
 

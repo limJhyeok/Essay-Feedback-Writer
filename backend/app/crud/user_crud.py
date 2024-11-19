@@ -1,7 +1,7 @@
 from pydantic import EmailStr
 from sqlalchemy.orm import Session
 
-from app.core.security import get_password_hash
+from app.core.security import get_password_hash, verify_password
 from app.models import User
 from app.schemas import user_schema
 
@@ -22,7 +22,7 @@ def get_existing_user_for_create(
     return db.query(User).filter(User.email == user_create.email).first()
 
 
-def get_user(db: Session, email: str) -> User | None:
+def get_user_by_email(db: Session, email: str) -> User | None:
     return db.query(User).filter(User.email == email).first()
 
 
@@ -35,3 +35,12 @@ def get_existing_user_for_reset_password(
     db: Session, user_email: EmailStr
 ) -> User | None:
     return db.query(User).filter(User.email == user_email).first()
+
+
+def authenticate(db: Session, email: str, password: str) -> User | None:
+    db_user = get_user_by_email(db=db, email=email)
+    if not db_user:
+        return None
+    if not verify_password(password, db_user.password):
+        return None
+    return db_user

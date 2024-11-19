@@ -45,7 +45,7 @@ def get_current_user(db: SessionDep, token: TokenDep) -> User:
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Could not validate credentials",
         )
-    user = user_crud.get_user(db, email=user_email)
+    user = user_crud.get_user_by_email(db, email=user_email)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user

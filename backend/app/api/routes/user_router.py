@@ -49,11 +49,9 @@ def user_create(user_in: user_schema.UserCreate, db: SessionDep) -> None:
     user_crud.create_user(db=db, user_create=user_in)
 
 
-@router.post("/reset-password", status_code=status.HTTP_204_NO_CONTENT)
-async def reset_password(_user_email: user_schema.UserEmail, db: SessionDep) -> None:
-    user = user_crud.get_existing_user_for_reset_password(
-        db, user_email=_user_email.email
-    )
+@router.put("/password", status_code=status.HTTP_204_NO_CONTENT)
+async def reset_password(user_email: user_schema.UserEmail, db: SessionDep) -> None:
+    user = user_crud.get_user_by_email(db, email=user_email.email)
 
     if not user:
         raise HTTPException(

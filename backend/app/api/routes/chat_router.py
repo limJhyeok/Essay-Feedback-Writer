@@ -233,27 +233,17 @@ async def stream_answer(
                 + "\n"
             )
             await asyncio.sleep(delay_seconds_for_stream)
-    await save_bot_conversation(
-        db=db,
+    bot_answer = chat_schema.ConversationCreate(
         chat_session_id=chat_session_id,
+        sender="bot",
         message=final_response,
         sender_id=bot.id if bot else 1,
     )
+    chat_crud.create_conversation(db, bot_answer)
+
     yield (
         json.dumps(
             {"status": "complete", "data": "Stream finished"}, ensure_ascii=False
         )
         + "\n"
     )
-
-
-async def save_bot_conversation(
-    db: SessionDep, chat_session_id: int, message: str, sender_id: int
-) -> None:
-    bot_conversation_create = chat_schema.ConversationCreate(
-        chat_session_id=chat_session_id,
-        sender="bot",
-        message=message,
-        sender_id=sender_id,
-    )
-    chat_crud.create_conversation(db, bot_conversation_create)

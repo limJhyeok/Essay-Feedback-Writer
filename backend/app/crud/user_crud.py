@@ -22,7 +22,7 @@ def get_existing_user_for_create(
     return db.query(User).filter(User.email == user_create.email).first()
 
 
-def get_user(db: Session, email: str) -> User | None:
+def get_user_by_email(db: Session, email: str) -> User | None:
     return db.query(User).filter(User.email == email).first()
 
 

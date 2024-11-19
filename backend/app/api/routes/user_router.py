@@ -22,7 +22,7 @@ def login_for_access_token(
 ) -> dict:
     user_email = form_data.username
     user_password = form_data.password
-    user = user_crud.get_user(db, user_email)
+    user = user_crud.get_user_by_email(db, user_email)
     if not user or not security.verify_password(user_password, user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

@@ -1,4 +1,3 @@
-from pydantic import EmailStr
 from sqlalchemy.orm import Session
 
 from app.core.security import get_password_hash, verify_password
@@ -23,12 +22,6 @@ def get_user_by_email(db: Session, email: str) -> User | None:
 def update_user_password(db: Session, user: User, new_password: str) -> None:
     user.password = new_password
     db.commit()
-
-
-def get_existing_user_for_reset_password(
-    db: Session, user_email: EmailStr
-) -> User | None:
-    return db.query(User).filter(User.email == user_email).first()
 
 
 def authenticate(db: Session, email: str, password: str) -> User | None:

@@ -16,14 +16,14 @@ router = APIRouter()
 
 
 @router.post("/login", response_model=user_schema.Token)
-def login_for_access_token(
+def login_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: SessionDep,
-) -> dict:
-    user_email = form_data.username
-    user_password = form_data.password
-    user = user_crud.get_user_by_email(db, user_email)
-    if not user or not security.verify_password(user_password, user.password):
+) -> user_schema.Token:
+    user = user_crud.authenticate(
+        db=db, email=form_data.username, password=form_data.password
+    )
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect user email or password",
@@ -34,8 +34,9 @@ def login_for_access_token(
     access_token = security.create_access_token(
         subject=user.email, expires_delta=access_token_expires
     )
-
-    return {"access_token": access_token, "token_type": "bearer", "email": user.email}
+    return user_schema.Token(
+        access_token=access_token, token_type="bearer", email=user.email
+    )
 
 
 @router.post("/create", status_code=status.HTTP_204_NO_CONTENT)

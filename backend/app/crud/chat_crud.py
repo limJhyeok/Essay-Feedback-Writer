@@ -42,13 +42,13 @@ def get_chat_session(db: Session, session_id: int) -> ChatSession:
 def create_conversation(
     db: Session, conversation_create: chat_schema.ConversationCreate
 ) -> None:
-    chat_session = Conversation(
+    conversation = Conversation(
         chat_session_id=conversation_create.chat_session_id,
         sender=conversation_create.sender,
         message=conversation_create.message,
         sender_id=conversation_create.sender_id,
     )
-    db.add(chat_session)
+    db.add(conversation)
     db.commit()
 
 

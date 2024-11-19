@@ -2,25 +2,13 @@ import asyncio
 import json
 import os
 import shutil
-from operator import itemgetter
 from typing import Any
 
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from fastapi.responses import StreamingResponse
-from langchain.chains import create_history_aware_retriever, create_retrieval_chain
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain_chroma import Chroma
 from langchain_community.chat_models import ChatOllama
-from langchain_community.document_loaders import PyPDFLoader
-from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 from langchain_core.messages import BaseMessage, HumanMessage
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.retrievers import RetrieverOutputLike
-from langchain_core.runnables import RunnablePassthrough
-from langchain_core.runnables.base import Runnable
 from langchain_core.runnables.history import RunnableWithMessageHistory
-from langchain_core.vectorstores import VectorStoreRetriever
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from app.api.deps import CurrentUser, SessionDep
 from app.api.utils import chat_utils
@@ -153,7 +141,7 @@ async def generate_answer(
     question = generate_answer_request.question
 
     bot = chat_crud.get_bot(db, generate_answer_request.bot_id)
-    llm = get_llm()
+    llm = chat_utils.get_llm()
 
     token_trimmer = chat_utils.get_token_trimmer(
         model=llm, max_tokens=EEVE_KOREAN_MAX_TOKENS - EEVE_KOREAN_BUFFER_TOKENS
@@ -183,83 +171,10 @@ async def upload_pdf(chat_session_id: int, file: UploadFile = File(...)) -> dict
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    splits = load_and_split_documents(file_path)
-    retriever = create_vectorstore_and_retriever(splits)
+    splits = chat_utils.load_and_split_documents(file_path)
+    retriever = chat_utils.create_vectorstore_and_retriever(splits)
     chat_utils.retriever_store[chat_session_id] = retriever
     return {"filename": file.filename, "status": "processed"}
-
-
-def load_and_split_documents(
-    pdf_path: str, chunk_size: int = 1000, chunk_overlap: int = 200
-) -> list[str]:
-    loader = PyPDFLoader(pdf_path)
-    documents = loader.load()
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=chunk_size, chunk_overlap=chunk_overlap
-    )
-    splits = text_splitter.split_documents(documents)
-    return splits
-
-
-def create_vectorstore_and_retriever(splits: list[str]) -> VectorStoreRetriever:
-    vectorstore = Chroma.from_documents(
-        documents=splits, embedding=HuggingFaceBgeEmbeddings()
-    )
-    return vectorstore.as_retriever()
-
-
-def create_history_aware_retriever_chain(
-    llm: ChatOllama, retriever: VectorStoreRetriever
-) -> RetrieverOutputLike:
-    contextualize_q_system_prompt = (
-        "Given a chat history and the latest user question "
-        "which might reference context in the chat history, "
-        "formulate a standalone question which can be understood "
-        "without the chat history. Do NOT answer the question, "
-        "just reformulate it if needed and otherwise return it as is."
-    )
-
-    contextualize_q_prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", contextualize_q_system_prompt),
-            MessagesPlaceholder("chat_history"),
-            ("human", "{input}"),
-        ]
-    )
-
-    history_aware_retriever = create_history_aware_retriever(
-        llm, retriever, contextualize_q_prompt
-    )
-    return history_aware_retriever
-
-
-def create_question_answer_chain(llm: ChatOllama) -> Runnable:
-    system_prompt = (
-        "You are an assistant for question-answering tasks. "
-        "Use the following pieces of retrieved context to answer "
-        "the question. If you don't know the answer, say that you "
-        "don't know. Use three sentences maximum and keep the "
-        "answer concise."
-        "\n\n"
-        "{context}"
-    )
-
-    qa_prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", system_prompt),
-            MessagesPlaceholder("chat_history"),
-            ("human", "{input}"),
-        ]
-    )
-
-    question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
-    return question_answer_chain
-
-
-def create_rag_chain(llm: ChatOllama, retriever: VectorStoreRetriever) -> Runnable:
-    question_answer_chain = create_question_answer_chain(llm)
-    rag_chain = create_retrieval_chain(retriever, question_answer_chain)
-    return rag_chain
 
 
 async def stream_answer(
@@ -271,14 +186,16 @@ async def stream_answer(
     token_trimmer: list[BaseMessage],
     delay_seconds_for_stream: float,
 ):
-    chat_session_init_result = await ensure_chat_session_initialized(
+    chat_session_init_result = await chat_utils.ensure_chat_session_initialized(
         chat_session_id, db
     )
     retriever = chat_utils.retriever_store.get(chat_session_id)
     config = {"configurable": {"session_id": f"{chat_session_id}"}}
     if retriever is not None:
-        history_aware_retriever = create_history_aware_retriever_chain(llm, retriever)
-        chain = create_rag_chain(llm, history_aware_retriever)
+        history_aware_retriever = chat_utils.create_history_aware_retriever_chain(
+            llm, retriever
+        )
+        chain = chat_utils.create_rag_chain(llm, history_aware_retriever)
         with_message_history_keys = {
             "input_messages_key": "input",
             "history_messages_key": "chat_history",
@@ -288,11 +205,11 @@ async def stream_answer(
             "input": question,
         }
     else:
-        prompt = get_prompt()
+        prompt = chat_utils.get_prompt()
         with_message_history_keys = {
             "input_messages_key": "messages",
         }
-        chain = create_chain_with_trimmer(token_trimmer, prompt, llm)
+        chain = chat_utils.create_chain_with_trimmer(token_trimmer, prompt, llm)
         # TODO: 대화이력 기반 chatbot refactoring 필요
         if chat_session_init_result == "initialized":
             messages = chat_utils.chat_session_store[chat_session_id].messages
@@ -330,29 +247,6 @@ async def stream_answer(
     )
 
 
-async def ensure_chat_session_initialized(chat_session_id: int, db: SessionDep) -> str:
-    if (
-        chat_session_id not in chat_utils.chat_session_store
-        or not chat_utils.chat_session_store[chat_session_id].messages
-    ):
-        chat_utils.get_chat_session_history_from_db(
-            chat_utils.chat_session_store, db, chat_session_id
-        )
-        return "initialized"
-    return ""
-
-
-def create_chain_with_trimmer(
-    token_trimmer: list[BaseMessage], prompt: str, llm: ChatOllama
-) -> Runnable:
-    chain = (
-        RunnablePassthrough.assign(messages=itemgetter("messages") | token_trimmer)
-        | prompt
-        | llm
-    )
-    return chain
-
-
 async def save_bot_conversation(
     db: SessionDep, chat_session_id: int, message: str, sender_id: int
 ) -> None:
@@ -363,21 +257,3 @@ async def save_bot_conversation(
         sender_id=sender_id,
     )
     chat_crud.create_conversation(db, bot_conversation_create)
-
-
-def get_prompt() -> ChatPromptTemplate:
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                "You are a helpful assistant. Answer all questions to the best of your ability.",
-            ),
-            MessagesPlaceholder(variable_name="messages"),
-        ]
-    )
-    return prompt
-
-
-def get_llm() -> ChatOllama:
-    llm = ChatOllama(model="EEVE-Korean-10.8B:latest")
-    return llm

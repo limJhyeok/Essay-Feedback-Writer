@@ -32,6 +32,8 @@
   function sendMessage() {
     if (userMessage.trim()) {
       let url = '/api/v1/chat/session'
+      // TODO: sender는 항상 user인데 params에 등록을 해야하는것인가?
+      // sender가 항상 user임을 보장? 추후 확장 시 달라질 수 있는가?
       let params = {
         chat_session_id: activeChatSessionId,
         sender: 'user',

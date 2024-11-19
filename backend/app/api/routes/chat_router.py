@@ -112,7 +112,6 @@ def post_user_conversation(
         db, user_chat_session_create_request.chat_session_id
     )
     if not chat_session:
-        # TODO: refactoring?(모듈화): create_chat과 매우 비슷
         # TODO: user_chat_session_create_request.message와 AI를 이용하여 chat의 title 부여한 후에 ChatCreate 만들기
         chat_session_create = chat_schema.ChatSessionCreate(
             user_id=current_user.id,

@@ -16,7 +16,6 @@ from app.models import User
 
 load_dotenv()
 
-SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
 
 
@@ -38,7 +37,7 @@ TokenDep = Annotated[str, Depends(reusable_oauth2)]
 
 def get_current_user(db: SessionDep, token: TokenDep) -> User:
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
         user_email = payload.get("sub")
     except (JWTError, ValidationError):
         raise HTTPException(

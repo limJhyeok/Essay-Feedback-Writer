@@ -1,37 +1,96 @@
-import os
+import logging
 import secrets
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from pathlib import Path
+from typing import Any
 
-from dotenv import load_dotenv
-from fastapi import HTTPException
-from pydantic import EmailStr
+import emails
+from jinja2 import Template
+from jose import JWTError, jwt
 
-load_dotenv()
-SMTP_HOST = os.getenv("SMTP_HOST")
-SMTP_PORT = int(os.getenv("SMTP_PORT"))
-SMTP_USERNAME = os.getenv("SMTP_USERNAME")
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+from app.core.config import settings
+
+
+@dataclass
+class EmailData:
+    html_content: str
+    subject: str
 
 
 def generate_temporary_password() -> str:
     return secrets.token_urlsafe(8)
 
 
-async def send_temporary_password(user_email: EmailStr, temp_password: str) -> None:
-    message = MIMEMultipart()
-    message["From"] = "gpt-copy-test"
-    message["To"] = user_email
-    message["Subject"] = "Your temporary password"
-    message.attach(MIMEText(f"Your temporary password is: {temp_password}", "plain"))
-    try:
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as smtp_server:
-            smtp_server.starttls()
-            smtp_server.login(SMTP_USERNAME, SMTP_PASSWORD)
-            smtp_server.sendmail(SMTP_USERNAME, user_email, message.as_string())
+def generate_password_reset_token(email: str) -> str:
+    delta = timedelta(hours=settings.EMAIL_RESET_TOKEN_EXPIRE_HOURS)
+    now = datetime.utcnow()
+    expires = now + delta
+    exp = expires.timestamp()
+    encoded_jwt = jwt.encode(
+        {"exp": exp, "nbf": now, "sub": email},
+        settings.SECRET_KEY,
+        algorithm="HS256",
+    )
+    return encoded_jwt
 
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to send the email. {str(e)}"
-        )
+
+def render_email_template(*, template_name: str, context: dict[str, Any]) -> str:
+    template_str = (
+        Path(__file__).parent.parent.parent
+        / "email-templates"
+        / "build"
+        / template_name
+    ).read_text()
+    html_content = Template(template_str).render(context)
+    return html_content
+
+
+def generate_reset_password_email(email_to: str, email: str, token: str) -> None:
+    project_name = settings.PROJECT_NAME
+    subject = f"{project_name} - Password recovery for user {email}"
+    link = f"{settings.server_host}/reset-password?token={token}"
+    html_content = render_email_template(
+        template_name="reset_password.html",
+        context={
+            "project_name": settings.PROJECT_NAME,
+            "username": email,
+            "email": email_to,
+            "valid_hours": settings.EMAIL_RESET_TOKEN_EXPIRE_HOURS,
+            "link": link,
+        },
+    )
+    return EmailData(html_content=html_content, subject=subject)
+
+
+def send_email(
+    *,
+    email_to: str,
+    subject: str = "",
+    html_content: str = "",
+) -> None:
+    assert settings.emails_enabled, "no provided configuration for email variables"
+    message = emails.Message(
+        subject=subject,
+        html=html_content,
+        mail_from=(settings.EMAILS_FROM_NAME, settings.EMAILS_FROM_EMAIL),
+    )
+    smtp_options = {"host": settings.SMTP_HOST, "port": settings.SMTP_PORT}
+    if settings.SMTP_TLS:
+        smtp_options["tls"] = True
+    elif settings.SMTP_SSL:
+        smtp_options["ssl"] = True
+    if settings.SMTP_USER:
+        smtp_options["user"] = settings.SMTP_USER
+    if settings.SMTP_PASSWORD:
+        smtp_options["password"] = settings.SMTP_PASSWORD
+    response = message.send(to=email_to, smtp=smtp_options)
+    logging.info(f"send email result: {response}")
+
+
+def verify_password_reset_token(token: str) -> str | None:
+    try:
+        decoded_token = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+        return str(decoded_token["sub"])
+    except JWTError:
+        return None

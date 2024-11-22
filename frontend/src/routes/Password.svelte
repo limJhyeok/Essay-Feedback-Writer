@@ -4,8 +4,7 @@
     import fastapi from '../lib/api';
 	let user_email = ''
 
-	function handleResetPasswordSubmit(){
-		let user_id = 1
+	function handlePasswordSubmit(){
 		let url = "/api/v1/user/password"
 		let params = {email: user_email}
 		fastapi('put', url, params,
@@ -26,9 +25,9 @@
 	<div class="row justify-content-center">
 	  <div class="col-md-6 text-center">
 		<h1 class="mb-3">비밀번호를 리셋하세요</h1>
-		<p class="mb-4">이메일 주소를 입력하면 해당 이메일로 임시 비밀번호가 발송됩니다.</p>
+		<p class="mb-4">이메일 주소를 입력하면 해당 이메일로 비밀번호를 변경할 수 있는 링크가 발송됩니다.</p>
 
-		<form on:submit|preventDefault={handleResetPasswordSubmit}>
+		<form on:submit|preventDefault={handlePasswordSubmit}>
 		  <div class="form-group mb-3">
 			<label for="email" class="form-label">이메일 주소</label>
 			<input

@@ -50,16 +50,41 @@ def user_create(user_in: user_schema.UserCreate, db: SessionDep) -> None:
 
 
 @router.put("/password", status_code=status.HTTP_204_NO_CONTENT)
-async def reset_password(user_email: user_schema.UserEmail, db: SessionDep) -> None:
+async def request_reset_password(
+    user_email: user_schema.UserEmail, db: SessionDep
+) -> None:
     user = user_crud.get_user_by_email(db, email=user_email.email)
 
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Email does not exist"
         )
+    password_reset_token = user_utils.generate_password_reset_token(
+        email=user_email.email
+    )
+    email_data = user_utils.generate_reset_password_email(
+        email_to=user.email, email=user_email.email, token=password_reset_token
+    )
+    user_utils.send_email(
+        email_to=user.email,
+        subject=email_data.subject,
+        html_content=email_data.html_content,
+    )
 
-    temp_password = user_utils.generate_temporary_password()
-    hashed_password = security.get_password_hash(temp_password)
+
+@router.post("/reset-password")
+def reset_password(db: SessionDep, body: user_schema.NewPassword) -> None:
+    """
+    Reset password
+    """
+    email = user_utils.verify_password_reset_token(token=body.token)
+    if not email:
+        raise HTTPException(status_code=400, detail="Invalid token")
+    user = user_crud.get_user_by_email(db=db, email=email)
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="The user with this email does not exist in the system.",
+        )
+    hashed_password = security.get_password_hash(password=body.new_password)
     user_crud.update_user_password(db, user, hashed_password)
-
-    await user_utils.send_temporary_password(user.email, temp_password)

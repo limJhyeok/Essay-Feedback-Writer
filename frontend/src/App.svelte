@@ -2,12 +2,12 @@
   import Router from 'svelte-spa-router'
   import Home from './routes/Home.svelte'
   import Auth from './routes/Auth.svelte'
-  import ResetPassoword from './routes/ResetPassword.svelte';
+  import Passoword from './routes/Password.svelte';
 
   const routes = {
     '/': Home,
     '/authorize': Auth,
-    '/password': ResetPassoword
+    '/password': Passoword
   }
 </script>
 

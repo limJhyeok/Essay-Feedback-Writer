@@ -7,9 +7,9 @@
 	function handlePasswordSubmit(){
 		let url = "/api/v1/user/password"
 		let params = {email: user_email}
-		fastapi('put', url, params,
+		fastapi('post', url, params,
 			(json) => {
-				push('/')
+				push("/authorize")
 			},
 			(json_error) => {
 				error = json_error

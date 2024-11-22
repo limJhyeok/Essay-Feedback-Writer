@@ -49,7 +49,7 @@ def user_create(user_in: user_schema.UserCreate, db: SessionDep) -> None:
     user_crud.create_user(db=db, user_create=user_in)
 
 
-@router.put("/password", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/password", status_code=status.HTTP_204_NO_CONTENT)
 async def request_reset_password(
     user_email: user_schema.UserEmail, db: SessionDep
 ) -> None:

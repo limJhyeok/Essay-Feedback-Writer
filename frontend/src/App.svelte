@@ -7,7 +7,7 @@
   const routes = {
     '/': Home,
     '/authorize': Auth,
-    '/reset-password': ResetPassoword
+    '/password': ResetPassoword
   }
 </script>
 

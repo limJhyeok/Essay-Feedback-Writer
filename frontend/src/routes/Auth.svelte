@@ -111,8 +111,8 @@
       </button>
     </div>
     <div class="text-center mb-4">
-      <a use:link href="/reset-password" class="text-decoration-none d-inline-block">
-        비밀번호를 잃어버리셨나요? 비밀번호 초기화
+      <a use:link href="/password" class="text-decoration-none d-inline-block">
+        비밀번호를 잃어버리셨나요?
       </a>
     </div>
     <div class="social-section">

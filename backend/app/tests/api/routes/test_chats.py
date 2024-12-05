@@ -205,15 +205,15 @@ def test_upload_pdf(client: TestClient, db: Session) -> None:
     test_pdf_path = os.path.join(TEST_DIRECTORY, test_pdf_name)
 
     with open(test_pdf_path, "rb") as pdf_file:
-        response = client.post(
+        r = client.post(
             f"{settings.API_V1_STR}/chat/{chat_session_id}/upload-pdf/",
             files={"file": (test_pdf_name, pdf_file, "application/pdf")},
         )
 
-    assert response.status_code == 200
-    json_response = response.json()
-    assert json_response["filename"] == test_pdf_name
-    assert json_response["status"] == "processed"
+    assert r.status_code == 200
+    content = r.json()
+    assert content["filename"] == test_pdf_name
+    assert content["status"] == "processed"
 
     cleanup_file(UPLOAD_DIRECTORY, test_pdf_name)
 

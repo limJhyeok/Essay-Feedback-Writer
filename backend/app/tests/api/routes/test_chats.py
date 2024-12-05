@@ -1,10 +1,16 @@
+import os
+
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.crud import chat_crud, user_crud
+from app.definitions import ROOT_DIR
 from app.schemas import chat_schema
-from app.tests.utils.chat import create_random_chat_session
+from app.tests.utils.chat import cleanup_file, create_random_chat_session
+
+TEST_DIRECTORY = os.path.join(ROOT_DIR, "tests")
+UPLOAD_DIRECTORY = os.path.join(ROOT_DIR, "user-upload")
 
 
 def test_get_chat_history_titles(
@@ -190,4 +196,26 @@ def test_post_user_conversation(
     assert r.status_code == 201
 
 
-# TODO: generate_answer, upload-pdf test 필요
+def test_upload_pdf(client: TestClient, db: Session) -> None:
+    email = settings.EMAIL_TEST_USER
+    created_chat_session = create_random_chat_session(db=db, email=email)
+    chat_session_id = created_chat_session.id
+
+    test_pdf_name = "dummy.pdf"
+    test_pdf_path = os.path.join(TEST_DIRECTORY, test_pdf_name)
+
+    with open(test_pdf_path, "rb") as pdf_file:
+        response = client.post(
+            f"{settings.API_V1_STR}/chat/{chat_session_id}/upload-pdf/",
+            files={"file": (test_pdf_name, pdf_file, "application/pdf")},
+        )
+
+    assert response.status_code == 200
+    json_response = response.json()
+    assert json_response["filename"] == test_pdf_name
+    assert json_response["status"] == "processed"
+
+    cleanup_file(UPLOAD_DIRECTORY, test_pdf_name)
+
+
+# TODO: generate_answer

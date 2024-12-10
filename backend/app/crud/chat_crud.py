@@ -50,6 +50,7 @@ def create_conversation(
     )
     db.add(conversation)
     db.commit()
+    return conversation
 
 
 def create_chat_session(

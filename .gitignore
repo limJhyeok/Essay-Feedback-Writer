@@ -4,6 +4,8 @@ __pycache__/
 *.ipynb
 venv
 .ruff_cache
+# test
+.coverage
 # Deep Learning Model Parameter
 *.gguf
 *.gguf

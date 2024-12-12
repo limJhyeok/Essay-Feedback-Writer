@@ -25,6 +25,9 @@ services:
       args:
         INSTALL_DEV: ${INSTALL_DEV-false}
     container_name: backend
+    networks:
+      - traefik-public
+      - default
     ports:
       - "8000:8000"
     volumes:
@@ -68,6 +71,23 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-public
+      - traefik.constraint-label=traefik-public
+
+      - traefik.http.services.${STACK_NAME?Variable not set}-backend.loadbalancer.server.port=80
+
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-http.rule=Host(`${DOMAIN?Variable not set}`, `www.${DOMAIN?Variable not set}`) && PathPrefix(`/api`, `/docs`, `/redoc`)
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-http.entrypoints=http
+
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-https.rule=Host(`${DOMAIN?Variable not set}`, `www.${DOMAIN?Variable not set}`) && PathPrefix(`/api`, `/docs`, `/redoc`)
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-https.entrypoints=https
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-https.tls=true
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-https.tls.certresolver=le
+
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-http.middlewares=https-redirect,${STACK_NAME?Variable not set}-www-redirect
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-https.middlewares=${STACK_NAME?Variable not set}-www-redirect
 
 
   frontend:
@@ -75,6 +95,9 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: frontend
+    networks:
+      - traefik-public
+      - default
     ports:
       - "5173:5173"
     volumes:
@@ -83,10 +106,37 @@ services:
       - backend
     environment:
       - VITE_SERVER_URL=${VITE_SERVER_URL}
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-public
+      - traefik.constraint-label=traefik-public
+
+      - traefik.http.services.${STACK_NAME?Variable not set}-frontend.loadbalancer.server.port=80
+
+      - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-http.rule=Host(`${DOMAIN?Variable not set}`, `www.${DOMAIN?Variable not set}`)
+      - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-http.entrypoints=http
+
+      - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-https.rule=Host(`${DOMAIN?Variable not set}`, `www.${DOMAIN?Variable not set}`)
+      - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-https.entrypoints=https
+      - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-https.tls=true
+      - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-https.tls.certresolver=le
+
+      # Handle domain with and without "www" to redirect to only one
+      # To disable www redirection remove the next line
+      - traefik.http.middlewares.${STACK_NAME?Variable not set}-www-redirect.redirectregex.regex=^http(s)?://www.(${DOMAIN?Variable not set})/(.*)
+      # Redirect a domain with www to non-www
+      # To disable it remove the next line
+      - traefik.http.middlewares.${STACK_NAME?Variable not set}-www-redirect.redirectregex.replacement=http$${1}://${DOMAIN?Variable not set}/$${3}
+      # Middleware to redirect www, to disable it remove the next line
+      - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-https.middlewares=${STACK_NAME?Variable not set}-www-redirect
+      # Middleware to redirect www, and redirect HTTP to HTTPS
+      # to disable www redirection remove the section: ${STACK_NAME?Variable not set}-www-redirect,
+      - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-http.middlewares=https-redirect,${STACK_NAME?Variable not set}-www-redirect
 volumes:
   app-db-data:
 
 
 networks:
-  default:
-    driver: bridge
+  traefik-public:
+    # Allow setting it to false for testing
+    external: true

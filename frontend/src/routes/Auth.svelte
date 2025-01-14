@@ -115,7 +115,7 @@
         비밀번호를 잃어버리셨나요?
       </a>
     </div>
-    <div class="social-section">
+    <!-- <div class="social-section">
       {#each social_account_providers as provider}
         <button class="btn btn-outline-secondary w-100 mb-2 text-start position-relative">
           <div class="position-absolute start-0 top-50 translate-middle-y ms-3">
@@ -124,6 +124,6 @@
           <span class="ms-5">{provider}로 계속하기</span>
         </button>
       {/each}
-    </div>
+    </div> -->
 
 </main>

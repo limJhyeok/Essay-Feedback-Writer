@@ -112,7 +112,7 @@ Attaching to backend, chatgpt-clone-adminer-1, chatgpt-clone-db-1, chatgpt-clone
 ```
 
 ## 백엔드 개발
-백엔드 문서: [backend/readme.md](./backend/readme.md)
+백엔드 문서: [backend/readme.md](./backend/readme.ko.md)
 
 ## 개발
 

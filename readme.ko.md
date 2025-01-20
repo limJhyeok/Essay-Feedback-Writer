@@ -116,6 +116,6 @@ Attaching to backend, chatgpt-clone-adminer-1, chatgpt-clone-db-1, chatgpt-clone
 
 ## 개발
 
-일반적인 개발 문서: [development.md](./development.md).
+일반적인 개발 문서: [development.md](./development.ko.md).
 
 이 문서에는 Docker Compose 사용, pre-commit, `.env` 설정 등의 내용이 포함되어 있습니다.

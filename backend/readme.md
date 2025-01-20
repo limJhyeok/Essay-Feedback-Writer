@@ -1,5 +1,10 @@
 # ChatGPT Clone Project - Backend
 
+**언어 선택 / Language Selection:**
+
+- [🇰🇷 한국어 (Korean)](./backend/readme.ko.md)
+- [🇺🇸 English](./backend/readme.md)
+
 ## Requirements
 
 * [Docker](https://www.docker.com/).

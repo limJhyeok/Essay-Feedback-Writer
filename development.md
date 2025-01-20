@@ -1,5 +1,10 @@
 # ChatGPT Clone Project - Development
 
+**언어 선택 / Language Selection:**
+
+- [🇰🇷 한국어 (Korean)](development.ko.md)
+- [🇺🇸 English](development.md)
+
 ## Docker Compose files and env vars
 
 There is a main `docker-compose.yml` file with all the configurations that apply to the whole stack, it is used automatically by `docker compose`.
@@ -55,7 +60,7 @@ Then you can `git add` the modified/fixed files again and now you can commit.
 
 #### Running pre-commit hooks manually
 
-you can also run `pre-commit` manually on all the files, you can do it using Poetry with:
+you can also run `pre-commit` manually on all the files:
 
 ```bash
 ❯ pre-commit run

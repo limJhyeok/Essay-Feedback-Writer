@@ -1,4 +1,10 @@
 # ChatGPT Clone Project
+
+**언어 선택 / Language Selection:**
+
+- [🇰🇷 한국어 (Korean)](readme.ko.md)
+- [🇺🇸 English](readme.md)
+
 ## Technology Stack and Features
 
 - ⚡ [**FastAPI**](https://fastapi.tiangolo.com) for the Python backend API.
@@ -76,7 +82,7 @@ LANGCHAIN_API_KEY =
 ```
 - **PROJECT_NAME**:  The name of the project
 - **STACK_NAME**: The name of the stack used for Docker Compose labels and project name (no spaces, no periods) (in .env).
-- **SECRET_KEY**: The secret key for the project, used for security, stored in .env, you can generate one with the method above.
+- **SECRET_KEY**: The secret key for the project, used for security, stored in .env.
 - **SMTP_USERNAME**: The SMTP server user to send emails.
 - **SMTP_PASSWORD**: The SMTP server password to send emails.
 - **LANGCHAIN_TRACING_V2**: Where to use Langsmith to tracing AI chat bot's response in detail.

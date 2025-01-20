@@ -2,8 +2,8 @@
 
 **언어 선택 / Language Selection:**
 
-- [🇰🇷 한국어 (Korean)](./backend/readme.ko.md)
-- [🇺🇸 English](./backend/readme.md)
+- [🇰🇷 한국어 (Korean)](readme.ko.md)
+- [🇺🇸 English](readme.md)
 
 ## Requirements
 

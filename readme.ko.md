@@ -124,7 +124,7 @@ Attaching to backend, chatgpt-clone-adminer-1, chatgpt-clone-db-1, chatgpt-clone
 이 레포지토리는 [full-stack-fastapi-template](https://github.com/fastapi/full-stack-fastapi-template)를 기반으로 개발되었습니다. 만약 FastAPI를 이용하실 생각이 있으시면 [full-stack-fastapi-template](https://github.com/fastapi/full-stack-fastapi-template)은 좋은 참고자료가 될 것입니다.
 ```
 @online{full-stack-fastapi-template,
-  author    = {fastaapi},
+  author    = {fastapi},
   title     = {full-stack-fastapi-template},
   url       = {https://github.com/fastapi/full-stack-fastapi-template},
   year      = {2024},

@@ -124,7 +124,7 @@ This includes using Docker Compose, pre-commit, `.env` configurations, etc.
 This repository is built upon [full-stack-fastapi-template](https://github.com/fastapi/full-stack-fastapi-template). If you want to use FastAPI, that will be good reference or starting point.
 ```
 @online{full-stack-fastapi-template,
-  author    = {fastaapi},
+  author    = {fastapi},
   title     = {full-stack-fastapi-template},
   url       = {https://github.com/fastapi/full-stack-fastapi-template},
   year      = {2024},

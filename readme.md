@@ -119,3 +119,14 @@ Backend docs: [backend/readme.md](./backend/readme.md)
 General development docs: [development.md](./development.md).
 
 This includes using Docker Compose, pre-commit, `.env` configurations, etc.
+
+## Acknowledgements
+This repository is built upon [full-stack-fastapi-template](https://github.com/fastapi/full-stack-fastapi-template). If you want to use FastAPI, that will be good reference or starting point.
+```
+@online{full-stack-fastapi-template,
+  author    = {fastaapi},
+  title     = {full-stack-fastapi-template},
+  url       = {https://github.com/fastapi/full-stack-fastapi-template},
+  year      = {2024},
+}
+```

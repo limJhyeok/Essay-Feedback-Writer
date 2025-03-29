@@ -49,7 +49,8 @@ STACK_NAME="ChatGPT-Clone-Project"
 DOMAIN=localhost
 
 # 백엔드 URL
-VITE_SERVER_URL=http://127.0.0.1:8000
+VITE_SERVER_URL=http://127.0.0.1:8000 # backend(CPU)
+VITE_EEVE_SERVER_URL=http://127.0.0.1:9000 # EEVE Korean container(GPU)
 
 # 프론트엔드 URL
 BACKEND_CORS_ORIGINS="http://localhost,http://localhost:5173,http://127.0.0.1:5173,https://localhost,https://localhost:5173,https://127.0.0.1:5173"

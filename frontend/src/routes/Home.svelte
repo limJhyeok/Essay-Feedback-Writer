@@ -66,12 +66,13 @@
   function generateAnswer() {
     generateLoading = true;
     let _url = "/api/v1/chat/generate-answer"
-    let url = import.meta.env.VITE_SERVER_URL + _url
+    let url = import.meta.env.VITE_EEVE_SERVER_URL + _url
     let method = "POST"
     let headers = {
             'Content-Type': 'application/json',
             'Accept': 'text/event-stream'
         }
+    console.log(url)
     let params = {
             chat_session_id: activeChatSessionId,
             bot_id: 1,
@@ -357,12 +358,11 @@
         return;
       }
       let _url = `/api/v1/chat/${activeChatSessionId}/upload-pdf/`
-      let url = import.meta.env.VITE_SERVER_URL + _url
+      let url = import.meta.env.VITE_EEVE_SERVER_URL + _url
       const response = await fetch(url, {
         method: 'POST',
         body: formData
       });
-
       if (response.ok) {
         alert('PDF uploaded and processed successfully');
         fileInput.value = '';
@@ -674,7 +674,6 @@
     font-size: 0.8rem;
     white-space: nowrap;
     color: #fff;
-
   }
 
   .upload-tooltip:hover .tooltiptext {
@@ -716,7 +715,7 @@
   </div>
 {/if}
 
-<!-- 새 채팅 생성 modal -->
+<!-- 새 채팅 생성 modal -->`
 {#if isNewChatModalOpen}
   <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0, 0, 0, 0.5);">
     <div class="modal-dialog modal-dialog-centered">

@@ -72,7 +72,6 @@
             'Content-Type': 'application/json',
             'Accept': 'text/event-stream'
         }
-    console.log(url)
     let params = {
             chat_session_id: activeChatSessionId,
             bot_id: 1,

@@ -130,6 +130,17 @@ def post_user_conversation(
     chat_crud.create_conversation(db=db, conversation_create=conversation_create)
 
 
+@router.post("/session/bot", status_code=status.HTTP_201_CREATED)
+async def create_bot_conversation(data: dict, db: SessionDep) -> None:
+    bot_answer = chat_schema.ConversationCreate(
+        chat_session_id=data["chat_session_id"],
+        sender="bot",
+        message=data["message"],
+        sender_id=data["sender_id"],
+    )
+    chat_crud.create_conversation(db=db, conversation_create=bot_answer)
+
+
 @router.post("/generate-answer", status_code=status.HTTP_201_CREATED)
 async def generate_answer(
     generate_answer_request: chat_schema.GenerateAnswerRequest,

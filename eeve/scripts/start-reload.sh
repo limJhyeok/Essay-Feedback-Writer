@@ -23,8 +23,6 @@ else
     echo "There is no script $PRE_START_PATH"
 fi
 
-alembic upgrade head
-
 ollama serve &
 
 # Start Uvicorn with live reload

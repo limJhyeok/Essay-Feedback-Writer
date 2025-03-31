@@ -54,11 +54,11 @@ def get_chat_session_history_from_db(
     get_chat_session_history_from_dict(chat_session_id)
     if conversations:
         for conversation in conversations:
-            if conversation.sender.value == "user":
+            if conversation.sender == "user":
                 chat_session_store[chat_session_id].add_message(
                     HumanMessage(content=conversation.message)
                 )
-            elif conversation.sender.value == "bot":
+            elif conversation.sender == "bot":
                 chat_session_store[chat_session_id].add_message(
                     AIMessage(content=conversation.message)
                 )

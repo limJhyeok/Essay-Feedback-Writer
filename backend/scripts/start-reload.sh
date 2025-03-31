@@ -25,7 +25,5 @@ fi
 
 alembic upgrade head
 
-ollama serve &
-
 # Start Uvicorn with live reload
 exec uvicorn --reload --host 0.0.0.0 --port 8000 --log-level $LOG_LEVEL "$APP_MODULE"

@@ -20,12 +20,6 @@ load_dotenv()
 
 DOMAIN_PORT = os.getenv("DOMAIN_PORT")
 USE_HASH_ROUTER = bool(os.getenv("USE_HASH_ROUTER"))
-SMTP_HOST = os.getenv("SMTP_HOST")
-SMTP_PORT = int(os.getenv("SMTP_PORT"))
-SMTP_USERNAME = os.getenv("SMTP_USERNAME")
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
-EMAILS_FROM_EMAIL = os.getenv("EMAILS_FROM_EMAIL")
-EMAILS_FROM_NAME = os.getenv("EMAILS_FROM_NAME")
 
 
 def parse_cors(v: Any) -> list[str] | str:
@@ -89,13 +83,13 @@ class Settings(BaseSettings):
 
     SMTP_TLS: bool = True
     SMTP_SSL: bool = False
-    SMTP_PORT: int = SMTP_PORT
-    SMTP_HOST: str | None = SMTP_HOST
-    SMTP_USER: str | None = SMTP_USERNAME
-    SMTP_PASSWORD: str | None = SMTP_PASSWORD
+    SMTP_PORT: int = 587
+    SMTP_HOST: str | None = None
+    SMTP_USER: str | None = None
+    SMTP_PASSWORD: str | None = None
     # TODO: update type to EmailStr when sqlmodel supports it
-    EMAILS_FROM_EMAIL: str | None = EMAILS_FROM_EMAIL
-    EMAILS_FROM_NAME: str | None = EMAILS_FROM_NAME
+    EMAILS_FROM_EMAIL: str | None = None
+    EMAILS_FROM_NAME: str | None = None
 
     @model_validator(mode="after")
     def _set_default_emails_from(self) -> Self:

@@ -1,5 +1,3 @@
-import os
-
 from sqlalchemy.orm import Session
 
 from app.crud import chat_crud, user_crud
@@ -16,9 +14,3 @@ def create_random_chat_session(db: Session, email: str) -> ChatSession:
     item_in = chat_schema.ChatSessionCreate(user_id=user.id, title=title)
     chat_session = chat_crud.create_chat_session(db=db, chat_session_create=item_in)
     return chat_session
-
-
-def cleanup_file(dir_path: str, file_name: str) -> None:
-    file_path = os.path.join(dir_path, file_name)
-    if os.path.exists(file_path):
-        os.remove(file_path)

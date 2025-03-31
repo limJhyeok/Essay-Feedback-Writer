@@ -78,9 +78,16 @@ pre-commit install
 
 ## 백엔드 테스트
 
-백엔드를 테스트하려면:
+``` console
+$ docker compose -f docker-compose.yaml -f docker-compose.override.yaml -f docker-compose.test.yaml up
+```
+위 명령어를 실행하면 개발(dev) 또는 운영(prod) 환경의 데이터베이스와 격리된 테스트 전용 데이터베이스(test DB)가 실행됩니다.
 
+테스트 진행 시 데이터 분리를 위해 test DB 를 사용하는 것을 권장합니다.
+
+**테스트를 실행하려면 아래 명령어를 사용하세요:**
 ```console
+$ docker compose backend bash # backend container 대화형 세션 시작
 $ bash ./scripts/test.sh
 ```
 

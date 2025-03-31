@@ -79,16 +79,6 @@ services:
       - EMAILS_FROM_NAME=${EMAILS_FROM_NAME}
       - DOMAIN_PORT=${DOMAIN_PORT}
       - USE_HASH_ROUTER=${USE_HASH_ROUTER}
-      # TODO: override를 통해 아래 LANGCHAIN 관련 환경변수 dev계만 적용?
-      - LANGCHAIN_TRACING_V2=${LANGCHAIN_TRACING_V2}
-      - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
-    deploy:
-      resources:
-        reservations:
-          devices:
-          - driver: nvidia
-            device_ids: ['0']
-            capabilities: [gpu]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/util/health-check/"]
       interval: 10s
@@ -139,15 +129,6 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER?Variable not set}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
-      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
-      - SECRET_KEY=${SECRET_KEY}
-      - ALGORITHM=${ALGORITHM}
-      - SMTP_HOST=${SMTP_HOST}
-      - SMTP_PORT=${SMTP_PORT}
-      - SMTP_USERNAME=${SMTP_USERNAME}
-      - SMTP_PASSWORD=${SMTP_PASSWORD}
-      - EMAILS_FROM_EMAIL=${EMAILS_FROM_EMAIL}
-      - EMAILS_FROM_NAME=${EMAILS_FROM_NAME}
       - DOMAIN_PORT=${DOMAIN_PORT}
       - USE_HASH_ROUTER=${USE_HASH_ROUTER}
       # TODO: override를 통해 아래 LANGCHAIN 관련 환경변수 dev계만 적용?

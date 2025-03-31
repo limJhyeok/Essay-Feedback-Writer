@@ -71,11 +71,18 @@ EMAILS_FROM_EMAIL = "info@example.com"
 EMAILS_FROM_NAME = "ChatGPT Clone Project Information"
 
 # Postgres 설정
+## Dev(or Prod) DB
 POSTGRES_SERVER=localhost
 POSTGRES_PORT=5432
 POSTGRES_DB=app
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=changethis
+## Test DB
+TEST_POSTGRES_SERVER=localhost
+TEST_POSTGRES_PORT=5432
+TEST_POSTGRES_DB=test
+TEST_POSTGRES_USER=postgres
+TEST_POSTGRES_PASSWORD=changethis
 
 # langsmith 설정
 LANGCHAIN_TRACING_V2 = 'true'
@@ -112,6 +119,29 @@ sudo docker-compose up
 Attaching to backend, chatgpt-clone-adminer-1, chatgpt-clone-db-1, chatgpt-clone-proxy-1, frontend
 ```
 
+### 테스트 환경에서 Docker Compose 실행
+
+테스트 환경에서 컨테이너를 실행하려면 다음 명령어를 사용하세요:
+```bash
+sudo docker-compose -f docker-compose.yaml -f docker-compose.override.yaml -f docker-compose.test.yaml up
+```
+위 명령어를 실행하면 개발(dev) 또는 운영(prod) 환경의 데이터베이스와 격리된 테스트 전용 데이터베이스(test DB)가 실행됩니다.
+
+백엔드와 EEVE에서 테스트를 수행하면, 해당 데이터가 test DB 에 저장됩니다.
+테스트 진행 시 데이터 분리를 위해 test DB 를 사용하는 것을 권장합니다.
+
+### CPU-only 환경에서 Docker Compose 실행
+GPU가 없는 환경에서 딥러닝 모델인 EEVE-Korean 모델을 실행하는 데에 제약이 있기 때문에, eeve 컨테이너를 제외하고 다른 컨테이너만 실행해야합니다. 이를 위해 다음 명령어를 사용하세요:
+```bash
+docker compose up db adminer backend frontend proxy
+```
+또는 다음 명령어를 사용할 수 있습니다.
+```bash
+sudo docker compose up --scale eeve=0
+```
+
+**주의: EEVE-Korean 모델과 대화할 수 없습니다.**
+
 ## 백엔드 개발
 백엔드 문서: [backend/readme.md](./backend/readme.ko.md)
 
@@ -131,4 +161,3 @@ Attaching to backend, chatgpt-clone-adminer-1, chatgpt-clone-db-1, chatgpt-clone
   year      = {2024},
 }
 ```
-

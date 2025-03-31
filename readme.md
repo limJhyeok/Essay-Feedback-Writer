@@ -71,11 +71,18 @@ EMAILS_FROM_EMAIL = "info@example.com"
 EMAILS_FROM_NAME = "ChatGPT Clone Project Information"
 
 # Postgres
+## Dev(or Prod) DB
 POSTGRES_SERVER=localhost
 POSTGRES_PORT=5432
 POSTGRES_DB=app
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=changethis
+## Test DB
+TEST_POSTGRES_SERVER=localhost
+TEST_POSTGRES_PORT=5432
+TEST_POSTGRES_DB=test
+TEST_POSTGRES_USER=postgres
+TEST_POSTGRES_PASSWORD=changethis
 
 # langsmith
 LANGCHAIN_TRACING_V2 = 'true'
@@ -111,6 +118,31 @@ for example)
  ✔ Container chatgpt-clone-adminer-1  Created                                                                                                                                                   0.0s
 Attaching to backend, chatgpt-clone-adminer-1, chatgpt-clone-db-1, chatgpt-clone-proxy-1, frontend
 ```
+
+### Running Containers in a CPU-Only Environment
+If you are running in a CPU-only environment then you cannot use the EEVE-Korean model, you can start all other containers except for the eeve container.
+
+To do this, use the following command:
+```bash
+docker compose up db adminer backend frontend proxy
+```
+or you can use this following command:
+```bash
+sudo docker compose up --scale eeve=0
+```
+**Note:** The EEVE-Korean model will not be available for interaction.
+
+### Excute Containers using docker compose in test environment
+
+To run containers in the test environment, use the following command:
+```bash
+sudo docker-compose -f docker-compose.yaml -f docker-compose.override.yaml -f docker-compose.test.yaml up
+```
+
+Running this command will start a **test database (test DB)** that is **isolated** from the development (dev) and production (prod) databases.
+
+When running tests in the **backend** or **eeve**, all test-related data will be stored in the **test DB**.
+To ensure data separation during testing, it is strongly recommended to use the **test DB**.
 
 ## Backend Development
 Backend docs: [backend/readme.md](./backend/readme.md)

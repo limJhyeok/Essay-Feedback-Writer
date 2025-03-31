@@ -72,7 +72,6 @@
             'Content-Type': 'application/json',
             'Accept': 'text/event-stream'
         }
-    console.log(url)
     let params = {
             chat_session_id: activeChatSessionId,
             bot_id: 1,
@@ -715,7 +714,7 @@
   </div>
 {/if}
 
-<!-- 새 채팅 생성 modal -->`
+<!-- 새 채팅 생성 modal -->
 {#if isNewChatModalOpen}
   <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0, 0, 0, 0.5);">
     <div class="modal-dialog modal-dialog-centered">

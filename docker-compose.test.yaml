@@ -1,0 +1,36 @@
+services:
+  # Test DB, Turn dev(or prod) DB off
+  db:
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${TEST_POSTGRES_USER} -d ${TEST_POSTGRES_DB}"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+    volumes: # by changing volume we can turn the dev(or prod) DB off and turn test DB on: app-db-data -> test-db-data
+      - test-db-data:/var/lib/postgresql/data/pgdata
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+      - POSTGRES_PASSWORD=${TEST_POSTGRES_PASSWORD?Variable not set}
+      - POSTGRES_USER=${TEST_POSTGRES_USER?Variable not set}
+      - POSTGRES_DB=${TEST_POSTGRES_DB?Variable not set}
+
+  backend:
+    environment:
+      - POSTGRES_SERVER=db
+      - POSTGRES_PORT=${TEST_POSTGRES_PORT}
+      - POSTGRES_DB=${TEST_POSTGRES_DB}
+      - POSTGRES_USER=${TEST_POSTGRES_USER?Variable not set}
+      - POSTGRES_PASSWORD=${TEST_POSTGRES_PASSWORD?Variable not set}
+
+  eeve:
+    environment:
+      - POSTGRES_SERVER=db
+      - POSTGRES_PORT=${TEST_POSTGRES_PORT}
+      - POSTGRES_DB=${TEST_POSTGRES_DB}
+      - POSTGRES_USER=${TEST_POSTGRES_USER?Variable not set}
+      - POSTGRES_PASSWORD=${TEST_POSTGRES_PASSWORD?Variable not set}
+
+
+volumes:
+  test-db-data:

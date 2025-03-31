@@ -3,8 +3,6 @@ import logging
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-# from app.models import Conversation
-
 logger = logging.getLogger(__name__)
 
 

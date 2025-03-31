@@ -124,6 +124,10 @@ If you are running in a CPU-only environment then you cannot use the EEVE-Korean
 
 To do this, use the following command:
 ```bash
+docker compose up db adminer backend frontend proxy
+```
+or you can use this following command:
+```bash
 sudo docker compose up --scale eeve=0
 ```
 **Note:** The EEVE-Korean model will not be available for interaction.

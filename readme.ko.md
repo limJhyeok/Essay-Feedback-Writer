@@ -133,8 +133,13 @@ sudo docker-compose -f docker-compose.yaml -f docker-compose.override.yaml -f do
 ### CPU-only 환경에서 Docker Compose 실행
 GPU가 없는 환경에서 딥러닝 모델인 EEVE-Korean 모델을 실행하는 데에 제약이 있기 때문에, eeve 컨테이너를 제외하고 다른 컨테이너만 실행해야합니다. 이를 위해 다음 명령어를 사용하세요:
 ```bash
+docker compose up db adminer backend frontend proxy
+```
+또는 다음 명령어를 사용할 수 있습니다.
+```bash
 sudo docker compose up --scale eeve=0
 ```
+
 **주의: EEVE-Korean 모델과 대화할 수 없습니다.**
 
 ## 백엔드 개발

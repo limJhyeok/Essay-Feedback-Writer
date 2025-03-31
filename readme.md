@@ -71,11 +71,18 @@ EMAILS_FROM_EMAIL = "info@example.com"
 EMAILS_FROM_NAME = "ChatGPT Clone Project Information"
 
 # Postgres
+## Dev(or Prod) DB
 POSTGRES_SERVER=localhost
 POSTGRES_PORT=5432
 POSTGRES_DB=app
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=changethis
+## Test DB
+TEST_POSTGRES_SERVER=localhost
+TEST_POSTGRES_PORT=5432
+TEST_POSTGRES_DB=test
+TEST_POSTGRES_USER=postgres
+TEST_POSTGRES_PASSWORD=changethis
 
 # langsmith
 LANGCHAIN_TRACING_V2 = 'true'

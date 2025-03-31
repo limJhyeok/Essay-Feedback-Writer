@@ -80,10 +80,20 @@ pre-commit install
 ```
 
 ## Backend tests
+To set up the test environment, run the following command:
+``` console
+$ docker compose -f docker-compose.yaml -f docker-compose.override.yaml -f docker-compose.test.yaml up
+```
+This will start the Test DB, which is isolated from the dev and prod databases.
 
-To test the backend run:
+It is recommended to use the test DB to keep the data separate during testing.
+
+To run the backend tests, execute:
 
 ```console
+$ # Start an interactive session in the backend container
+$ docker compose exec backend bash
+
 $ bash ./scripts/test.sh
 ```
 

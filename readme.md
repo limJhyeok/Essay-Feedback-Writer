@@ -112,6 +112,15 @@ for example)
 Attaching to backend, chatgpt-clone-adminer-1, chatgpt-clone-db-1, chatgpt-clone-proxy-1, frontend
 ```
 
+### Running Containers in a CPU-Only Environment
+If you are running in a CPU-only environment then you cannot use the EEVE-Korean model, you can start all other containers except for the eeve container.
+
+To do this, use the following command:
+```bash
+sudo docker compose up --scale eeve=0
+```
+**Note:** The EEVE-Korean model will not be available for interaction.
+
 ### Excute Containers using docker compose in test environment
 
 To run containers in the test environment, use the following command:

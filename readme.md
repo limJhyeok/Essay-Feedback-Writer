@@ -112,6 +112,18 @@ for example)
 Attaching to backend, chatgpt-clone-adminer-1, chatgpt-clone-db-1, chatgpt-clone-proxy-1, frontend
 ```
 
+### Excute Containers using docker compose in test environment
+
+To run containers in the test environment, use the following command:
+```bash
+sudo docker-compose -f docker-compose.yaml -f docker-compose.override.yaml -f docker-compose.test.yaml up
+```
+
+Running this command will start a **test database (test DB)** that is **isolated** from the development (dev) and production (prod) databases.
+
+When running tests in the **backend** or **eeve**, all test-related data will be stored in the **test DB**.
+To ensure data separation during testing, it is strongly recommended to use the **test DB**.
+
 ## Backend Development
 Backend docs: [backend/readme.md](./backend/readme.md)
 

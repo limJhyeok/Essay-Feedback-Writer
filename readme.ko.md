@@ -112,6 +112,17 @@ sudo docker-compose up
 Attaching to backend, chatgpt-clone-adminer-1, chatgpt-clone-db-1, chatgpt-clone-proxy-1, frontend
 ```
 
+### 테스트 환경에서 Docker Compose 실행
+
+테스트 환경에서 컨테이너를 실행하려면 다음 명령어를 사용하세요:
+```bash
+sudo docker-compose -f docker-compose.yaml -f docker-compose.override.yaml -f docker-compose.test.yaml up
+```
+위 명령어를 실행하면 개발(dev) 또는 운영(prod) 환경의 데이터베이스와 격리된 테스트 전용 데이터베이스(test DB)가 실행됩니다.
+
+백엔드와 EEVE에서 테스트를 수행하면, 해당 데이터가 test DB 에 저장됩니다.
+테스트 진행 시 데이터 분리를 위해 test DB 를 사용하는 것을 권장합니다.
+
 ## 백엔드 개발
 백엔드 문서: [backend/readme.md](./backend/readme.ko.md)
 
@@ -131,4 +142,3 @@ Attaching to backend, chatgpt-clone-adminer-1, chatgpt-clone-db-1, chatgpt-clone
   year      = {2024},
 }
 ```
-

@@ -3,7 +3,7 @@
   import fastapi from "../lib/api";
   import { push } from "svelte-spa-router";
 	import {link} from 'svelte-spa-router'
-
+  import "./auth.css";
   let user_email = '';
   let user_password = '';
   let social_account_providers = ['Google', 'Microsoft', 'Apple']
@@ -59,37 +59,6 @@
       $isSignUpPage = !$isSignUpPage;
   }
 </script>
-<style>
-  :global(body) {
-    background-color: #f8f9fa;
-  }
-
-  main {
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    padding: 2rem;
-  }
-
-  .form-control, .btn {
-    border-radius: 0.25rem;
-  }
-
-  .btn-primary {
-    background-color: #007bff;
-    border-color: #007bff;
-  }
-
-  .btn-primary:hover {
-    background-color: #0056b3;
-    border-color: #0056b3;
-  }
-
-  .social-section .btn {
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
-  }
-</style>
 
 <main class="container vh-100 d-flex align-items-center justify-content-center">
   <div class="col-md-6 col-lg-4">

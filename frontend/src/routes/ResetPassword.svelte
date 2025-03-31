@@ -3,7 +3,7 @@ import {link, push} from 'svelte-spa-router'
 import { onMount } from "svelte";
 import { isSignUpPage } from "../lib/store"
 import fastapi from '../lib/api';
-
+import "./reset_password.css";
 let token = "";
 let newPassword = "";
 let confirmPassword="";
@@ -93,14 +93,4 @@ function handleLoginClick() {
 	  </div>
 	</div>
   </main>
-
-  <style>
-	.alert {
-	  margin-top: 1rem;
-	  padding: 0.75rem 1rem;
-	  color: #721c24;
-	  background-color: #f8d7da;
-	  border: 1px solid #f5c6cb;
-	  border-radius: 0.25rem;
-	}
-  </style>
+  

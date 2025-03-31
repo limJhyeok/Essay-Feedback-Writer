@@ -46,4 +46,32 @@ def test_upload_pdf(client: TestClient, db: Session) -> None:
     cleanup_file(UPLOAD_DIRECTORY, test_pdf_name)
 
 
-# TODO: generate_answer
+def test_generate_answer(client: TestClient, db: Session) -> None:
+    email = settings.EMAIL_TEST_USER
+    query = text(
+        """
+        SELECT chat_session.*
+        FROM chat_session
+        JOIN "user" ON chat_session.user_id = "user".id
+        WHERE "user".email = :email;
+    """
+    )
+    result = db.execute(query, {"email": email})
+    chat_session = result.fetchone()
+    if chat_session is None:
+        raise NoResultFound(f"No chat session found for email: {email}")
+
+    chat_session_id = chat_session.id
+
+    data = {
+        "chat_session_id": chat_session_id,
+        "bot_id": 1,
+        "question": "hi there",
+        "context": None,
+    }
+    r = client.post(
+        f"{settings.API_V1_STR}/chat/generate-answer",
+        json=data,
+    )
+
+    assert 200 <= r.status_code < 300

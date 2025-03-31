@@ -188,6 +188,3 @@ def test_post_user_conversation(
         json=data,
     )
     assert r.status_code == 201
-
-
-# TODO: generate_answer

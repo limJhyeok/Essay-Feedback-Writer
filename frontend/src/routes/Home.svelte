@@ -5,6 +5,7 @@
   import fastapi from "../lib/api";
   import { onMount, tick } from 'svelte';
   import { marked } from 'marked'
+  import { push } from 'svelte-spa-router'
   import active from 'svelte-spa-router/active';
   import "./home.css";
 
@@ -21,6 +22,19 @@
   let selectedChatId = null;
   let fileInput;
   let isFileUploading = false;
+
+  if ($isLogin == true){
+    getChatTitles();
+  } else {
+    handleUnauthorized();
+  }
+
+  async function handleUnauthorized() {
+    alert("로그인이 필요합니다.");
+    await tick(); // Wait while UI update finishes
+    push('/authorize');
+  }
+
   function openNewChatModal() {
     isNewChatModalOpen = true;
   }
@@ -147,7 +161,6 @@
         }
     )
   }
-  getChatTitles()
 
   function setRecentChatSessionAsActive(callback) {
     let url = "/api/v1/chat/recent";

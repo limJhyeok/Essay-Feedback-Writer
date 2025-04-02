@@ -44,7 +44,7 @@ def user_create(user_in: user_schema.UserCreate, db: SessionDep) -> None:
     user = user_crud.get_user_by_email(db, email=user_in.email)
     if user:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail="이미 존재하는 사용자입니다."
+            status_code=status.HTTP_409_CONFLICT, detail="The user already exists."
         )
     user_crud.create_user(db=db, user_create=user_in)
 

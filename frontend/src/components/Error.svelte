@@ -1,19 +1,19 @@
 <script>
-    export let error
-  </script>
+  export let error  // 전달받은 오류
+</script>
 
-  {#if typeof error.detail === 'string'}
-    <div class = "alert alert-danger" role = "alert">
-      <dib>
-        {error.detail}
-      </dib>
-    </div>
-
-    <div class = "alert alert-danger" role = "alert">
+{#if typeof error.detail === 'string'}
+  <div class="alert alert-danger" role="alert">
+      <div>
+          {error.detail}
+      </div>
+  </div>
+{:else if typeof error.detail === 'object' && error.detail.length > 0 }
+  <div class="alert alert-danger" role="alert">
       {#each error.detail as err, i}
-      <li>
-        <strong>{err.loc[1]}</strong> : {err.msg}
-      </li>
+      <div>
+          <strong>{err.loc[1]}</strong> : {err.msg}
+      </div>
       {/each}
-    </div>
-  {/if}
+  </div>
+{/if}

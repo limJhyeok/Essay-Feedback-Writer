@@ -3,10 +3,13 @@
   import fastapi from "../lib/api";
   import { push } from "svelte-spa-router";
 	import {link} from 'svelte-spa-router'
+  import Error from "../components/Error.svelte"
   import "./auth.css";
   let user_email = '';
   let user_password = '';
   let social_account_providers = ['Google', 'Microsoft', 'Apple']
+
+  let error = {detail:[]}
 
   function login(event) {
       event.preventDefault()
@@ -37,11 +40,9 @@
       }
       fastapi('post', url, params,
           (json) => {
-              // TODO: 회원가입 후 자동으로 로그인한 상태로 만들 것인지 고려
-              // $accessToken = json.access_token
-              // $userEmail = json.user_email
-              // $isLogin = true
-              push("/")
+              $isSignUpPage = false;
+              user_email = "";
+              user_password = "";
           },
           (json_error) => {
               error = json_error
@@ -72,6 +73,9 @@
         <label for="password" class="form-label">Password</label>
         <input type="password" id="password" class="form-control" bind:value={user_password} autoComplete = "off" required />
       </div>
+
+      <Error error={error} />
+
       <button type="submit" class="btn btn-primary w-100">{$isSignUpPage ? '회원가입' : '로그인'}</button>
     </form>
     <div class="text-center mb-3">

@@ -1,4 +1,6 @@
 <script>
+  import { faRobot } from '@fortawesome/free-solid-svg-icons';
+  import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
   import { userEmail, accessToken, isLogin, isSignUpPage} from "../lib/store"
   import fastapi from "../lib/api";
   import { push } from "svelte-spa-router";
@@ -63,6 +65,18 @@
 
 <main class="container vh-100 d-flex align-items-center justify-content-center">
   <div class="col-md-6 col-lg-4">
+
+    <div class = "text-center">
+      <div class="mb-4 home-tooltip">
+        <a href="/" class="d-inline-block">
+          <FontAwesomeIcon icon={faRobot} size="2x" />
+        </a>
+        <span class="tooltiptext">
+          Go to Home
+        </span>
+      </div>
+    </div>
+
     <h1 class="text-center mb-4">{$isSignUpPage ? '회원가입' : '로그인'}</h1>
     <form on:submit={handleAuthSubmit} class="mb-3">
       <div class="mb-3">

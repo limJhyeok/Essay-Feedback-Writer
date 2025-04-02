@@ -8,13 +8,15 @@
   import { push } from 'svelte-spa-router'
   import active from 'svelte-spa-router/active';
   import "./home.css";
+  import Error from "../components/Error.svelte"
+
 
   $: chatTitles, chatSessionMessages
   let activeMessages = []
   let userMessage = '';
   let activeChatSessionId = -1;
   let isSidebarVisible = true;
-  let newChatTitle = '새 채팅';
+  let newChatTitle = 'New Chat';
   let isNewChatModalOpen = false;
   let answer = '';
   let generateLoading = false;
@@ -22,6 +24,8 @@
   let selectedChatId = null;
   let fileInput;
   let isFileUploading = false;
+  let inputClass = '';
+  let error = {detail:[]}
 
   if ($isLogin == true){
     getChatTitles();
@@ -192,6 +196,11 @@
   }
   function createNewChat(){
     let url = "/api/v1/chat/create"
+    if (!newChatTitle.trim()) {
+      inputClass = 'is-invalid';
+      return
+    }
+    inputClass = '';
     let params = {title: newChatTitle}
     let recentChatSessionId = -1;
     fastapi('post', url, params,
@@ -426,20 +435,20 @@
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">새 채팅 생성</h5>
+          <h5 class="modal-title">Create New Chat</h5>
           <button type="button" class="btn-close" aria-label="Close" on:click="{closeNewChatModal}"></button>
         </div>
         <div class="modal-body">
           <input
             type="text"
-            class="form-control"
+            class="form-control {inputClass}"
             bind:value={newChatTitle}
-            placeholder="채팅 제목을 입력하세요"
+            placeholder="Please Enter The Chat Title"
           />
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" on:click="{closeNewChatModal}">취소</button>
-          <button type="button" class="btn btn-primary" on:click="{createNewChat}">생성</button>
+          <button type="button" class="btn btn-secondary" on:click="{closeNewChatModal}">Cancel</button>
+          <button type="button" class="btn btn-primary" on:click="{createNewChat}" o>Create</button>
         </div>
       </div>
     </div>

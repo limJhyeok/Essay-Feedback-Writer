@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 
 class ChatSessionPublic(BaseModel):
@@ -46,6 +46,12 @@ class ChatSessionMessageList(BaseModel):
 class ChatSessionCreate(BaseModel):
     user_id: int
     title: str | None = "New chat"
+
+    @field_validator("title")
+    def not_empty(cls, v):
+        if not v or not v.strip():
+            raise ValueError("null value is not allowed")
+        return v
 
 
 class ChatSessionCreateRequest(BaseModel):

@@ -1,5 +1,8 @@
 # ChatGPT Clone Project
 
+<a href="https://github.com/limJhyeok/ChatGPT-Clone/actions?query=workflow%3ATest" target="_blank"><img src="https://github.com/limJhyeok/ChatGPT-Clone/workflows/Test/badge.svg" alt="Test"></a>
+<a href="https://coverage-badge.samuelcolvin.workers.dev/redirect/limJhyeok/ChatGPT-Clone" target="_blank"><img src="https://coverage-badge.samuelcolvin.workers.dev/limJhyeok/ChatGPT-Clone.svg" alt="Coverage"></a>
+
 **언어 선택 / Language Selection:**
 
 - [🇰🇷 한국어 (Korean)](readme.ko.md)

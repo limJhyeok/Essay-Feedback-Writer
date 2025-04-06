@@ -3,7 +3,7 @@
   import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
   import { isLogin, isSignUpPage, chatTitles, chatSessionMessages as chatSessionMessages, accessToken, userEmail } from "../lib/store"
   import fastapi from "../lib/api";
-  import { onMount, tick } from 'svelte';
+  import { onMount, tick, onDestroy } from 'svelte';
   import { marked } from 'marked'
   import { push } from 'svelte-spa-router'
   import active from 'svelte-spa-router/active';
@@ -26,11 +26,24 @@
   let isFileUploading = false;
   let inputClass = '';
   let error = {detail:[]}
+  const models = ["EEVE-Korean-Instruct"]
+  let showDropdown = false;
+  let selectedModel = models[0];
 
   if ($isLogin == true){
     getChatTitles();
   } else {
     handleUnauthorized();
+  }
+
+  // top bar
+  function toggleDropdown() {
+    showDropdown = !showDropdown;
+  }
+
+  function selectModel(model) {
+    selectedModel = model;
+    showDropdown = false;
   }
 
   async function handleUnauthorized() {
@@ -354,6 +367,9 @@
   }
 
   function handleClickOutside(event) {
+    if (!event.target.closest('.dropdown-wrapper')) {
+      showDropdown = false;
+    }
     if (popupContainer && !popupContainer.contains(event.target) && !event.target.closest('.options-container')) {
       closePopup();
     }
@@ -396,6 +412,9 @@
     return () => {
       document.removeEventListener('click', handleClickOutside);
     };
+  });
+  onDestroy(() => {
+    document.removeEventListener('click', handleClickOutside);
   });
 </script>
 
@@ -507,6 +526,38 @@
 
   <div class="message-container">
     <div class="top-bar">
+      <!-- Wrapper for outside click detection -->
+      <div class="dropdown-wrapper position-relative d-inline-block">
+
+        <!-- Button -->
+        <button
+          type="button"
+          aria-haspopup="menu"
+          aria-expanded={showDropdown}
+          class="d-flex align-items-center gap-1 rounded py-2 px-3 fw-semibold text-secondary border-0 bg-white hover-bg-lightgray"
+          on:click={toggleDropdown}
+          style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+        >
+          <div class = "hover-bg-lightgray active-bg-lightgray">{selectedModel}</div>
+          <i class="fas fa-chevron-down"></i>
+        </button>
+
+        <!-- Dropdown list -->
+        {#if showDropdown}
+          <div class="position-absolute bg-white border rounded mt-2 shadow-sm z-1" style="min-width: 200px; width: auto;">
+            {#each models as model}
+              <button
+                class="dropdown-item w-100 text-start py-2 px-3"
+                on:click={() => selectModel(model)}
+              >
+              <div class = "hover-bg-lightgray active-bg-lightgray">
+                {model}
+              </div>
+              </button>
+            {/each}
+          </div>
+        {/if}
+      </div>
 
       {#if $isLogin == false}
       <button class="btn relative btn-primary btn-small mr-6" on:click|preventDefault={goToLogin}>

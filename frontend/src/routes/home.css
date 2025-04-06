@@ -84,7 +84,7 @@ cursor: pointer;
 .top-bar {
 padding: 15px 0;
 display: flex;
-justify-content: flex-end;
+justify-content: space-between;
 width: 100%;
 background-color: white;
 }
@@ -294,5 +294,15 @@ opacity: 1;
 }
 
 .upload-tooltip.disabled .tooltiptext {
+background-color: #aaa;
+}
+
+
+.hover-bg-lightgray:hover {
+background-color: #eee;
+
+}
+
+.active-bg-lightgray:active {
 background-color: #aaa;
 }

@@ -33,6 +33,7 @@ jobs:
           echo "ACCESS_TOKEN_EXPIRE_MINUTES=${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }}" >> .env
           echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> .env
           echo "ALGORITHM=${{ secrets.ALGORITHM }}" >> .env
+          echo "FERNET_SECRET=${{ secrets.FERNET_SECRET }}" >> .env
           echo "SMTP_HOST=${{ secrets.SMTP_HOST }}" >> .env
           echo "SMTP_PORT=${{ secrets.SMTP_PORT }}" >> .env
           echo "SMTP_USERNAME=${{ secrets.SMTP_USERNAME }}" >> .env
@@ -44,6 +45,7 @@ jobs:
           echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> .env
           echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
           echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+          echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
 
       - run: docker compose build db backend
       - run: docker compose down -v --remove-orphans

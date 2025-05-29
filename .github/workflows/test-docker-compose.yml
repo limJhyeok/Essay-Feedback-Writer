@@ -25,6 +25,8 @@ jobs:
           echo "VITE_SERVER_URL=${{ secrets.VITE_SERVER_URL }}" >> .env
           echo "BACKEND_CORS_ORIGINS=${{ secrets.BACKEND_CORS_ORIGINS }}" >> .env
           echo "DOMAIN_PORT=${{ secrets.DOMAIN_PORT }}" >> .env
+          echo "FIRST_SUPERUSER=${{ secrets.FIRST_SUPERUSER }}" >> .env
+          echo "FIRST_SUPERUSER_PASSWORD=${{ secrets.FIRST_SUPERUSER_PASSWORD }}" >> .env
           echo "USE_HASH_ROUTER=${{ secrets.USE_HASH_ROUTER }}" >> .env
           echo "ACCESS_TOKEN_EXPIRE_MINUTES=${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }}" >> .env
           echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> .env

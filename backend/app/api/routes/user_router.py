@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from starlette import status
 
-from app.api.deps import SessionDep
+from app.api.deps import SessionDep, CurrentUser
 from app.api.utils import user_utils
 from app.core import security
 from app.core.config import settings
@@ -13,6 +13,11 @@ from app.crud import user_crud
 from app.schemas import user_schema
 
 router = APIRouter()
+
+
+@router.get("/auth")
+def check_auth(current_user: CurrentUser):
+    return {"status": "authenticated"}
 
 
 @router.post("/login", response_model=user_schema.Token)

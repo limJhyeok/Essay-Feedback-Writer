@@ -1,9 +1,10 @@
-# ChatGPT Clone Project - backend
+# Essay Feedback Writer Project - backend
 
 **언어 선택 / Language Selection:**
 
-- [🇰🇷 한국어 (Korean)](readme.ko.md)
-- [🇺🇸 English](readme.md)
+<p align="left">
+    한국어&nbsp ｜ &nbsp<a href="readme.md">English</a>&nbsp
+</p>
 
 ## Requirements
 
@@ -26,13 +27,13 @@ docker compose up -d
 백엔드, OpenAPI 기반 JSON 웹 API: http://localhost:8000
 
 자동화된 Swagger UI 문서(백엔드 OpenAPI에서 제공): http://localhost:8000/docs
-[![API docs](../imgs/swagger.png)](https://github.com/limJhyeok/ChatGPT-Clone)
++[![API docs](../imgs/swagger.png)](https://github.com/limJhyeok/Essay-Feedback-Writer)
 
 Adminer, 데이터베이스 웹 관리: http://localhost:8080
-[![API docs](../imgs/adminer.png)](https://github.com/limJhyeok/ChatGPT-Clone)
++[![API docs](../imgs/adminer.png)](https://github.com/limJhyeok/Essay-Feedback-Writer)
 
 Traefik UI, 프록시가 처리하는 경로를 확인: http://localhost:8090
-[![API docs](../imgs/traefik.png)](https://github.com/limJhyeok/ChatGPT-Clone)
++[![API docs](../imgs/traefik.png)](https://github.com/limJhyeok/Essay-Feedback-Writer)
 
 로그를 확인하려면:
 

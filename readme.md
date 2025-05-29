@@ -1,12 +1,11 @@
-# ChatGPT Clone Project
+# Essay Feedback Writer Project
 
-<a href="https://github.com/limJhyeok/ChatGPT-Clone/actions?query=workflow%3ATest" target="_blank"><img src="https://github.com/limJhyeok/ChatGPT-Clone/workflows/Test/badge.svg" alt="Test"></a>
-<a href="https://coverage-badge.samuelcolvin.workers.dev/redirect/limJhyeok/ChatGPT-Clone" target="_blank"><img src="https://coverage-badge.samuelcolvin.workers.dev/limJhyeok/ChatGPT-Clone.svg" alt="Coverage"></a>
+<a href="https://github.com/limJhyeok/Essay-Feedback-Writer/actions?query=workflow%3ATest" target="_blank"><img src="https://github.com/limJhyeok/Essay-Feedback-Writer/workflows/Test/badge.svg" alt="Test"></a>
+<a href="https://coverage-badge.samuelcolvin.workers.dev/redirect/limJhyeok/Essay-Feedback-Writer" target="_blank"><img src="https://coverage-badge.samuelcolvin.workers.dev/limJhyeok/Essay-Feedback-Writer.svg" alt="Coverage"></a>
 
-**언어 선택 / Language Selection:**
-
-- [🇰🇷 한국어 (Korean)](readme.ko.md)
-- [🇺🇸 English](readme.md)
+<p align="left">
+    <a href="readme.ko.md">한국어</a>&nbsp ｜ &nbspEnglish&nbsp
+</p>
 
 ## Technology Stack and Features
 
@@ -15,8 +14,6 @@
     - 🔍 [Pydantic](https://docs.pydantic.dev) used by FastAPI, for the data validation and settings management.
     - 💾 [PostgreSQL](https://www.postgresql.org) as the SQL database.
     - 📁 [Adminer](https://www.adminer.org/) as the Database Management System
-    - 🤖 [Ollama](https://ollama.com/) as the local hosting server for LLM(EEVE-Korean)
-    - ⛓️ [LangChain](https://www.langchain.com/) to build LLM chat bot
 - 🚀 [Svelte](https://svelte.dev/) for the frontend
 - 🐋 [Docker Compose](https://www.docker.com) for development and production.
 - 🔒 Secure password hashing by default.
@@ -28,32 +25,34 @@
 
 ### Dashboard Login
 
-[![API docs](imgs/login.png)](https://github.com/limJhyeok/ChatGPT-Clone)
+[![API docs](imgs/login.png)](https://github.com/limJhyeok/Essay-Feedback-Writer)
 
 ### Dashboard password recovery
-[![API docs](imgs/password_recovery.png)](https://github.com/limJhyeok/ChatGPT-Clone)
+[![API docs](imgs/password_recovery.png)](https://github.com/limJhyeok/Essay-Feedback-Writer)
 
-### Dashboard Chat
-[![API docs](imgs/dashboard_chat.png)](https://github.com/limJhyeok/ChatGPT-Clone)
+### Dashboard select a prompt
+[![API docs](imgs/dashboard_prompt.png)](https://github.com/limJhyeok/Essay-Feedback-Writer)
+
+### Dashboard write a essay
+[![API docs](imgs/dashboard_write.png)](https://github.com/limJhyeok/Essay-Feedback-Writer)
+
+### Dashboard example essay
+[![API docs](imgs/dashboard_example.png)](https://github.com/limJhyeok/Essay-Feedback-Writer)
+
+### Dashboard feedback by an AI
+[![API docs](imgs/dashboard_feedback.png)](https://github.com/limJhyeok/Essay-Feedback-Writer)
 
 ## How to use it
-### Infra
-I developed this project using the GPU cloud service([paperspace](https://www.paperspace.com/))
-- OS: Ubuntu 22.04
-- GPU: Quadro RTX4000(8192MiB)
-  - It could be difficult to use RAG because of out of memory in GPU.
-- CUDA version: 12.6
 
 ### .env file setting
 please make the **.env** file in the root folder
 ```
-PROJECT_NAME="ChatGPT Clone Project"
-STACK_NAME="ChatGPT-Clone-Project"
+PROJECT_NAME="Essay Feedback Writer"
+STACK_NAME="Essay-Feedback-Writer"
 DOMAIN=localhost
 
 # backend url
 VITE_SERVER_URL=http://127.0.0.1:8000
-VITE_EEVE_SERVER_URL=http://127.0.0.1:9000
 
 # frontend url
 BACKEND_CORS_ORIGINS="http://localhost,http://localhost:5173,http://127.0.0.1:5173,https://localhost,https://localhost:5173,https://127.0.0.1:5173"
@@ -66,12 +65,15 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60
 SECRET_KEY =
 ALGORITHM =
 
+# secret key for encode and decode AI API key(e.g. OpenAI API Key)
+FERNET_SECRET =
+
 SMTP_HOST = "smtp.gmail.com"
 SMTP_PORT = 587
 SMTP_USERNAME =
 SMTP_PASSWORD =
 EMAILS_FROM_EMAIL = "info@example.com"
-EMAILS_FROM_NAME = "ChatGPT Clone Project Information"
+EMAILS_FROM_NAME = "Essay Feedback Writer Information"
 
 # Postgres
 ## Dev(or Prod) DB
@@ -87,17 +89,15 @@ TEST_POSTGRES_DB=test
 TEST_POSTGRES_USER=postgres
 TEST_POSTGRES_PASSWORD=changethis
 
-# langsmith
-LANGCHAIN_TRACING_V2 = 'true'
-LANGCHAIN_API_KEY =
+# AI API KEY for superuser
+OPENAI_API_KEY=sk-....
 ```
 - **PROJECT_NAME**:  The name of the project
 - **STACK_NAME**: The name of the stack used for Docker Compose labels and project name (no spaces, no periods) (in .env).
 - **SECRET_KEY**: The secret key for the project, used for security, stored in .env.
 - **SMTP_USERNAME**: The SMTP server user to send emails.
 - **SMTP_PASSWORD**: The SMTP server password to send emails.
-- **LANGCHAIN_TRACING_V2**: Where to use Langsmith to tracing AI chat bot's response in detail.
-- **LANGCHAIN_API_KEY**: API Key to tracing AI chat bot's response in Langsmith.
+- **OPENAI_API_KEY**: OpenAI API Key for the super user
 
 ### Execute Containers using docker compsoe
 ```bash
@@ -122,19 +122,6 @@ for example)
 Attaching to backend, chatgpt-clone-adminer-1, chatgpt-clone-db-1, chatgpt-clone-proxy-1, frontend
 ```
 
-### Running Containers in a CPU-Only Environment
-If you are running in a CPU-only environment then you cannot use the EEVE-Korean model, you can start all other containers except for the eeve container.
-
-To do this, use the following command:
-```bash
-docker compose up db adminer backend frontend proxy
-```
-or you can use this following command:
-```bash
-sudo docker compose up --scale eeve=0
-```
-**Note:** The EEVE-Korean model will not be available for interaction.
-
 ### Excute Containers using docker compose in test environment
 
 To run containers in the test environment, use the following command:
@@ -144,7 +131,7 @@ sudo docker-compose -f docker-compose.yaml -f docker-compose.override.yaml -f do
 
 Running this command will start a **test database (test DB)** that is **isolated** from the development (dev) and production (prod) databases.
 
-When running tests in the **backend** or **eeve**, all test-related data will be stored in the **test DB**.
+When running tests in the **backend**, all test-related data will be stored in the **test DB**.
 To ensure data separation during testing, it is strongly recommended to use the **test DB**.
 
 ## Backend Development

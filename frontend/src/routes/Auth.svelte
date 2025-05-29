@@ -37,7 +37,7 @@
       let url = "/api/v1/user/create"
       let params = {
           email: user_email,
-          is_social: false,
+          is_superuser: false,
           password: user_password
       }
       fastapi('post', url, params,
@@ -77,7 +77,7 @@
       </div>
     </div>
 
-    <h1 class="text-center mb-4">{$isSignUpPage ? '회원가입' : '로그인'}</h1>
+    <h1 class="text-center mb-4">{$isSignUpPage ? 'Sign up' : 'Log in'}</h1>
     <form on:submit={handleAuthSubmit} class="mb-3">
       <div class="mb-3">
         <label for="email" class="form-label">Email</label>
@@ -90,16 +90,16 @@
 
       <Error error={error} />
 
-      <button type="submit" class="btn btn-primary w-100">{$isSignUpPage ? '회원가입' : '로그인'}</button>
+      <button type="submit" class="btn btn-primary w-100">{$isSignUpPage ? 'Sign up' : 'Log in'}</button>
     </form>
     <div class="text-center mb-3">
       <button class="btn btn-link" on:click={toggleMode}>
-        {$isSignUpPage ? '이미 계정이 있으신가요? 로그인' : '계정이 없으신가요? 회원가입'}
+        {$isSignUpPage ? "Already have an account? Log in" : "Don't have an account? Sign up"}
       </button>
     </div>
     <div class="text-center mb-4">
       <a use:link href="/password" class="text-decoration-none d-inline-block">
-        비밀번호를 잃어버리셨나요?
+        Forgot your password?
       </a>
     </div>
     <!-- <div class="social-section">

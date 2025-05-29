@@ -3,8 +3,8 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 
 class UserCreate(BaseModel):
     email: EmailStr
-    is_social: bool = Field(
-        False, description="Indicates if the user is a social login user"
+    is_superuser: bool = Field(
+        False, description="Indicates if the user is a superuser(system administrator)"
     )
     password: str = Field(..., description="Password for regular users")
 

@@ -53,7 +53,6 @@ const fastapi = (operation, url, params, success_callback, failure_callback) => 
                         accessToken.set('')
                         userEmail.set('')
                         isLogin.set(false)
-                        alert("로그인이 필요합니다.")
                         push('/authorize')
                     }else {
                         if (failure_callback) {

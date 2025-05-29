@@ -1,9 +1,10 @@
-# ChatGPT Clone Project - Backend
+# Essay Feedback Writer Project - Backend
 
 **언어 선택 / Language Selection:**
 
-- [🇰🇷 한국어 (Korean)](readme.ko.md)
-- [🇺🇸 English](readme.md)
+<p align="left">
+    <a href="readme.ko.md">한국어</a>&nbsp ｜ &nbspEnglish&nbsp
+</p>
 
 ## Requirements
 
@@ -26,15 +27,15 @@ Frontend, built with Docker, with routes handled based on the path: http://local
 Backend, JSON based web API based on OpenAPI: http://localhost:8000
 
 Automatic interactive documentation with Swagger UI (from the OpenAPI backend): http://localhost:8000/docs
-[![API docs](../imgs/swagger.png)](https://github.com/limJhyeok/ChatGPT-Clone)
+[![API docs](../imgs/swagger.png)](https://github.com/limJhyeok/Essay-Feedback-Writer)
 
 
 Adminer, database web administration: http://localhost:8080
-[![API docs](../imgs/adminer.png)](https://github.com/limJhyeok/ChatGPT-Clone)
+[![API docs](../imgs/adminer.png)](https://github.com/limJhyeok/Essay-Feedback-Writer)
 
 Traefik UI, to see how the routes are being handled by the proxy: http://localhost:8090
 
-[![API docs](../imgs/traefik.png)](https://github.com/limJhyeok/ChatGPT-Clone)
+[![API docs](../imgs/traefik.png)](https://github.com/limJhyeok/Essay-Feedback-Writer)
 
 
 To check the logs, run:

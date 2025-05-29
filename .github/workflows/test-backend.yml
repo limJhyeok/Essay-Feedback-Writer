@@ -27,7 +27,6 @@ jobs:
           echo "STACK_NAME=${{ secrets.STACK_NAME }}" >> .env
           echo "DOMAIN=${{ secrets.DOMAIN }}" >> .env
           echo "VITE_SERVER_URL=${{ secrets.VITE_SERVER_URL }}" >> .env
-          echo "VITE_EEVE_SERVER_URL=${{ secrets.VITE_EEVE_SERVER_URL }}" >> .env
           echo "BACKEND_CORS_ORIGINS=${{ secrets.BACKEND_CORS_ORIGINS }}" >> .env
           echo "DOMAIN_PORT=${{ secrets.DOMAIN_PORT }}" >> .env
           echo "USE_HASH_ROUTER=${{ secrets.USE_HASH_ROUTER }}" >> .env

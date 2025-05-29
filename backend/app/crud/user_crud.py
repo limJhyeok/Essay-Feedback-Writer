@@ -8,7 +8,7 @@ from app.schemas import user_schema
 def create_user(db: Session, user_create: user_schema.UserCreate) -> None:
     db_user = User(
         email=user_create.email,
-        is_social=user_create.is_social,
+        is_superuser=user_create.is_superuser,
         password=get_password_hash(user_create.password),
     )
     db.add(db_user)

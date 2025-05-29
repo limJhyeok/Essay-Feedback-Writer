@@ -1,9 +1,11 @@
-# ChatGPT Clone Project - Development
+# Essay Feedback Writer Project - Development
 
 **언어 선택 / Language Selection:**
 
-- [🇰🇷 한국어 (Korean)](development.ko.md)
-- [🇺🇸 English](development.md)
+<p align="left">
+    <a href="development.ko.md">한국어</a>&nbsp ｜ &nbspEnglish&nbsp
+</p>
+
 
 ## Docker Compose files and env vars
 

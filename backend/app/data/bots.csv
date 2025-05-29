@@ -1,0 +1,5 @@
+name,version,description
+GPT-4.1,,GPT-4.1 is OpenAI's flagship model for complex tasks. It is well suited for problem solving across domains.
+GPT-4.1 mini,,"GPT-4.1 mini provides a balance between intelligence, speed, and cost that makes it an attractive model for many use cases."
+o4-mini,,"o4-mini is OpenAI's latest small o-series model. It's optimized for fast, effective reasoning with exceptionally efficient performance in coding and visual tasks."
+GPT-4o,,"GPT-4o (“o” for “omni”) is OpenAI's versatile, high-intelligence flagship model. It accepts both text and image inputs, and produces text outputs (including Structured Outputs). It is the best model for most tasks, and is our most capable model outside of our o-series models."

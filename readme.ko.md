@@ -1,13 +1,14 @@
-# ChatGPT Clone 프로젝트
+# Essay Feedback Writer 프로젝트
 
-<a href="https://github.com/limJhyeok/ChatGPT-Clone/actions?query=workflow%3ATest" target="_blank"><img src="https://github.com/limJhyeok/ChatGPT-Clone/workflows/Test/badge.svg" alt="Test"></a>
-<a href="https://coverage-badge.samuelcolvin.workers.dev/redirect/limJhyeok/ChatGPT-Clone" target="_blank"><img src="https://coverage-badge.samuelcolvin.workers.dev/limJhyeok/ChatGPT-Clone.svg" alt="Coverage"></a>
+
+<a href="https://github.com/limJhyeok/ChatGPT-Clone/actions?query=workflow%3ATest" target="_blank"><img src="https://github.com/limJhyeok/Essay-Feedback-Writer/workflows/Test/badge.svg" alt="Test"></a>
+<a href="https://coverage-badge.samuelcolvin.workers.dev/redirect/limJhyeok/Essay-Feedback-Writer" target="_blank"><img src="https://coverage-badge.samuelcolvin.workers.dev/limJhyeok/Essay-Feedback-Writer.svg" alt="Coverage"></a>
 
 **언어 선택 / Language Selection:**
 
-- [🇰🇷 한국어 (Korean)](readme.ko.md)
-- [🇺🇸 English](readme.md)
-
+<p align="left">
+    한국어&nbsp ｜ &nbsp<a href="readme.md">English</a>&nbsp
+</p>
 ## 기술 스택 및 기능
 
 - ⚡ [**FastAPI**](https://fastapi.tiangolo.com): Python 백엔드 API 구축.
@@ -15,8 +16,6 @@
     - 🔍 [Pydantic](https://docs.pydantic.dev): FastAPI에서 사용하며 데이터 유효성 검사 및 설정 관리.
     - 💾 [PostgreSQL](https://www.postgresql.org): 데이터베이스 사용.
     - 📁 [Adminer](https://www.adminer.org/): 데이터베이스 관리 시스템.
-    - 🤖 [Ollama](https://ollama.com/): LLM(EEVE-Korean) 로컬 호스팅.
-    - ⛓️ [LangChain](https://www.langchain.com/): LLM 챗봇 구축.
 - 🚀 [Svelte](https://svelte.dev/): 프론트엔드.
 - 🐋 [Docker Compose](https://www.docker.com): 개발 및 배포 환경.
 - 🔒 기본적인 비밀번호 해싱 기능.
@@ -33,27 +32,27 @@
 ### 대시보드 비밀번호 복구
 [![API docs](imgs/password_recovery.png)](https://github.com/limJhyeok/ChatGPT-Clone)
 
-### 대시보드 채팅
-[![API docs](imgs/dashboard_chat.png)](https://github.com/limJhyeok/ChatGPT-Clone)
+### 대시보드 에세이 프롬프트 선택
+[![API docs](imgs/dashboard_prompt.png)](https://github.com/limJhyeok/Essay-Feedback-Writer)
 
-## 사용법
-### 인프라
-이 프로젝트는 GPU 클라우드 서비스([paperspace](https://www.paperspace.com/))를 사용하여 개발되었습니다.
-- 운영 체제: Ubuntu 22.04
-- GPU: Quadro RTX4000(8192MiB)
-  - RAG 사용 시 GPU 메모리 부족으로 어려움이 있을 수 있습니다.
-- CUDA 버전: 12.6
+### 대시보드 에세이 작성
+[![API docs](imgs/dashboard_write.png)](https://github.com/limJhyeok/Essay-Feedback-Writer)
+
+### 대시보드 에세이 예시
+[![API docs](imgs/dashboard_example.png)](https://github.com/limJhyeok/Essay-Feedback-Writer)
+
+### 대시보드 AI 피드백
+[![API docs](imgs/dashboard_feedback.png)](https://github.com/limJhyeok/Essay-Feedback-Writer)
 
 ### .env 파일 설정
 루트 폴더에 **.env** 파일을 만들어 주세요.
 ```
-PROJECT_NAME="ChatGPT Clone Project"
-STACK_NAME="ChatGPT-Clone-Project"
+PROJECT_NAME="Essay Feedback Writer"
+STACK_NAME="Essay Feedback Writer"
 DOMAIN=localhost
 
 # 백엔드 URL
 VITE_SERVER_URL=http://127.0.0.1:8000 # backend(CPU)
-VITE_EEVE_SERVER_URL=http://127.0.0.1:9000 # EEVE Korean container(GPU)
 
 # 프론트엔드 URL
 BACKEND_CORS_ORIGINS="http://localhost,http://localhost:5173,http://127.0.0.1:5173,https://localhost,https://localhost:5173,https://127.0.0.1:5173"
@@ -66,12 +65,15 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60
 SECRET_KEY =
 ALGORITHM =
 
+# AI API key 암호화 및 복호화용 secret key(e.g. OpenAI API Key)
+FERNET_SECRET =
+
 SMTP_HOST = "smtp.gmail.com"
 SMTP_PORT = 587
 SMTP_USERNAME =
 SMTP_PASSWORD =
 EMAILS_FROM_EMAIL = "info@example.com"
-EMAILS_FROM_NAME = "ChatGPT Clone Project Information"
+EMAILS_FROM_NAME = "Essay Feedback Writer Information"
 
 # Postgres 설정
 ## Dev(or Prod) DB
@@ -87,17 +89,16 @@ TEST_POSTGRES_DB=test
 TEST_POSTGRES_USER=postgres
 TEST_POSTGRES_PASSWORD=changethis
 
-# langsmith 설정
-LANGCHAIN_TRACING_V2 = 'true'
-LANGCHAIN_API_KEY =
+# SUper user용 AI API Key
+OPENAI_API_KEY=sk-....
 ```
 - **PROJECT_NAME**: 프로젝트 이름
 - **STACK_NAME**: Docker Compose 라벨 및 프로젝트 이름(공백 및 마침표 제외) (이 값은 .env에 설정)
 - **SECRET_KEY**: 프로젝트의 보안을 위한 secret key, .env 파일에 저장.
 - **SMTP_USERNAME**: 이메일 전송을 위한 SMTP 서버 사용자명.
 - **SMTP_PASSWORD**: 이메일 전송을 위한 SMTP 서버 비밀번호.
-- **LANGCHAIN_TRACING_V2**: Langsmith를 사용하여 AI 챗봇의 응답을 자세히 추적할지 여부.
-- **LANGCHAIN_API_KEY**: Langsmith에서 AI 챗봇 응답을 추적하기 위한 API 키.
+- **OPENAI_API_KEY**: Super user용 AI key
+
 
 ### Docker Compose로 컨테이너 실행
 ```bash
@@ -130,20 +131,9 @@ sudo docker-compose -f docker-compose.yaml -f docker-compose.override.yaml -f do
 ```
 위 명령어를 실행하면 개발(dev) 또는 운영(prod) 환경의 데이터베이스와 격리된 테스트 전용 데이터베이스(test DB)가 실행됩니다.
 
-백엔드와 EEVE에서 테스트를 수행하면, 해당 데이터가 test DB 에 저장됩니다.
+백엔드에서 테스트를 수행하면, 해당 데이터가 test DB 에 저장됩니다.
 테스트 진행 시 데이터 분리를 위해 test DB 를 사용하는 것을 권장합니다.
 
-### CPU-only 환경에서 Docker Compose 실행
-GPU가 없는 환경에서 딥러닝 모델인 EEVE-Korean 모델을 실행하는 데에 제약이 있기 때문에, eeve 컨테이너를 제외하고 다른 컨테이너만 실행해야합니다. 이를 위해 다음 명령어를 사용하세요:
-```bash
-docker compose up db adminer backend frontend proxy
-```
-또는 다음 명령어를 사용할 수 있습니다.
-```bash
-sudo docker compose up --scale eeve=0
-```
-
-**주의: EEVE-Korean 모델과 대화할 수 없습니다.**
 
 ## 백엔드 개발
 백엔드 문서: [backend/readme.md](./backend/readme.ko.md)

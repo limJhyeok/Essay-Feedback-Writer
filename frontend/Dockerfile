@@ -1,5 +1,6 @@
 # Step 1: Use Node.js base image
-FROM node:18.18.0
+# FROM node:18.18.0
+FROM node:22.16.0
 
 # Set the working directory
 WORKDIR /frontend

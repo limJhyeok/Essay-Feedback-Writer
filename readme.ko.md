@@ -1,7 +1,7 @@
 # Essay Feedback Writer 프로젝트
 
 
-<a href="https://github.com/limJhyeok/ChatGPT-Clone/actions?query=workflow%3ATest" target="_blank"><img src="https://github.com/limJhyeok/Essay-Feedback-Writer/workflows/Test/badge.svg" alt="Test"></a>
+[![Test](https://github.com/limJhyeok/Essay-Feedback-Writer/actions/workflows/test-backend.yml/badge.svg)](https://github.com/limJhyeok/Essay-Feedback-Writer/actions/workflows/test-backend.yml)
 <a href="https://coverage-badge.samuelcolvin.workers.dev/redirect/limJhyeok/Essay-Feedback-Writer" target="_blank"><img src="https://coverage-badge.samuelcolvin.workers.dev/limJhyeok/Essay-Feedback-Writer.svg" alt="Coverage"></a>
 
 **언어 선택 / Language Selection:**

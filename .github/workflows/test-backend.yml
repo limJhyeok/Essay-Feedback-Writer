@@ -51,6 +51,9 @@ jobs:
 
       - run: docker compose build db backend
       - run: docker compose down -v --remove-orphans
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        timeout-minutes: 30
       - run: docker compose up -d db backend
       - run: docker compose exec -T backend poetry install --no-root
       - name: Lint

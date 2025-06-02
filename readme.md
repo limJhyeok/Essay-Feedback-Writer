@@ -51,6 +51,8 @@ PROJECT_NAME="Essay Feedback Writer"
 STACK_NAME="Essay-Feedback-Writer"
 DOMAIN=localhost
 
+ENVIRONMENT=local
+
 # backend url
 VITE_SERVER_URL=http://127.0.0.1:8000
 
@@ -94,6 +96,8 @@ OPENAI_API_KEY=sk-....
 ```
 - **PROJECT_NAME**:  The name of the project
 - **STACK_NAME**: The name of the stack used for Docker Compose labels and project name (no spaces, no periods) (in .env).
+- **DOMAIN**: Set the `DOMAIN`, by default localhost (for development), but when deploying you would use your own domain,
+- **ENVIRONMENT**: Set the `ENVIRONMENT`, by default local (for development), but when deploying to a server you would put something like `staging` or `production`
 - **SECRET_KEY**: The secret key for the project, used for security, stored in .env.
 - **SMTP_USERNAME**: The SMTP server user to send emails.
 - **SMTP_PASSWORD**: The SMTP server password to send emails.

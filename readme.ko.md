@@ -94,6 +94,8 @@ OPENAI_API_KEY=sk-....
 ```
 - **PROJECT_NAME**: 프로젝트 이름
 - **STACK_NAME**: Docker Compose 라벨 및 프로젝트 이름(공백 및 마침표 제외) (이 값은 .env에 설정)
+- **DOMAIN**: 기본값은 개발용 localhost이며, 배포 시에는 본인의 도메인으로 설정합니다.
+- **ENVIRONMENT**: 기본값은 개발용 local이며, 서버에 배포할 때는 staging 또는 production과 같은 값을 설정합니다.
 - **SECRET_KEY**: 프로젝트의 보안을 위한 secret key, .env 파일에 저장.
 - **SMTP_USERNAME**: 이메일 전송을 위한 SMTP 서버 사용자명.
 - **SMTP_PASSWORD**: 이메일 전송을 위한 SMTP 서버 비밀번호.

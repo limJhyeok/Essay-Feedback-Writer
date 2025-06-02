@@ -61,6 +61,8 @@ services:
     command: bash /app/scripts/prestart.sh
     environment:
       # - DEV_FRONTEND_URL=${DEV_FRONTEND_URL}
+      - DOMAIN=${DOMAIN}
+      - ENVIRONMENT=${ENVIRONMENT}
       - PROJECT_NAME=${PROJECT_NAME}
       - BACKEND_CORS_ORIGINS=${BACKEND_CORS_ORIGINS}
       - POSTGRES_SERVER=db

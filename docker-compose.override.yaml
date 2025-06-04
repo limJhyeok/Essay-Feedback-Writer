@@ -54,6 +54,14 @@ services:
     # command: sleep infinity  # Infinite loop to keep container alive doing nothing
     command: bash /app/scripts/start-reload.sh
 
+  frontend:
+    restart: "no"
+    ports:
+      - "5173:5173"
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+
 networks:
   traefik-public:
     # For local dev, don't expect an external Traefik network

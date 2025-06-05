@@ -1,6 +1,6 @@
 services:
   traefik:
-    image: traefik:v2.3
+    image: traefik:3.0
     ports:
       # Listen on port 80, default for HTTP, necessary to redirect to HTTPS
       - 80:80
@@ -39,7 +39,7 @@ services:
       # Add Docker as a mounted volume, so that Traefik can read the labels of other services
       - /var/run/docker.sock:/var/run/docker.sock:ro
       # Mount the volume to store the certificates
-      - traefik-public-certificates:/certificates
+      - ./letsencrypt/acme.json:/certificates/acme.json
     command:
       # Enable Docker in Traefik, so that it reads labels from Docker services
       - --providers.docker

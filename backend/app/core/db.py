@@ -188,7 +188,6 @@ def store_default_api_key(db: Session) -> None:
             db,
             super_user.id,
             provider_id=ai_provider_crud.get_provider_by_name(db, "OpenAI").id,
-            key_name=default_key_name,
         )
 
         if not existing_key:

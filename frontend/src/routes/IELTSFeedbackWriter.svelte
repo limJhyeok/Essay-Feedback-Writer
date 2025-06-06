@@ -234,7 +234,12 @@
         getFeedbacksByEssayId(submittedEssayId);
       },
       (json_error) => {
-        error = json_error;
+        if (json_error?.detail) {
+          error = json_error.detail;
+          alert(`Error: ${error}`);
+        } else {
+          alert("Unknown error occurred.");
+        }
       }
     )
   }
@@ -452,6 +457,7 @@
 
   function setManageKeyTab(tab){
     manageKeyTab = tab;
+    getRegisteredAPIKeys();
   }
 
   let showUserProfile = false;

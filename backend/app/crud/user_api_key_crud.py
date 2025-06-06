@@ -53,3 +53,8 @@ def update_last_used(db: Session, id: int):
 
     user_api_key.last_used = datetime.now(timezone.utc)
     db.commit()
+
+
+def update_to_be_inactive(db: Session, user_api_key: UserAPIKey):
+    user_api_key.is_active = False
+    db.commit()

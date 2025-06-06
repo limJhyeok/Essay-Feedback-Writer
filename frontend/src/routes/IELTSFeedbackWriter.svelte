@@ -775,6 +775,7 @@
                   <th>Provider</th>
                   <th>Registered</th>
                   <th>Last Used</th>
+                  <th>Status</th>
                   <th class="text-center">Action</th>
                 </tr>
               </thead>
@@ -801,6 +802,7 @@
                     <td>{registeredKey.provider_name}</td>
                     <td>{registeredKey.registered_at}</td>
                     <td>{registeredKey.last_used || ''}</td>
+                    <td>{registeredKey.is_active ? "active": "inactive"}</td>
                     <td class="text-center">
                       <button
                         class="btn btn-sm btn-outline-secondary"

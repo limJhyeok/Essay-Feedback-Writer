@@ -25,7 +25,7 @@ def create_user_api_key(
 
 
 def get_user_api_key(
-    db: Session, user_id, provider_id, key_name
+    db: Session, user_id, provider_id
 ) -> user_api_key_schema.UserAPIKey:
     db_api_key = (
         db.query(UserAPIKey)
@@ -33,7 +33,6 @@ def get_user_api_key(
             and_(
                 UserAPIKey.user_id == user_id,
                 UserAPIKey.provider_id == provider_id,
-                UserAPIKey.name == key_name,
                 UserAPIKey.is_active,
             )
         )

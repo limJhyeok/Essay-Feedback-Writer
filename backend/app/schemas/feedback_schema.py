@@ -25,6 +25,10 @@ class FeedbackCreateRequest(BaseModel):
     prompt: str
     rubric_name: Optional[str] = None
     essay_content: str = Field(..., description="The text content of the essay")
+    model_provider_name: str = Field(
+        ...,
+        description="The name of the AI model provider like OpenAI, Anthropic, google.",
+    )
     api_model_name: str = Field(
         ..., description="The name of the AI model for calling API"
     )

@@ -224,6 +224,7 @@
       prompt: promptContent,
       rubric_name: "IELTS Writing Task 2",
       essay_content: essayContent,
+      model_provider_name: selectedAIModelProvider.name,
       api_model_name: selectedFeedbackModel.api_model_name
     }
     feedbackList = [];
@@ -243,6 +244,9 @@
   const models = ["IELTS Feedback Writer"]
   let showDropdown = false;
   let selectedModel = models[0];
+
+  let AIModelProviders = [];
+  let selectedAIModelProvider = null;
   let feedbackModels = []
   let selectedFeedbackModel = null;
 
@@ -262,6 +266,23 @@
     )
   }
   read_bots();
+
+  function read_providers() {
+    let params = {}
+    let url = "/api/v1/ielts/providers";
+    fastapi("get", url, params,
+      (json) => {
+        AIModelProviders = json
+        if (AIModelProviders.length > 0) {
+         selectedAIModelProvider = AIModelProviders[0];
+        }
+      },
+      (json_error) => {
+        error = json_error;
+      }
+    )
+  }
+  read_providers();
 
   if ($isLogin == false){
     handleUnauthorized();
@@ -1103,9 +1124,16 @@
             background-color: #f5f7fa;
             border-radius: 8px;
             align-items: center;box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-
               <div class="model-selector">
-                <span>Select AI Model:</span>
+
+                <span>AI Provider:</span>
+                <select bind:value={selectedAIModelProvider} class="model-dropdown">
+                    {#each AIModelProviders as provider}
+                      <option value={provider}>{provider.name}</option>
+                    {/each}
+                </select>
+
+                <span>AI Model:</span>
                 <select bind:value={selectedFeedbackModel} class="model-dropdown">
                     {#each feedbackModels as feedbackModel}
                       <option value={feedbackModel}>{feedbackModel.alias}</option>
@@ -1173,7 +1201,14 @@
 
             <div class="feedback-controls" style = "box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                 <div class="model-selector">
-                    <span>Select AI Model:</span>
+                  <span>AI Provider:</span>
+                  <select bind:value={selectedAIModelProvider} class="model-dropdown">
+                      {#each AIModelProviders as provider}
+                        <option value={provider}>{provider.name}</option>
+                      {/each}
+                  </select>
+
+                    <span>AI Model:</span>
                     <select bind:value={selectedFeedbackModel} class="model-dropdown" style = "box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
                       {#each feedbackModels as feedbackModel}
                         <option value={feedbackModel}>{feedbackModel.alias}</option>

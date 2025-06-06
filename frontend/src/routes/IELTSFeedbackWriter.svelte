@@ -770,7 +770,7 @@
           <div class="table-responsive mt-3">
             <table class="table table-hover align-middle">
               <thead class="table-light">
-                <tr>
+                <tr class="text-center">
                   <th>Name</th>
                   <th>Provider</th>
                   <th>Registered</th>
@@ -778,7 +778,7 @@
                   <th class="text-center">Action</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody class="text-center">
                 {#each registeredAPIKeys as registeredKey}
                   <tr>
                     {#if editingApiKey}

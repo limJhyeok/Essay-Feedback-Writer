@@ -20,3 +20,8 @@ def create_provider(
     db.refresh(new_ai_provider)
 
     return ai_provider_schema.AIProvider.from_orm(new_ai_provider)
+
+
+def get_providers(db: Session) -> list[ai_provider_schema.AIProvider]:
+    providers = db.query(AIProvider).all()
+    return providers

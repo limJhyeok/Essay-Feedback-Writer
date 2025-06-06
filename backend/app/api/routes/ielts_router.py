@@ -27,6 +27,7 @@ from app.schemas import (
     bot_schema,
     api_model_schema,
     user_api_key_schema,
+    ai_provider_schema,
 )
 
 router = APIRouter()
@@ -90,6 +91,11 @@ def get_feedbacks_by_user_prompt(
 @router.get("/bots", response_model=list[bot_schema.BotPublic])
 def read_bots(db: SessionDep) -> list[bot_schema.BotPublic]:
     return bot_crud.get_bots(db)
+
+
+@router.get("/providers", response_model=list[ai_provider_schema.AIProviderPublic])
+def read_providers(db: SessionDep) -> list[ai_provider_schema.AIProviderPublic]:
+    return ai_provider_crud.get_providers(db)
 
 
 @router.get(
@@ -199,8 +205,7 @@ async def trigger_feedback_generation(
 - Whether errors in grammar hinder communication or understanding
 """,
     }
-    provider_name = "OpenAI"
-    db_provider = ai_provider_crud.get_provider_by_name(db, provider_name)
+    db_provider = ai_provider_crud.get_provider_by_name(db, request.model_provider_name)
     db_api_key = user_api_key_crud.get_user_api_key(
         db, current_user.id, db_provider.id, key_name="OPENAI_API_KEY"
     )

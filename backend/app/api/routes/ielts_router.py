@@ -206,9 +206,7 @@ async def trigger_feedback_generation(
 """,
     }
     db_provider = ai_provider_crud.get_provider_by_name(db, request.model_provider_name)
-    db_api_key = user_api_key_crud.get_user_api_key(
-        db, current_user.id, db_provider.id, key_name="OPENAI_API_KEY"
-    )
+    db_api_key = user_api_key_crud.get_user_api_key(db, current_user.id, db_provider.id)
     client = OpenAI(
         api_key=security.decrypt_api_key(db_api_key.api_key),
     )

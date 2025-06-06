@@ -1,7 +1,8 @@
 from pydantic import BaseModel
 from openai import OpenAI
+import openai
 from datetime import datetime, timezone
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from starlette import status
 
 from app.core import security
@@ -207,9 +208,12 @@ async def trigger_feedback_generation(
     }
     db_provider = ai_provider_crud.get_provider_by_name(db, request.model_provider_name)
     db_api_key = user_api_key_crud.get_user_api_key(db, current_user.id, db_provider.id)
-    client = OpenAI(
-        api_key=security.decrypt_api_key(db_api_key.api_key),
-    )
+    if db_api_key is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"We couldn’t find an active API key for {request.model_provider_name}. Please register your API key to proceed.",
+        )
+    client = get_openai_client(db, db_api_key)
 
     feedback_response = {"feedback_by_criteria": {}}
     holistic_feedback_inputs = {}
@@ -269,6 +273,48 @@ async def trigger_feedback_generation(
 
     _ = feedback_crud.create_feedback(db, feedback_create)
     user_api_key_crud.update_last_used(db, db_api_key.id)
+
+
+def get_openai_client(
+    db: SessionDep, db_api_key: user_api_key_schema.UserAPIKey
+) -> OpenAI:
+    decrypted_api_key = security.decrypt_api_key(db_api_key.api_key)
+    client = OpenAI(api_key=decrypted_api_key)
+    try:
+        # validate api key
+        client.models.list()
+        return client
+
+    except openai.AuthenticationError:
+        user_api_key_crud.update_to_be_inactive(db, db_api_key)
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="The provided API key is invalid and has been deactivated. Please delete and re-register your API key.",
+        )
+
+    except openai.PermissionDeniedError:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are accessing the API from an unsupported country, region, or territory.",
+        )
+
+    except openai.RateLimitError:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="You are sending requests too quickly or You have run out of credits or hit your maximum monthly spend.",
+        )
+
+    except openai.APIError:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="OpenAI API server error. Please try again later.",
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unexpected error occurred: {str(e)}",
+        )
 
 
 def get_llm_prompt_for_ielts(

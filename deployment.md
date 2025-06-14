@@ -96,6 +96,24 @@ export EMAIL=admin@example.com
 
 **Note**: you need to set a different email, an email `@example.com` won't work.
 
+### Create the certificate file
+
+Before starting the Traefik container, ensure the certificate file and directory are correctly set up. This is required for Let's Encrypt to store TLS certificates securely.
+
+```bash
+
+# Create directory for Let's Encrypt data
+mkdir -p /root/code/traefik-public/letsencrpyt
+
+# Create empty certificate file
+touch /root/code/traefik-public/letsencrpyt/acme.json
+
+# Set appropriate permissions
+chmod 600 /root/code/traefik-public/letsencrpyt/acme.json
+```
+
+This ensures Traefik can manage certificates securely when using Let's Encrypt.
+
 ### Start the Traefik Docker Compose
 
 Go to the directory where you copied the Traefik Docker Compose file in your remote server:

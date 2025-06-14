@@ -62,6 +62,23 @@ export DOMAIN=example-project.example.com
 export EMAIL=admin@example.com  # 실제 이메일 사용
 ```
 
+### 인증서 파일 생성하기
+
+Traefik 컨테이너를 시작하기 전에, Let's Encrypt에서 TLS 인증서를 안전하게 저장할 수 있도록 인증서 파일과 디렉토리를 먼저 설정해야 합니다.
+
+```bash
+# Let's Encrypt 데이터를 저장할 디렉토리 생성
+mkdir -p /root/code/traefik-public/letsencrpyt
+
+# 빈 인증서 파일 생성
+touch /root/code/traefik-public/letsencrpyt/acme.json
+
+# 적절한 권한 설정
+chmod 600 /root/code/traefik-public/letsencrpyt/acme.json
+```
+
+이 과정은 Traefik이 Let's Encrypt를 통해 인증서를 안전하게 관리할 수 있도록 해줍니다.
+
 ### Traefik 시작하기
 
 Traefik 설정 파일 위치로 이동한 뒤:

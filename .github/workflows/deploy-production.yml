@@ -10,40 +10,36 @@ jobs:
     runs-on:
       - self-hosted
       - production
-    env:
-      ENVIRONMENT: production
-      DOMAIN: ${{ secrets.DOMAIN_PRODUCTION }}
-      STACK_NAME: ${{ secrets.STACK_NAME_PRODUCTION }}
-      SECRET_KEY: ${{ secrets.SECRET_KEY }}
-      FIRST_SUPERUSER: ${{ secrets.FIRST_SUPERUSER }}
-      FIRST_SUPERUSER_PASSWORD: ${{ secrets.FIRST_SUPERUSER_PASSWORD }}
-      SMTP_HOST: ${{ secrets.SMTP_HOST }}
-      SMTP_USER: ${{ secrets.SMTP_USER }}
-      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
-      EMAILS_FROM_EMAIL: ${{ secrets.EMAILS_FROM_EMAIL }}
-      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Create .env file
         run: |
-          echo "ENVIRONMENT=${{ secrets.ENVIRONMENT }}" >> .env
-          echo "PROJECT_NAME=${{ secrets.PROJECT_NAME }}" >> .env
-          echo "VITE_SERVER_URL=${{ secrets.VITE_SERVER_URL }}" >> .env
-          echo "BACKEND_CORS_ORIGINS=${{ secrets.BACKEND_CORS_ORIGINS }}" >> .env
-          echo "DOMAIN_PORT=${{ secrets.DOMAIN_PORT }}" >> .env
-          echo "USE_HASH_ROUTER=${{ secrets.USE_HASH_ROUTER }}" >> .env
-          echo "ACCESS_TOKEN_EXPIRE_MINUTES=${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }}" >> .env
-          echo "ALGORITHM=${{ secrets.ALGORITHM }}" >> .env
-          echo "FERNET_SECRET=${{ secrets.FERNET_SECRET }}" >> .env
-          echo "SMTP_PORT=${{ secrets.SMTP_PORT }}" >> .env
-          echo "SMTP_USERNAME=${{ secrets.SMTP_USERNAME }}" >> .env
-          echo "EMAILS_FROM_NAME=${{ secrets.EMAILS_FROM_NAME }}" >> .env
-          echo "POSTGRES_SERVER=${{ secrets.POSTGRES_SERVER }}" >> .env
-          echo "POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}" >> .env
-          echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> .env
-          echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
-          echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
+          echo "ENVIRONMENT=production" >> .env
+          echo "PROJECT_NAME=${{ secrets.PROJECT_NAME_PRODUCTION }}" >> .env
+          echo "STACK_NAME=${{ secrets.STACK_NAME_PRODUCTION }}" >> .env
+          echo "DOMAIN=${{ secrets.DOMAIN_PRODUCTION }}" >> .env
+          echo "BACKEND_CORS_ORIGINS=${{ secrets.BACKEND_CORS_ORIGINS_PRODUCTION }}" >> .env
+          echo "DOMAIN_PORT=${{ secrets.DOMAIN_PORT_PRODUCTION }}" >> .env
+          echo "FIRST_SUPERUSER=${{ secrets.FIRST_SUPERUSER_PRODUCTION }}" >> .env
+          echo "FIRST_SUPERUSER_PASSWORD=${{ secrets.FIRST_SUPERUSER_PASSWORD_PRODUCTION }}" >> .env
+          echo "USE_HASH_ROUTER=${{ secrets.USE_HASH_ROUTER_PRODUCTION }}" >> .env
+          echo "ACCESS_TOKEN_EXPIRE_MINUTES=${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES_PRODUCTION }}" >> .env
+          echo "SECRET_KEY=${{ secrets.SECRET_KEY_PRODUCTION }}" >> .env
+          echo "ALGORITHM=${{ secrets.ALGORITHM_PRODUCTION }}" >> .env
+          echo "FERNET_SECRET=${{ secrets.FERNET_SECRET_PRODUCTION }}" >> .env
+          echo "SMTP_HOST=${{ secrets.SMTP_HOST_PRODUCTION }}" >> .env
+          echo "SMTP_PORT=${{ secrets.SMTP_PORT_PRODUCTION }}" >> .env
+          echo "SMTP_USERNAME=${{ secrets.SMTP_USERNAME_PRODUCTION }}" >> .env
+          echo "SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD_PRODUCTION }}" >> .env
+          echo "EMAILS_FROM_EMAIL=${{ secrets.EMAILS_FROM_EMAIL_PRODUCTION }}" >> .env
+          echo "EMAILS_FROM_NAME=${{ secrets.EMAILS_FROM_NAME_PRODUCTION }}" >> .env
+          echo "POSTGRES_SERVER=${{ secrets.POSTGRES_SERVER_PRODUCTION }}" >> .env
+          echo "POSTGRES_PORT=${{ secrets.POSTGRES_PORT_PRODUCTION }}" >> .env
+          echo "POSTGRES_DB=${{ secrets.POSTGRES_DB_PRODUCTION }}" >> .env
+          echo "POSTGRES_USER=${{ secrets.POSTGRES_USER_PRODUCTION }}" >> .env
+          echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD_PRODUCTION }}" >> .env
+          echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY_PRODUCTION }}" >> .env
       - name: Log in to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
       - run: docker compose -f docker-compose.yaml --project-name ${{ secrets.STACK_NAME_PRODUCTION }} pull

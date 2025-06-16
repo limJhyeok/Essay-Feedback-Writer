@@ -109,7 +109,7 @@ services:
       # Enable redirection for HTTP and HTTPS
       - traefik.http.routers.${STACK_NAME?Variable not set}-backend-http.middlewares=https-redirect
   frontend:
-    image: '${DOCKER_IMAGE_FRONTEND:-ghcr.io/limjhyeok/backend}:${TAG-latest}'
+    image: '${DOCKER_IMAGE_FRONTEND:-ghcr.io/limjhyeok/frontend}:${TAG-latest}'
     build:
       context: ./frontend
       dockerfile: Dockerfile

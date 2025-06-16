@@ -48,9 +48,6 @@ jobs:
 
       - run: docker compose build db adminer backend frontend proxy
       - run: docker compose down -v --remove-orphans
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        timeout-minutes: 30
       - run: docker compose up -d --wait backend frontend adminer
       - name: Test backend is up
         run: curl http://localhost:8000/api/v1/utils/health-check

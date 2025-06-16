@@ -44,30 +44,5 @@ jobs:
           echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> .env
           echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
           echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
-      - name: Create .env file for the docker image
-        run: |
-          # invalid reference format: repository name must be lowercase
-          REPO_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          SERVICES=("backend" "frontend")
-
-          for SERVICE in "${SERVICES[@]}"; do
-            VAR_NAME="DOCKER_IMAGE_$(echo "$SERVICE" | tr '[:lower:]' '[:upper:]')"
-            IMAGE_NAME="ghcr.io/${REPO_OWNER}/${SERVICE}:latest"
-            echo "${VAR_NAME}=${IMAGE_NAME}" >> .env
-          done
-      - name: Log in to GHCR
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
-      - name: Pull and Deploy
-        run: |
-          # invalid reference format: repository name must be lowercase
-          REPO_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          # Define services
-          SERVICES=("backend" "frontend")
-
-          for SERVICE in "${SERVICES[@]}"; do
-            IMAGE_NAME="ghcr.io/${REPO_OWNER}/${SERVICE}:latest"
-            docker pull $IMAGE_NAME
-          done
-
-          docker compose up -d
+      - run: docker compose -f docker-compose.yaml --project-name ${{ secrets.STACK_NAME_PRODUCTION }} build
+      - run: docker compose -f docker-compose.yaml --project-name ${{ secrets.STACK_NAME_PRODUCTION }} up -d

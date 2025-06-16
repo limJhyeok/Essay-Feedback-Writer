@@ -20,6 +20,7 @@ jobs:
           echo "STACK_NAME=${{ secrets.STACK_NAME_PRODUCTION }}" >> .env
           echo "DOMAIN=${{ secrets.DOMAIN_PRODUCTION }}" >> .env
           echo "BACKEND_CORS_ORIGINS=${{ secrets.BACKEND_CORS_ORIGINS_PRODUCTION }}" >> .env
+          echo "VITE_SERVER_URL=${{ secrets.VITE_SERVER_URL_PRODUCTION }}" >> .env
           echo "DOMAIN_PORT=${{ secrets.DOMAIN_PORT_PRODUCTION }}" >> .env
           echo "FIRST_SUPERUSER=${{ secrets.FIRST_SUPERUSER_PRODUCTION }}" >> .env
           echo "FIRST_SUPERUSER_PASSWORD=${{ secrets.FIRST_SUPERUSER_PASSWORD_PRODUCTION }}" >> .env

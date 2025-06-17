@@ -257,10 +257,10 @@ sudo su
 cd /home/github/actions-runner
 ```
 
-* Install the self-hosted runner as a service with the user `github`:
+* Install the self-hosted runner as a service with the user `root`(temporary solution for the permission denied checkout@v4 [#1720](https://github.com/actions/checkout/issues/1720)):
 
 ```bash
-./svc.sh install github
+./svc.sh install root
 ```
 
 * Start the service:

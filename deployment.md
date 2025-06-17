@@ -103,13 +103,13 @@ Before starting the Traefik container, ensure the certificate file and directory
 ```bash
 
 # Create directory for Let's Encrypt data
-mkdir -p /root/code/traefik-public/letsencrpyt
+mkdir -p /root/code/traefik-public/letsencrypt
 
 # Create empty certificate file
-touch /root/code/traefik-public/letsencrpyt/acme.json
+touch /root/code/traefik-public/letsencrypt/acme.json
 
 # Set appropriate permissions
-chmod 600 /root/code/traefik-public/letsencrpyt/acme.json
+chmod 600 /root/code/traefik-public/letsencrypt/acme.json
 ```
 
 This ensures Traefik can manage certificates securely when using Let's Encrypt.

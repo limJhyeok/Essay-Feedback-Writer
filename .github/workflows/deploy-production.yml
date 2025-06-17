@@ -53,7 +53,5 @@ jobs:
           echo "POSTGRES_USER=${{ secrets.POSTGRES_USER_PRODUCTION }}" >> .env
           echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD_PRODUCTION }}" >> .env
           echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY_PRODUCTION }}" >> .env
-      - name: Log in to GHCR
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-      - run: docker compose -f docker-compose.yaml --project-name ${{ secrets.STACK_NAME_PRODUCTION }} pull
+      - run: docker compose -f docker-compose.yaml --project-name ${{ secrets.STACK_NAME_PRODUCTION }} build
       - run: docker compose -f docker-compose.yaml --project-name ${{ secrets.STACK_NAME_PRODUCTION }} up -d

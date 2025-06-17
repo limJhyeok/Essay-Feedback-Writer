@@ -68,13 +68,13 @@ Traefik 컨테이너를 시작하기 전에, Let's Encrypt에서 TLS 인증서�
 
 ```bash
 # Let's Encrypt 데이터를 저장할 디렉토리 생성
-mkdir -p /root/code/traefik-public/letsencrpyt
+mkdir -p /root/code/traefik-public/letsencrypt
 
 # 빈 인증서 파일 생성
-touch /root/code/traefik-public/letsencrpyt/acme.json
+touch /root/code/traefik-public/letsencrypt/acme.json
 
 # 적절한 권한 설정
-chmod 600 /root/code/traefik-public/letsencrpyt/acme.json
+chmod 600 /root/code/traefik-public/letsencrypt/acme.json
 ```
 
 이 과정은 Traefik이 Let's Encrypt를 통해 인증서를 안전하게 관리할 수 있도록 해줍니다.
@@ -176,7 +176,7 @@ sudo su - github
 exit  # github 사용자에서 나와서
 sudo su  # root로 전환
 cd /home/github/actions-runner
-./svc.sh install github
+./svc.sh install root
 ./svc.sh start
 ./svc.sh status
 ```

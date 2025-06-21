@@ -64,6 +64,16 @@ def generate_key_name():
     return f"secret-key_{datetime.now(timezone.utc).isoformat()}"
 
 
+class UserAPIKeyRenameRequest(BaseModel):
+    name: str
+
+    @field_validator("name")
+    def not_empty(cls, v):
+        if not v or not v.strip():
+            raise ValueError("null value is not allowed")
+        return v
+
+
 class UserAPIKeyCreate(BaseModel):
     user_id: int
     provider_id: int

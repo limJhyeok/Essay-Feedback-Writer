@@ -55,6 +55,15 @@ def update_last_used(db: Session, id: int):
     db.commit()
 
 
+def update_api_key_name(db: Session, id: int, name: str):
+    user_api_key = db.get(UserAPIKey, id)
+    if not user_api_key:
+        raise HTTPException(status_code=404, detail="API key not found")
+
+    user_api_key.name = name
+    db.commit()
+
+
 def update_to_be_inactive(db: Session, user_api_key: UserAPIKey):
     user_api_key.is_active = False
     db.commit()

@@ -166,6 +166,15 @@ def get_api_key_list(
     return response
 
 
+@router.put("/api_keys/{api_key_id}/name", status_code=status.HTTP_204_NO_CONTENT)
+def rename_api_key(
+    db: SessionDep,
+    api_key_id: int,
+    request: user_api_key_schema.UserAPIKeyRenameRequest,
+) -> None:
+    user_api_key_crud.update_api_key_name(db, api_key_id, request.name)
+
+
 class FeedbackResponse(BaseModel):
     score: float
     feedback: str

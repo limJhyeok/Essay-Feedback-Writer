@@ -367,28 +367,44 @@
     selectedApiKey = apiKey
   }
 
-  let editingApiKey = null;
-  function handleRenameApiKeyButton(apiKey){
-    editingApiKey = apiKey
+  let renameActiveIndex = null;
+  let inputElement = null;
+  let editingNameOfApiKey = '';
+  function handleRenameApiKeyButton(index){
+    renameActiveIndex = index
     tick().then(() => {
       if (inputElement) {
         inputElement.focus();
       }
     });
   }
+  function handleRenameKeyPress(event, apiKey) {
+    if (event.key === 'Enter') {
+      renameApiKey(apiKey);
+      cancelEdit();
+    } else if (event.key === 'Escape') {
+      cancelEdit();
+    }
+  }
   function renameApiKey(apiKey) {
-    if (apiKey.name.trim() === '' || editingApiKey.name === apiKey.name) {
-      editingApiKey = null;
-      return;
+    if (editingNameOfApiKey.trim() === '' || editingNameOfApiKey === apiKey.name) {
+      return
     }
+    // TODO: backend API key fetching
+    let url = `/api/v1/ielts/api_keys/${apiKey.id}/name`;
+    let params = { name:  editingNameOfApiKey};
 
-    const index = secretKeys.findIndex(k => k.id === apiKey.id);
-    if (index !== -1) {
-      secretKeys[index].name = apiKey.name;
-      // Reassign to trigger reactivity in Svelte
-      secretKeys = [...secretKeys];
-    }
-    editingApiKey = null;
+    fastapi('put', url, params,
+      (json) => {
+        inputElement = null;
+        editingNameOfApiKey='';
+        renameActiveIndex = null;
+        getRegisteredAPIKeys();
+      },
+      (json_error) => {
+        console.error("Error updating API key name:", json_error);
+      }
+    );
   }
   function closeCheckDeleteApiKeyModal(){
     checkDeleteApiModalOpen = false;
@@ -398,9 +414,9 @@
   }
 
   function cancelEdit() {
-    newChatTitle = '';
     inputElement=null;
-    editingChatTitleId = null;
+    renameActiveIndex = null;
+    editingNameOfApiKey = '';
 
   }
 
@@ -780,20 +796,17 @@
                 </tr>
               </thead>
               <tbody class="text-center">
-                {#each registeredAPIKeys as registeredKey}
+                {#each registeredAPIKeys as registeredKey, index}
                   <tr>
-                    {#if editingApiKey}
+                    {#if renameActiveIndex === index}
                     <td>
                       <input
                         type="text"
-                        class="form-control {inputClass}"
-                        bind:value={registeredKey.name}
+                        class="form-control"
+                        bind:this={inputElement}
+                        bind:value={editingNameOfApiKey}
                         placeholder={registeredKey.name}
-                        on:keydown={(e) => {
-                          if (e.key === 'Enter') {
-                            renameApiKey(registeredKey);
-                          }
-                        }}
+                        on:keydown={(event) => handleRenameKeyPress(event, registeredKey)}
                       />
                     </td>
                     {:else}
@@ -806,7 +819,7 @@
                     <td class="text-center">
                       <button
                         class="btn btn-sm btn-outline-secondary"
-                        on:click={() => handleRenameApiKeyButton(registeredKey)}
+                        on:click={() => handleRenameApiKeyButton(index)}
                         aria-label="Rename API key"
                       >
                         <SquarePen class = "h-4 w-4" />

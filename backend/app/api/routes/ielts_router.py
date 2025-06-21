@@ -242,7 +242,7 @@ async def trigger_feedback_generation(
             criterion_name, sub_system_prompts.get(criterion_name, ""), rubric_text
         )
         llm_prompt = llm_prompt.format(
-            essay_prompt=request.prompt, student_essay=student_essay
+            essay_prompt=request.prompt, student_essay=student_essay.content
         )
 
         llm_response = client.responses.parse(

@@ -34,7 +34,7 @@
   let APIKey = "";
   let registeredAPIKeys = [];
 
-  let selectedApiKey = null;
+  let activeApiKeyForDeleting = null;
 
   function cancel() {
     showManageKeyModalOpen = false;
@@ -364,7 +364,7 @@
   function openCheckDeleteApiKeyModal(apiKey){
     closePopup();
     checkDeleteApiModalOpen = true;
-    selectedApiKey = apiKey
+    activeApiKeyForDeleting = apiKey
   }
 
   let renameActiveIndex = null;
@@ -390,7 +390,7 @@
     if (editingNameOfApiKey.trim() === '' || editingNameOfApiKey === apiKey.name) {
       return
     }
-    // TODO: backend API key fetching
+    // TODO: [feat] add patch method in fastapi function
     let url = `/api/v1/ielts/api_keys/${apiKey.id}/name`;
     let params = { name:  editingNameOfApiKey};
 
@@ -409,9 +409,6 @@
   function closeCheckDeleteApiKeyModal(){
     checkDeleteApiModalOpen = false;
   }
-  function deleteApiKey(apiKey){
-    openCheckDeleteApiKeyModal(apiKey)
-  }
 
   function cancelEdit() {
     inputElement=null;
@@ -421,14 +418,23 @@
   }
 
   function confirmDeleteApiKey(){
-    secretKeys = secretKeys.filter(k => k.id !== selectedApiKey.id);
-    selectedApiKey = null;
-    checkDeleteApiModalOpen = false;
+
+    let url = `/api/v1/ielts/api_keys/${activeApiKeyForDeleting.id}`;
+    let params = {};
+    fastapi('delete', url, params,
+      (json) => {
+        activeApiKeyForDeleting = null;
+        checkDeleteApiModalOpen = false;
+        getRegisteredAPIKeys();
+      },
+      (json_error) => {
+        console.error("Error deleting API key name:", json_error);
+      }
+    );
   }
+
   let activePopupId = null
   let popupContainer;
-
-
   function closePopup() {
     activePopupId = null;
     if (popupContainer) {
@@ -913,7 +919,7 @@
         </div>
         <div class="modal-body">
           <h5>Are you sure you want to delete
-            <strong>{selectedApiKey?.name}</strong>
+            <strong>{activeApiKeyForDeleting?.name}</strong>
             ? This action cannot be undone.</h5>
         </div>
         <div class="modal-footer">

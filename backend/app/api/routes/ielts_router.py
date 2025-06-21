@@ -175,6 +175,11 @@ def rename_api_key(
     user_api_key_crud.update_api_key_name(db, api_key_id, request.name)
 
 
+@router.delete("/api_keys/{api_key_id}")
+def delete_api_key_route(db: SessionDep, api_key_id: int) -> None:
+    user_api_key_crud.delete_api_key(db, api_key_id)
+
+
 class FeedbackResponse(BaseModel):
     score: float
     feedback: str

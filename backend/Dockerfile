@@ -7,9 +7,17 @@ WORKDIR /app/
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Copy dependency files
-COPY ./pyproject.toml ./uv.lock /app/
+COPY ./pyproject.toml /app/
 
-# Install dependencies
+RUN if [ -f uv.lock ]; then \
+        echo "Using uv.lock"; \
+        uv sync --frozen; \
+    else \
+        echo "uv.lock not found, resolving dependencies"; \
+        uv sync; \
+    fi
+
+    # Install dependencies
 RUN if [ "$INSTALL_DEV" = "true" ]; then \
         uv sync --frozen --no-install-project; \
     else \

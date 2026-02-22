@@ -61,7 +61,7 @@ jobs:
       - run: docker compose build db backend
       - run: docker compose down -v --remove-orphans
       - run: docker compose up -d db backend
-      - run: docker compose exec -T backend uv sync --frozen --no-install-project
+      - run: docker compose exec -T backend uv sync --no-install-project
       - name: Lint
         run: docker compose exec -T backend bash /app/scripts/format.sh
       - name: Run tests

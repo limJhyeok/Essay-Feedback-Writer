@@ -27,3 +27,8 @@ alembic upgrade head
 
 # Start Uvicorn with live reload
 exec uvicorn --reload --host 0.0.0.0 --port 8000 --log-level $LOG_LEVEL "$APP_MODULE"
+if [ "$DEBUG" = "true" ]; then
+    exec python -m debugpy --listen 0.0.0.0:5678 --wait-for-client -m uvicorn --reload --host 0.0.0.0 --port 8000 --log-level $LOG_LEVEL "$APP_MODULE"
+else
+    exec uvicorn --reload --host 0.0.0.0 --port 8000 --log-level $LOG_LEVEL "$APP_MODULE"
+fi

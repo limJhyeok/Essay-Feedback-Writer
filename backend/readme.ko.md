@@ -128,6 +128,68 @@ $ alembic revision --autogenerate -m "Add column last_name to User model"
 $ alembic upgrade head
 ```
 
+## VSCode 디버깅 (Docker)
+
+Docker 컨테이너 내부에서 실행 중인 백엔드를 `debugpy`와 VSCode의 attach 디버거를 사용하여 디버깅할 수 있습니다.
+
+### 사전 준비
+
+- VSCode에 [Python Debugger extension](https://marketplace.visualstudio.com/items?itemName=ms-python.debugpy) 설치
+- 백엔드 컨테이너에 `debugpy` 설치 (dev 의존성으로 포함되어 있음)
+
+실행 중인 컨테이너에 `debugpy`가 아직 설치되지 않은 경우:
+```bash
+docker-compose exec backend pip install debugpy
+```
+
+### 서버 디버깅
+
+1. `.env` 파일에서 `DEBUG=true`로 설정
+2. 백엔드를 재시작:
+   ```bash
+   docker-compose up -d backend
+   ```
+3. 디버거가 연결될 때까지 서버가 대기합니다
+4. VSCode에서 브레이크포인트를 설정한 후 **F5**를 누르고 **"Attach to Docker Backend"**를 선택
+
+### pytest 디버깅
+
+1. `.env`에서 `DEBUG=false`(또는 미설정)로 설정하여 서버가 5678 포트를 점유하지 않도록 합니다
+2. 컨테이너 내부에서 debugpy와 함께 pytest를 실행:
+   ```bash
+   docker-compose exec backend python -m debugpy --listen 0.0.0.0:5678 --wait-for-client -m pytest app/tests/api/routes/test_ielts.py -v
+   ```
+3. 테스트 파일에서 브레이크포인트를 설정한 후 **F5**를 누르고 **"Debug Pytest in Docker"**를 선택
+
+### VSCode launch.json
+
+`.vscode/launch.json` 파일에 다음 내용이 포함되어야 합니다:
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Attach to Docker Backend",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": { "host": "localhost", "port": 5678 },
+      "pathMappings": [
+        { "localRoot": "${workspaceFolder}/backend", "remoteRoot": "/app" }
+      ]
+    },
+    {
+      "name": "Debug Pytest in Docker",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": { "host": "localhost", "port": 5678 },
+      "pathMappings": [
+        { "localRoot": "${workspaceFolder}/backend", "remoteRoot": "/app" }
+      ]
+    }
+  ]
+}
+```
+
 ## 이메일 템플릿
 
 이메일 템플릿은 `./backend/app/email-templates/`에 있습니다. 여기에는 `build`와 `src`라는 두 개의 디렉터리가 있습니다. `src` 디렉터리에는 최종 이메일 템플릿을 만들 때 사용하는 소스 파일이 있고, `build` 디렉터리에는 애플리케이션에서 사용하는 최종 이메일 템플릿이 있습니다.

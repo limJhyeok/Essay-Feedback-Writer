@@ -134,6 +134,68 @@ $ alembic revision --autogenerate -m "Add column last_name to User model"
 $ alembic upgrade head
 ```
 
+## Debugging with VSCode (Docker)
+
+You can debug the backend running inside Docker using `debugpy` and VSCode's attach debugger.
+
+### Prerequisites
+
+- [Python Debugger extension](https://marketplace.visualstudio.com/items?itemName=ms-python.debugpy) installed in VSCode
+- `debugpy` installed in the backend container (included as a dev dependency)
+
+If `debugpy` is not yet installed in the running container:
+```bash
+docker-compose exec backend pip install debugpy
+```
+
+### Debugging the running server
+
+1. Set `DEBUG=true` in your `.env` file
+2. Restart the backend:
+   ```bash
+   docker-compose up -d backend
+   ```
+3. The server will wait for the debugger to attach before starting
+4. Set breakpoints in VSCode, then press **F5** and select **"Attach to Docker Backend"**
+
+### Debugging pytest
+
+1. Make sure `DEBUG=false` (or unset) in `.env` so the server isn't holding port 5678
+2. Run pytest with debugpy inside the container:
+   ```bash
+   docker-compose exec backend python -m debugpy --listen 0.0.0.0:5678 --wait-for-client -m pytest app/tests/api/routes/test_ielts.py -v
+   ```
+3. Set breakpoints in your test file, then press **F5** and select **"Debug Pytest in Docker"**
+
+### VSCode launch.json
+
+The `.vscode/launch.json` should contain:
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Attach to Docker Backend",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": { "host": "localhost", "port": 5678 },
+      "pathMappings": [
+        { "localRoot": "${workspaceFolder}/backend", "remoteRoot": "/app" }
+      ]
+    },
+    {
+      "name": "Debug Pytest in Docker",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": { "host": "localhost", "port": 5678 },
+      "pathMappings": [
+        { "localRoot": "${workspaceFolder}/backend", "remoteRoot": "/app" }
+      ]
+    }
+  ]
+}
+```
+
 ## Email Templates
 
 The email templates are in `./backend/app/email-templates/`. Here, there are two directories: `build` and `src`. The `src` directory contains the source files that are used to build the final email templates. The `build` directory contains the final email templates that are used by the application.

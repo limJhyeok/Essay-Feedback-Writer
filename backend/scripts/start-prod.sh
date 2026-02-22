@@ -1,7 +1,6 @@
 #! /usr/bin/env sh
 set -e
 
-
 if [ -f /app/app/main.py ]; then
     DEFAULT_MODULE_NAME=app.main
 elif [ -f /app/main.py ]; then
@@ -24,11 +23,5 @@ else
     echo "There is no script $PRE_START_PATH"
 fi
 
-# Start Uvicorn with live reload
-if [ "$DEBUG" = "true" ]; then
-    echo "🚀 Starting FastAPI with debugpy..."
-    exec python -m debugpy --listen 0.0.0.0:5678 --wait-for-client -m uvicorn --reload --host 0.0.0.0 --port 8000 --log-level $LOG_LEVEL "$APP_MODULE"
-else
-    echo "🚀 Starting FastAPI without debugpy..."
-    exec uvicorn --reload --host 0.0.0.0 --port 8000 --log-level $LOG_LEVEL "$APP_MODULE"
-fi
+# Start Uvicorn without reload for production
+exec uvicorn --host 0.0.0.0 --port 8000 --log-level $LOG_LEVEL "$APP_MODULE"

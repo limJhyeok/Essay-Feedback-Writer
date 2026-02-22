@@ -59,7 +59,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    command: bash /app/scripts/prestart.sh
+    command: bash /app/scripts/start-prod.sh
     environment:
       # - DEV_FRONTEND_URL=${DEV_FRONTEND_URL}
       - DOMAIN=${DOMAIN}

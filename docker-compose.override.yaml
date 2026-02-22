@@ -48,11 +48,15 @@ services:
 
   backend:
     restart: "no"
+    ports: #debugpy port
+      - "5678:5678"
     build:
       args:
         INSTALL_DEV: ${INSTALL_DEV-true}
     # command: sleep infinity  # Infinite loop to keep container alive doing nothing
     command: bash /app/scripts/start-reload.sh
+    environment:
+      - DEBUG=${DEBUG:-false}
 
   frontend:
     restart: "no"

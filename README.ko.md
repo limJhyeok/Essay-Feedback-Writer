@@ -7,7 +7,7 @@
 **언어 선택 / Language Selection:**
 
 <p align="left">
-    한국어&nbsp ｜ &nbsp<a href="readme.md">English</a>&nbsp
+    한국어&nbsp ｜ &nbsp<a href="README.md">English</a>&nbsp
 </p>
 ## 기술 스택 및 기능
 
@@ -138,7 +138,7 @@ sudo docker-compose -f docker-compose.yaml -f docker-compose.override.yaml -f do
 
 
 ## 백엔드 개발
-백엔드 문서: [backend/readme.md](./backend/readme.ko.md)
+백엔드 문서: [backend/readme.md](backend/README.ko.md)
 
 ## 개발
 

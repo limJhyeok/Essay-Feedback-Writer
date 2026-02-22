@@ -29,11 +29,11 @@ alembic revision --autogenerate -m "Description"
 ### Backend (local, without Docker)
 ```bash
 cd backend
-poetry install
-poetry run pytest                             # Run all tests
-poetry run pytest app/tests/api/routes/      # Run a specific directory
-poetry run pytest app/tests/api/routes/test_users.py  # Run a single test file
-poetry run ruff check --fix                  # Lint and format
+uv sync                                       # Install all dependencies (including dev)
+uv run pytest                                 # Run all tests
+uv run pytest app/tests/api/routes/           # Run a specific directory
+uv run pytest app/tests/api/routes/test_users.py  # Run a single test file
+uv run ruff check --fix                       # Lint and format
 ```
 
 ### Frontend (local, without Docker)
@@ -131,7 +131,7 @@ Copy `.env.example` to `.env` and fill in:
 - **Coverage**: HTML report generated in `htmlcov/`
 
 ```bash
-# Inside backend container or locally with Poetry
+# Inside backend container or locally with uv
 pytest app/tests/crud/test_user.py         # single file
 pytest app/tests/ -k "test_login"          # filter by name
 ```

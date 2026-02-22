@@ -3,6 +3,7 @@
 __pycache__/
 *.ipynb
 venv
+.venv
 .ruff_cache
 # test
 .coverage

@@ -3,7 +3,7 @@
 **언어 선택 / Language Selection:**
 
 <p align="left">
-    <a href="readme.ko.md">한국어</a>&nbsp ｜ &nbspEnglish&nbsp
+    <a href="README.ko.md">한국어</a>&nbsp ｜ &nbspEnglish&nbsp
 </p>
 
 ## Requirements

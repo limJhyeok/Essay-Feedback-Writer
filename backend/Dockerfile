@@ -13,10 +13,21 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 # Using a wildcard 'uv.lock*' allows the build to continue even if the file is missing.
 COPY ./pyproject.toml ./uv.lock* /app/ ./
 
-RUN if [ "$INSTALL_DEV" = "true" ]; then \
-        uv sync --frozen --no-install-project; \
+# We run sync once, using logic to decide whether to use --frozen or not.
+RUN if [ -f uv.lock ]; then \
+        echo "Lockfile found. Syncing with --frozen..."; \
+        if [ "$INSTALL_DEV" = "true" ]; then \
+            uv sync --frozen; \
+        else \
+            uv sync --frozen --no-group dev; \
+        fi; \
     else \
-        uv sync --frozen --no-install-project --no-group dev; \
+        echo "No lockfile. Resolving dependencies..."; \
+        if [ "$INSTALL_DEV" = "true" ]; then \
+            uv sync; \
+        else \
+            uv sync --no-group dev; \
+        fi; \
     fi
 # Copy the application code
 COPY . .

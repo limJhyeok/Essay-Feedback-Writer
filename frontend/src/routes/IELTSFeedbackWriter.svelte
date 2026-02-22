@@ -28,8 +28,8 @@
   let registeredEssayList = [];
   let editing = false;
 
-  let providerName = "OpenAI";
-  let providerNameList = ["OpenAI"]
+  let providerName = "";
+  $: providerNameList = AIModelProviders.map(p => p.name);
   let APIKeyName = "";
   let APIKey = "";
   let registeredAPIKeys = [];
@@ -256,8 +256,9 @@
   let selectedFeedbackModel = null;
 
   function read_bots() {
+    if (!selectedAIModelProvider) return;
     let params = {}
-    let url = `/api/v1/ielts/api_models/${providerName}`;
+    let url = `/api/v1/ielts/api_models/${selectedAIModelProvider.name}`;
     fastapi("get", url, params,
       (json) => {
         feedbackModels = json
@@ -270,7 +271,7 @@
       }
     )
   }
-  read_bots();
+  $: selectedAIModelProvider && read_bots();
 
   function read_providers() {
     let params = {}
@@ -280,6 +281,7 @@
         AIModelProviders = json
         if (AIModelProviders.length > 0) {
          selectedAIModelProvider = AIModelProviders[0];
+         providerName = AIModelProviders[0].name;
         }
       },
       (json_error) => {

@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from langchain_openai import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import SystemMessage, HumanMessage
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
 from starlette import status
@@ -195,7 +195,6 @@ async def trigger_feedback_generation(
     request: feedback_schema.FeedbackCreateRequest,
 ) -> None:
     student_essay = essay_crud.get_essay_by_id(db, essay_id)
-
     criterion_names = rubric_criterion_crud.get_unique_criterion_names_by_rubric(
         db, request.rubric_name
     )
@@ -242,15 +241,15 @@ async def trigger_feedback_generation(
             f"- **{criterion.score}**: {criterion.description}"
             for criterion in criterion_list
         )
-        llm_prompt = get_llm_prompt_for_ielts(
+        system_prompt, human_template = get_llm_prompt_for_ielts(
             criterion_name, sub_system_prompts.get(criterion_name, ""), rubric_text
         )
-        llm_prompt = llm_prompt.format(
+        human_prompt = human_template.format(
             essay_prompt=request.prompt, student_essay=student_essay.content
         )
 
         result: FeedbackResponse = structured_llm.invoke(
-            [SystemMessage(content=llm_prompt)]
+            [SystemMessage(content=system_prompt), HumanMessage(content=human_prompt)]
         )
 
         feedback_response["feedback_by_criteria"][criterion_name] = {
@@ -260,12 +259,12 @@ async def trigger_feedback_generation(
 
         holistic_feedback_inputs[criterion_name] = result.feedback
 
-    holistic_prompt = get_llm_prompt_for_ielts_holistic_feedback(
+    holistic_system, holistic_human = get_llm_prompt_for_ielts_holistic_feedback(
         **holistic_feedback_inputs
     )
 
     holistic_result: FeedbackResponse = structured_llm.invoke(
-        [SystemMessage(content=holistic_prompt)]
+        [SystemMessage(content=holistic_system), HumanMessage(content=holistic_human)]
     )
 
     feedback_response["overall_score"] = holistic_result.score
@@ -314,16 +313,10 @@ def get_llm_client(
 
 def get_llm_prompt_for_ielts(
     criteria_name: str, subsystem_prompt: str, rubric_for_criteria: str
-) -> str:
+) -> tuple[str, str]:
     system_prompt = f"""You are a professional IELTS writing examiner. Your job is to evaluate essays written in response to specific prompts. You assess essays based on a rubric with scores from 0 to 9. Each score corresponds to a specific level of performance on the "{criteria_name}" criteria.
 
     {subsystem_prompt}
-
-    **Essay Prompt**:
-    {{essay_prompt}}
-
-    **Student's Essay**:
-    {{student_essay}}
 
     Assign a **score between 0 and 9** based on the closest match in the rubric and provide a brief explanation justifying your score. Then give **constructive feedback** with suggestions for improvement.
 
@@ -332,20 +325,24 @@ def get_llm_prompt_for_ielts(
     **Rubric for "{criteria_name}"**:
     {rubric_for_criteria}
     """
-    return system_prompt
+    human_template = """**Essay Prompt**:
+    {essay_prompt}
+
+    **Student's Essay**:
+    {student_essay}"""
+    return system_prompt, human_template
 
 
-def get_llm_prompt_for_ielts_holistic_feedback(**kwrgs):
+def get_llm_prompt_for_ielts_holistic_feedback(**kwargs):
     system_prompt = """You are an IELTS examiner.
-
-Below are scores and feedback for four IELTS Writing Task 2 scoring criteria.
 
 Your job is to:
 1. Calculate the average band score based on the four criteria.
 2. Provide the final overall score (rounded to the nearest half band).
 3. Justify the final band score in 2-3 sentences.
 4. Do not repeat the individual criteria feedback — just summarise holistically."""
-    for criterion, text in kwrgs.items():
-        system_prompt += f"\n### {criterion}\n{text}\n"
-    system_prompt += "\nNow give the final score and your justification."
-    return system_prompt
+    human_prompt = "Below are scores and feedback for four IELTS Writing Task 2 scoring criteria.\n"
+    for criterion, text in kwargs.items():
+        human_prompt += f"\n### {criterion}\n{text}\n"
+    human_prompt += "\nNow give the final score and your justification."
+    return system_prompt, human_prompt

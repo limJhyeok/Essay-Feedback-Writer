@@ -42,7 +42,6 @@ services:
       - traefik.http.services.${STACK_NAME?Variable not set}-adminer.loadbalancer.server.port=8080
 
   backend:
-    image: '${DOCKER_IMAGE_BACKEND:-ghcr.io/limjhyeok/backend}:${TAG-latest}'
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -87,6 +86,10 @@ services:
       - USE_HASH_ROUTER=${USE_HASH_ROUTER}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - LANGCHAIN_TRACING_V2=${LANGCHAIN_TRACING_V2}
+      - LANGSMITH_ENDPOINT=${LANGSMITH_ENDPOINT}
+      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY}
+      - LANGSMITH_PROJECT=${LANGSMITH_PROJECT}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/util/health-check/"]
       interval: 10s
@@ -110,7 +113,6 @@ services:
       # Enable redirection for HTTP and HTTPS
       - traefik.http.routers.${STACK_NAME?Variable not set}-backend-http.middlewares=https-redirect
   frontend:
-    image: '${DOCKER_IMAGE_FRONTEND:-ghcr.io/limjhyeok/frontend}:${TAG-latest}'
     build:
       context: ./frontend
       dockerfile: Dockerfile

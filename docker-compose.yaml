@@ -86,6 +86,7 @@ services:
       - DOMAIN_PORT=${DOMAIN_PORT}
       - USE_HASH_ROUTER=${USE_HASH_ROUTER}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/util/health-check/"]
       interval: 10s

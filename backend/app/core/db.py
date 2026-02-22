@@ -180,21 +180,33 @@ def store_default_api_models(db: Session, csv_path: str) -> None:
 
 
 def store_default_api_key(db: Session) -> None:
-    openai_api_key = os.getenv("OPENAI_API_KEY")
-    default_key_name = "OPENAI_API_KEY"
-    if openai_api_key:
-        super_user = user_crud.get_user_by_email(db, settings.FIRST_SUPERUSER)
+    super_user = user_crud.get_user_by_email(db, settings.FIRST_SUPERUSER)
+
+    api_keys = [
+        ("OPENAI_API_KEY", "OpenAI"),
+        ("ANTHROPIC_API_KEY", "Anthropic"),
+    ]
+
+    for env_var, provider_name in api_keys:
+        api_key_value = os.getenv(env_var)
+        if not api_key_value:
+            continue
+
+        provider = ai_provider_crud.get_provider_by_name(db, provider_name)
+        if not provider:
+            continue
+
         existing_key = user_api_key_crud.get_user_api_key(
             db,
             super_user.id,
-            provider_id=ai_provider_crud.get_provider_by_name(db, "OpenAI").id,
+            provider_id=provider.id,
         )
 
         if not existing_key:
             user_api_key_create = user_api_key_schema.UserAPIKeyCreate(
                 user_id=super_user.id,
-                provider_id=ai_provider_crud.get_provider_by_name(db, "OpenAI").id,
-                name=default_key_name,
-                api_key=encrypt_api_key(openai_api_key),
+                provider_id=provider.id,
+                name=env_var,
+                api_key=encrypt_api_key(api_key_value),
             )
             user_api_key_crud.create_user_api_key(db, user_api_key_create)

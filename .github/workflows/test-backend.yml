@@ -13,6 +13,8 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    env:
+      COMPOSE_FILE: docker-compose.yaml:docker-compose.override.yaml:docker-compose.test.yaml
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -49,6 +51,12 @@ jobs:
           echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
           echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
           echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
+          echo "ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}" >> .env
+          echo "TEST_POSTGRES_SERVER=db" >> .env
+          echo "TEST_POSTGRES_PORT=5432" >> .env
+          echo "TEST_POSTGRES_DB=test" >> .env
+          echo "TEST_POSTGRES_USER=postgres" >> .env
+          echo "TEST_POSTGRES_PASSWORD=changethis" >> .env
 
       - run: docker compose build db backend
       - run: docker compose down -v --remove-orphans

@@ -4,7 +4,7 @@
 <a href="https://coverage-badge.samuelcolvin.workers.dev/redirect/limJhyeok/Essay-Feedback-Writer" target="_blank"><img src="https://coverage-badge.samuelcolvin.workers.dev/limJhyeok/Essay-Feedback-Writer.svg" alt="Coverage"></a>
 
 <p align="left">
-    <a href="readme.ko.md">한국어</a>&nbsp ｜ &nbspEnglish&nbsp
+    <a href="README.ko.md">한국어</a>&nbsp ｜ &nbspEnglish&nbsp
 </p>
 
 ## Technology Stack and Features
@@ -139,7 +139,7 @@ When running tests in the **backend**, all test-related data will be stored in t
 To ensure data separation during testing, it is strongly recommended to use the **test DB**.
 
 ## Backend Development
-Backend docs: [backend/readme.md](./backend/readme.md)
+Backend docs: [backend/readme.md](backend/README.md)
 
 ## Development
 

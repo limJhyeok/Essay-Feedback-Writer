@@ -1,29 +1,30 @@
 FROM python:3.10
 
-# Set the working directory
+# Set environment variables
+ENV UV_SYSTEM_PYTHON=1 \
+    UV_COMPILE_BYTECODE=1 \
+    PYTHONPATH=/app
+
 WORKDIR /app/
 
-# 기본 패키지 업데이트 및 필수 패키지 설치
-RUN apt-get update && apt-get install -y \
-    curl \
-    && apt-get clean
+# Install uv from official image
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# Install Poetry
-RUN curl -sSL https://install.python-poetry.org | POETRY_HOME=/opt/poetry python && \
-    cd /usr/local/bin && \
-    ln -s /opt/poetry/bin/poetry && \
-    poetry config virtualenvs.create false
+# Using a wildcard 'uv.lock*' allows the build to continue even if the file is missing.
+COPY pyproject.toml uv.lock* README.md* ./
 
-# Copy poetry.lock* in case it doesn't exist in the repo
-COPY ./pyproject.toml ./poetry.lock* /app/
-
-RUN bash -c "if [ $INSTALL_DEV == 'true' ] ; then poetry install --no-root ; else poetry install --no-root --only main ; fi"
-
+# 2. Sync dependencies BUT skip installing the local project
+RUN if [ -f uv.lock ]; then \
+        uv sync --frozen --no-install-project $([ "$INSTALL_DEV" != "true" ] && echo "--no-group dev"); \
+    else \
+        uv sync --no-install-project $([ "$INSTALL_DEV" != "true" ] && echo "--no-group dev"); \
+    fi
 
 # Copy the application code
 COPY . .
 
-ENV PYTHONPATH=/app
+# Make the virtualenv's bin directory available on PATH
+ENV PATH="/app/.venv/bin:$PATH"
 
 # Expose the port that the app will run on
 EXPOSE 8000

@@ -8,6 +8,8 @@ from passlib.context import CryptContext
 
 from app.core.config import settings
 
+# TODO: Consider migration passlib to another security library(ref: https://github.com/fastapi/fastapi/discussions/11773)
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 ALGORITHM = os.getenv("ALGORITHM")

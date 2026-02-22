@@ -3,7 +3,7 @@
 **언어 선택 / Language Selection:**
 
 <p align="left">
-    한국어&nbsp ｜ &nbsp<a href="readme.md">English</a>&nbsp
+    한국어&nbsp ｜ &nbsp<a href="README.md">English</a>&nbsp
 </p>
 
 ## Requirements

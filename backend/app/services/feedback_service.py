@@ -18,6 +18,11 @@ from app.crud import (
     rubric_criterion_crud,
     user_api_key_crud,
 )
+from app.prompts.ielts_prompt import (
+    IELTS_HOLISTIC_SYSTEM_PROMPT,
+    IELTS_SUB_SYSTEM_PROMPT,
+    IELTS_SYSTEM_PROMPT_TEMPLATE,
+)
 from app.schemas import feedback_schema, user_api_key_schema
 
 
@@ -52,17 +57,11 @@ def get_llm_client(
 def get_llm_prompt_for_ielts(
     criteria_name: str, subsystem_prompt: str, rubric_for_criteria: str
 ) -> tuple[str, str]:
-    system_prompt = f"""You are a professional IELTS writing examiner. Your job is to evaluate essays written in response to specific prompts. You assess essays based on a rubric with scores from 0 to 9. Each score corresponds to a specific level of performance on the "{criteria_name}" criteria.
-
-    {subsystem_prompt}
-
-    Assign a **score between 0 and 9** based on the closest match in the rubric and provide a brief explanation justifying your score. Then give **constructive feedback** with suggestions for improvement.
-
-    **Evaluation Criteria**: {criteria_name}
-
-    **Rubric for "{criteria_name}"**:
-    {rubric_for_criteria}
-    """
+    system_prompt = IELTS_SYSTEM_PROMPT_TEMPLATE.format(
+        criteria_name=criteria_name,
+        subsystem_prompt=subsystem_prompt,
+        rubric_for_criteria=rubric_for_criteria,
+    )
     human_template = """**Essay Prompt**:
     {essay_prompt}
 
@@ -72,18 +71,11 @@ def get_llm_prompt_for_ielts(
 
 
 def get_llm_prompt_for_ielts_holistic_feedback(**kwargs):
-    system_prompt = """You are an IELTS examiner.
-
-Your job is to:
-1. Calculate the average band score based on the four criteria.
-2. Provide the final overall score (rounded to the nearest half band).
-3. Justify the final band score in 2-3 sentences.
-4. Do not repeat the individual criteria feedback — just summarise holistically."""
     human_prompt = "Below are scores and feedback for four IELTS Writing Task 2 scoring criteria.\n"
     for criterion, text in kwargs.items():
         human_prompt += f"\n### {criterion}\n{text}\n"
     human_prompt += "\nNow give the final score and your justification."
-    return system_prompt, human_prompt
+    return IELTS_HOLISTIC_SYSTEM_PROMPT, human_prompt
 
 
 def generate_feedback(
@@ -97,28 +89,6 @@ def generate_feedback(
         db, request.rubric_name
     )
 
-    sub_system_prompts = {
-        "Task Response": """Use the rubric below to assess how well the essay addresses the prompt. Pay close attention to:
-- Whether the essay clearly answers the question
-- How well-developed and supported the ideas are
-- Relevance and extension of the content
-""",
-        "Coherence & Cohesion": """Use the rubric below to assess how well the essay is organised and how ideas flow logically. Pay attention to:
-- The logical organisation of ideas and the progression of arguments
-- The use of cohesive devices (e.g., linking words, paragraphing) to make the essay easy to follow
-- The clarity and fluency of paragraphing
-""",
-        "Lexical Resource": """Use the rubric below to assess the range and accuracy of vocabulary used in the essay. Pay attention to:
-- The range of vocabulary used and how appropriate and varied it is
-- The accuracy of word choice, including collocations and precision
-- Whether there are any noticeable errors in spelling, word form, or word choice that affect understanding
-""",
-        "Grammatical Range & Accuracy": """Use the rubric below to assess the range and accuracy of grammar used in the essay. Pay attention to:
-- The variety of sentence structures used (simple, compound, complex)
-- The accuracy of grammar, including verb tenses, subject-verb agreement, punctuation, and article use
-- Whether errors in grammar hinder communication or understanding
-""",
-    }
     db_provider = ai_provider_crud.get_provider_by_name(db, request.model_provider_name)
     db_api_key = user_api_key_crud.get_user_api_key(db, user_id, db_provider.id)
     if db_api_key is None:
@@ -140,7 +110,7 @@ def generate_feedback(
             for criterion in criterion_list
         )
         system_prompt, human_template = get_llm_prompt_for_ielts(
-            criterion_name, sub_system_prompts.get(criterion_name, ""), rubric_text
+            criterion_name, IELTS_SUB_SYSTEM_PROMPT.get(criterion_name, ""), rubric_text
         )
         human_prompt = human_template.format(
             essay_prompt=request.prompt, student_essay=student_essay.content

@@ -17,7 +17,7 @@ jobs:
       COMPOSE_FILE: docker-compose.yaml:docker-compose.override.yaml:docker-compose.test.yaml
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
         uses: actions/setup-python@v5

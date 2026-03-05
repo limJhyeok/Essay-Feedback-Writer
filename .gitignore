@@ -26,3 +26,6 @@ venv
 *.db
 
 traefik-public/
+
+# Claude Code audit logs
+.claude/logs/

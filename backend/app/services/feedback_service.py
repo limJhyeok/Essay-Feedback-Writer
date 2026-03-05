@@ -1,9 +1,10 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import HTTPException
 from langchain_anthropic import ChatAnthropic
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.runnables import Runnable
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -20,6 +21,7 @@ from app.crud import (
 )
 from app.prompts.ielts_prompt import (
     IELTS_HOLISTIC_SYSTEM_PROMPT,
+    IELTS_HUMAN_TEMPLATE,
     IELTS_SUB_SYSTEM_PROMPT,
     IELTS_SYSTEM_PROMPT_TEMPLATE,
 )
@@ -41,7 +43,7 @@ def get_llm_client(
     db_api_key: user_api_key_schema.UserAPIKey,
     provider_name: str,
     model_name: str,
-) -> BaseChatModel:
+) -> Runnable:
     cls = _PROVIDER_MAP.get(provider_name)
     if cls is None:
         raise HTTPException(
@@ -62,17 +64,14 @@ def get_llm_prompt_for_ielts(
         subsystem_prompt=subsystem_prompt,
         rubric_for_criteria=rubric_for_criteria,
     )
-    human_template = """**Essay Prompt**:
-    {essay_prompt}
-
-    **Student's Essay**:
-    {student_essay}"""
-    return system_prompt, human_template
+    return system_prompt, IELTS_HUMAN_TEMPLATE
 
 
-def get_llm_prompt_for_ielts_holistic_feedback(**kwargs):
+def get_llm_prompt_for_ielts_holistic_feedback(
+    criteria_feedbacks: dict[str, str],
+) -> tuple[str, str]:
     human_prompt = "Below are scores and feedback for four IELTS Writing Task 2 scoring criteria.\n"
-    for criterion, text in kwargs.items():
+    for criterion, text in criteria_feedbacks.items():
         human_prompt += f"\n### {criterion}\n{text}\n"
     human_prompt += "\nNow give the final score and your justification."
     return IELTS_HOLISTIC_SYSTEM_PROMPT, human_prompt
@@ -90,6 +89,11 @@ def generate_feedback(
     )
 
     db_provider = ai_provider_crud.get_provider_by_name(db, request.model_provider_name)
+    if db_provider is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Unknown provider: {request.model_provider_name}",
+        )
     db_api_key = user_api_key_crud.get_user_api_key(db, user_id, db_provider.id)
     if db_api_key is None:
         raise HTTPException(
@@ -101,7 +105,7 @@ def generate_feedback(
     )
 
     feedback_response = {"feedback_by_criteria": {}}
-    holistic_feedback_inputs = {}
+    holistic_feedback_inputs: dict[str, str] = {}
 
     for criterion_name in criterion_names:
         criterion_list = rubric_criterion_crud.get_criterion_by_name(db, criterion_name)
@@ -128,7 +132,7 @@ def generate_feedback(
         holistic_feedback_inputs[criterion_name] = result.feedback
 
     holistic_system, holistic_human = get_llm_prompt_for_ielts_holistic_feedback(
-        **holistic_feedback_inputs
+        holistic_feedback_inputs
     )
 
     holistic_result: FeedbackResponse = structured_llm.invoke(
@@ -148,8 +152,8 @@ def generate_feedback(
         essay_id=essay_id,
         bot_id=api_model.bot.id,
         content=feedback_response,
-        created_at=datetime.now(),
+        created_at=datetime.now(timezone.utc),
     )
 
-    _ = feedback_crud.create_feedback(db, feedback_create)
+    feedback_crud.create_feedback(db, feedback_create)
     user_api_key_crud.update_last_used(db, db_api_key.id)

@@ -33,6 +33,12 @@ IELTS_SUB_SYSTEM_PROMPT = {
 """,
 }
 
+IELTS_HUMAN_TEMPLATE = """**Essay Prompt**:
+    {essay_prompt}
+
+    **Student's Essay**:
+    {student_essay}"""
+
 IELTS_HOLISTIC_SYSTEM_PROMPT = """You are an IELTS examiner.
 
 Your job is to:

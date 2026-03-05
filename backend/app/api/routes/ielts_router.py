@@ -1,37 +1,33 @@
-from pydantic import BaseModel
-from langchain_openai import ChatOpenAI
-from langchain_anthropic import ChatAnthropic
-from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import SystemMessage, HumanMessage
 from datetime import datetime, timezone
-from fastapi import APIRouter, HTTPException
+
+from fastapi import APIRouter
 from starlette import status
 
+from app.api.deps import CurrentUser, SessionDep
 from app.core import security
-from app.api.deps import SessionDep, CurrentUser
 from app.crud import (
-    prompt_crud,
-    essay_crud,
-    feedback_crud,
-    bot_crud,
-    example_essay_crud,
-    rubric_crud,
-    rubric_criterion_crud,
-    api_model_crud,
-    user_api_key_crud,
     ai_provider_crud,
+    api_model_crud,
+    bot_crud,
+    essay_crud,
+    example_essay_crud,
+    feedback_crud,
+    prompt_crud,
+    rubric_crud,
+    user_api_key_crud,
 )
 from app.schemas import (
-    prompt_schema,
-    essay_schema,
-    feedback_schema,
-    example_essay_schema,
-    rubric_criterion_schema,
-    bot_schema,
-    api_model_schema,
-    user_api_key_schema,
     ai_provider_schema,
+    api_model_schema,
+    bot_schema,
+    essay_schema,
+    example_essay_schema,
+    feedback_schema,
+    prompt_schema,
+    rubric_criterion_schema,
+    user_api_key_schema,
 )
+from app.services import feedback_service
 
 router = APIRouter()
 
@@ -182,11 +178,6 @@ def delete_api_key_route(db: SessionDep, api_key_id: int) -> None:
     user_api_key_crud.delete_api_key(db, api_key_id)
 
 
-class FeedbackResponse(BaseModel):
-    score: float
-    feedback: str
-
-
 @router.post("/essays/{essay_id}/feedback")
 async def trigger_feedback_generation(
     db: SessionDep,
@@ -194,155 +185,4 @@ async def trigger_feedback_generation(
     essay_id: int,
     request: feedback_schema.FeedbackCreateRequest,
 ) -> None:
-    student_essay = essay_crud.get_essay_by_id(db, essay_id)
-    criterion_names = rubric_criterion_crud.get_unique_criterion_names_by_rubric(
-        db, request.rubric_name
-    )
-
-    sub_system_prompts = {
-        "Task Response": """Use the rubric below to assess how well the essay addresses the prompt. Pay close attention to:
-- Whether the essay clearly answers the question
-- How well-developed and supported the ideas are
-- Relevance and extension of the content
-""",
-        "Coherence & Cohesion": """Use the rubric below to assess how well the essay is organised and how ideas flow logically. Pay attention to:
-- The logical organisation of ideas and the progression of arguments
-- The use of cohesive devices (e.g., linking words, paragraphing) to make the essay easy to follow
-- The clarity and fluency of paragraphing
-""",
-        "Lexical Resource": """Use the rubric below to assess the range and accuracy of vocabulary used in the essay. Pay attention to:
-- The range of vocabulary used and how appropriate and varied it is
-- The accuracy of word choice, including collocations and precision
-- Whether there are any noticeable errors in spelling, word form, or word choice that affect understanding
-""",
-        "Grammatical Range & Accuracy": """Use the rubric below to assess the range and accuracy of grammar used in the essay. Pay attention to:
-- The variety of sentence structures used (simple, compound, complex)
-- The accuracy of grammar, including verb tenses, subject-verb agreement, punctuation, and article use
-- Whether errors in grammar hinder communication or understanding
-""",
-    }
-    db_provider = ai_provider_crud.get_provider_by_name(db, request.model_provider_name)
-    db_api_key = user_api_key_crud.get_user_api_key(db, current_user.id, db_provider.id)
-    if db_api_key is None:
-        raise HTTPException(
-            status_code=404,
-            detail=f"We couldn’t find an active API key for {request.model_provider_name}. Please register your API key to proceed.",
-        )
-    structured_llm = get_llm_client(
-        db, db_api_key, request.model_provider_name, request.api_model_name
-    )
-
-    feedback_response = {"feedback_by_criteria": {}}
-    holistic_feedback_inputs = {}
-
-    for criterion_name in criterion_names:
-        criterion_list = rubric_criterion_crud.get_criterion_by_name(db, criterion_name)
-        rubric_text = "\n".join(
-            f"- **{criterion.score}**: {criterion.description}"
-            for criterion in criterion_list
-        )
-        system_prompt, human_template = get_llm_prompt_for_ielts(
-            criterion_name, sub_system_prompts.get(criterion_name, ""), rubric_text
-        )
-        human_prompt = human_template.format(
-            essay_prompt=request.prompt, student_essay=student_essay.content
-        )
-
-        result: FeedbackResponse = structured_llm.invoke(
-            [SystemMessage(content=system_prompt), HumanMessage(content=human_prompt)]
-        )
-
-        feedback_response["feedback_by_criteria"][criterion_name] = {
-            "score": result.score,
-            "feedback": result.feedback,
-        }
-
-        holistic_feedback_inputs[criterion_name] = result.feedback
-
-    holistic_system, holistic_human = get_llm_prompt_for_ielts_holistic_feedback(
-        **holistic_feedback_inputs
-    )
-
-    holistic_result: FeedbackResponse = structured_llm.invoke(
-        [SystemMessage(content=holistic_system), HumanMessage(content=holistic_human)]
-    )
-
-    feedback_response["overall_score"] = holistic_result.score
-    feedback_response["overall_feedback"] = holistic_result.feedback
-
-    api_model = api_model_crud.get_api_model_by_name_and_provider(
-        db, request.api_model_name, request.model_provider_name
-    )
-    prompt = prompt_crud.get_prompt_by_content(db, request.prompt)
-    feedback_create = feedback_schema.FeedbackCreate(
-        user_id=current_user.id,
-        prompt_id=prompt.id,
-        essay_id=essay_id,
-        bot_id=api_model.bot.id,
-        content=feedback_response,
-        created_at=datetime.now(),
-    )
-
-    _ = feedback_crud.create_feedback(db, feedback_create)
-    user_api_key_crud.update_last_used(db, db_api_key.id)
-
-
-_PROVIDER_MAP: dict[str, type[BaseChatModel]] = {
-    "OpenAI": ChatOpenAI,
-    "Anthropic": ChatAnthropic,
-}
-
-
-def get_llm_client(
-    db: SessionDep,
-    db_api_key: user_api_key_schema.UserAPIKey,
-    provider_name: str,
-    model_name: str,
-) -> BaseChatModel:
-    cls = _PROVIDER_MAP.get(provider_name)
-    if cls is None:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported provider: {provider_name}",
-        )
-
-    decrypted_api_key = security.decrypt_api_key(db_api_key.api_key)
-    llm = cls(model=model_name, api_key=decrypted_api_key)
-    return llm.with_structured_output(FeedbackResponse)
-
-
-def get_llm_prompt_for_ielts(
-    criteria_name: str, subsystem_prompt: str, rubric_for_criteria: str
-) -> tuple[str, str]:
-    system_prompt = f"""You are a professional IELTS writing examiner. Your job is to evaluate essays written in response to specific prompts. You assess essays based on a rubric with scores from 0 to 9. Each score corresponds to a specific level of performance on the "{criteria_name}" criteria.
-
-    {subsystem_prompt}
-
-    Assign a **score between 0 and 9** based on the closest match in the rubric and provide a brief explanation justifying your score. Then give **constructive feedback** with suggestions for improvement.
-
-    **Evaluation Criteria**: {criteria_name}
-
-    **Rubric for "{criteria_name}"**:
-    {rubric_for_criteria}
-    """
-    human_template = """**Essay Prompt**:
-    {essay_prompt}
-
-    **Student's Essay**:
-    {student_essay}"""
-    return system_prompt, human_template
-
-
-def get_llm_prompt_for_ielts_holistic_feedback(**kwargs):
-    system_prompt = """You are an IELTS examiner.
-
-Your job is to:
-1. Calculate the average band score based on the four criteria.
-2. Provide the final overall score (rounded to the nearest half band).
-3. Justify the final band score in 2-3 sentences.
-4. Do not repeat the individual criteria feedback — just summarise holistically."""
-    human_prompt = "Below are scores and feedback for four IELTS Writing Task 2 scoring criteria.\n"
-    for criterion, text in kwargs.items():
-        human_prompt += f"\n### {criterion}\n{text}\n"
-    human_prompt += "\nNow give the final score and your justification."
-    return system_prompt, human_prompt
+    feedback_service.generate_feedback(db, current_user.id, essay_id, request)

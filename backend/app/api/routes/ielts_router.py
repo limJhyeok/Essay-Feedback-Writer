@@ -1,10 +1,14 @@
+import os
 from datetime import datetime, timezone
+from pathlib import Path
 
-from fastapi import APIRouter
+from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 from starlette import status
 
 from app.api.deps import CurrentUser, SessionDep
 from app.core import security
+from app.core.config import settings
 from app.crud import (
     ai_provider_crud,
     api_model_crud,
@@ -125,6 +129,48 @@ def submit_essay(
     return essay
 
 
+@router.post("/essays/handwriting")
+def submit_handwriting_essay(
+    db: SessionDep,
+    current_user: CurrentUser,
+    prompt_id: int,
+    image: UploadFile = File(...),
+) -> essay_schema.Essay:
+    max_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
+    contents = image.file.read()
+    if len(contents) > max_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"Image exceeds {settings.MAX_UPLOAD_SIZE_MB}MB limit",
+        )
+
+    db_essay = essay_crud.create_handwriting_essay(
+        db, current_user.id, prompt_id, datetime.now(timezone.utc)
+    )
+
+    upload_dir = Path(settings.UPLOAD_DIR) / "essays" / str(current_user.id)
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    file_path = upload_dir / f"{db_essay.id}.png"
+    file_path.write_bytes(contents)
+
+    essay_crud.update_essay_image_path(db, db_essay.id, str(file_path))
+
+    db.refresh(db_essay)
+    return essay_schema.Essay.model_validate(db_essay)
+
+
+@router.get("/essays/{essay_id}/image")
+def get_essay_image(
+    db: SessionDep, current_user: CurrentUser, essay_id: int
+) -> FileResponse:
+    essay = essay_crud.get_essay_by_id(db, essay_id)
+    if essay is None or essay.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Essay not found")
+    if not essay.image_path or not os.path.isfile(essay.image_path):
+        raise HTTPException(status_code=404, detail="Image not found")
+    return FileResponse(essay.image_path, media_type="image/png")
+
+
 def generate_key_name():
     return f"secret-key_{datetime.now(timezone.utc).isoformat()}"
 
@@ -185,4 +231,12 @@ async def trigger_feedback_generation(
     essay_id: int,
     request: feedback_schema.FeedbackCreateRequest,
 ) -> None:
-    feedback_service.generate_feedback(db, current_user.id, essay_id, request)
+    essay = essay_crud.get_essay_by_id(db, essay_id)
+    if essay is None:
+        raise HTTPException(status_code=404, detail="Essay not found")
+    if essay.input_type.value == "handwriting":
+        feedback_service.generate_feedback_for_handwriting(
+            db, current_user.id, essay_id, request
+        )
+    else:
+        feedback_service.generate_feedback(db, current_user.id, essay_id, request)

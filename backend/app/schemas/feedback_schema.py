@@ -24,7 +24,9 @@ class FeedbackCreate(BaseModel):
 class FeedbackCreateRequest(BaseModel):
     prompt: str
     rubric_name: Optional[str] = None
-    essay_content: str = Field(..., description="The text content of the essay")
+    essay_content: Optional[str] = Field(
+        None, description="The text content of the essay (optional for handwriting)"
+    )
     model_provider_name: str = Field(
         ...,
         description="The name of the AI model provider like OpenAI, Anthropic, google.",
@@ -33,7 +35,7 @@ class FeedbackCreateRequest(BaseModel):
         ..., description="The name of the AI model for calling API"
     )
 
-    @field_validator("prompt", "essay_content", "api_model_name")
+    @field_validator("prompt", "api_model_name")
     def not_empty(cls, v):
         if not v or not v.strip():
             raise ValueError("null value is not allowed")

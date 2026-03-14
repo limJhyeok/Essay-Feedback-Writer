@@ -87,6 +87,13 @@ class Settings(BaseSettings):
             path=self.POSTGRES_DB,
         )
 
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def ASYNC_SQLALCHEMY_DATABASE_URI(self) -> str:
+        return str(self.SQLALCHEMY_DATABASE_URI).replace(
+            "postgresql+psycopg://", "postgresql+psycopg_async://", 1
+        )
+
     SMTP_TLS: bool = True
     SMTP_SSL: bool = False
     SMTP_PORT: int = SMTP_PORT

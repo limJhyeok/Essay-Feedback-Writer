@@ -1,6 +1,6 @@
 import logging
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 import os
 import csv
@@ -8,6 +8,7 @@ from typing import Any
 from datetime import datetime
 
 from sqlalchemy import create_engine
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from app.core.config import settings
 
 from app.core.security import encrypt_api_key
@@ -40,24 +41,21 @@ logger = logging.getLogger(__name__)
 
 engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI))
 
+async_engine = create_async_engine(str(settings.ASYNC_SQLALCHEMY_DATABASE_URI))
+AsyncSessionLocal = async_sessionmaker(
+    async_engine, class_=AsyncSession, expire_on_commit=False
+)
 
-def init_db(db: Session) -> None:
-    # Tables should be created with Alembic migrations
-    # But if you don't want to use migrations, create
-    # the tables un-commenting the next lines
-    # from sqlmodel import SQLModel
 
-    # This works because the models are already imported and registered from app.models
-    # SQLModel.metadata.create_all(engine)
-
-    user = user_crud.get_user_by_email(db, settings.FIRST_SUPERUSER)
+async def init_db(db: AsyncSession) -> None:
+    user = await user_crud.get_user_by_email(db, settings.FIRST_SUPERUSER)
     if not user:
         user_create = user_schema.UserCreate(
             email=settings.FIRST_SUPERUSER,
             is_superuser=True,
             password=settings.FIRST_SUPERUSER_PASSWORD,
         )
-        user_crud.create_user(db, user_create)
+        await user_crud.create_user(db, user_create)
 
 
 def load_from_csv(csv_path: str) -> list[dict[str, Any]]:
@@ -72,14 +70,16 @@ def load_from_csv(csv_path: str) -> list[dict[str, Any]]:
     return data
 
 
-def store_example_essays(db: Session, csv_path: str) -> None:
+async def store_example_essays(db: AsyncSession, csv_path: str) -> None:
     data = load_from_csv(csv_path)
-    super_user = user_crud.get_user_by_email(db, settings.FIRST_SUPERUSER)
+    super_user = await user_crud.get_user_by_email(db, settings.FIRST_SUPERUSER)
     for item in data:
         prompt_content = item["prompt"].strip()
         example_answer = item["example_answer"].strip()
 
-        existing_prompt = prompt_crud.get_prompt_by_content(db, content=prompt_content)
+        existing_prompt = await prompt_crud.get_prompt_by_content(
+            db, content=prompt_content
+        )
         if not existing_prompt:
             prompt_create = prompt_schema.PromptCreate(
                 content=prompt_content,
@@ -87,9 +87,9 @@ def store_example_essays(db: Session, csv_path: str) -> None:
                 created_at=datetime.now(),
                 updated_at=datetime.now(),
             )
-            db_prompt = prompt_crud.create_prompt(db, prompt_create)
+            db_prompt = await prompt_crud.create_prompt(db, prompt_create)
 
-            existing_example = example_essay_crud.get_example_essay_by_content(
+            existing_example = await example_essay_crud.get_example_essay_by_content(
                 db, example_answer
             )
             if not existing_example:
@@ -100,18 +100,20 @@ def store_example_essays(db: Session, csv_path: str) -> None:
                     updated_at=datetime.now(),
                 )
 
-                _ = example_essay_crud.create_example_essay(db, example_essay_create)
+                _ = await example_essay_crud.create_example_essay(
+                    db, example_essay_create
+                )
 
 
-def store_default_rubric(
-    db: Session, csv_path: str, rubric_create: rubric_schema.RubricCreate
+async def store_default_rubric(
+    db: AsyncSession, csv_path: str, rubric_create: rubric_schema.RubricCreate
 ) -> None:
     data = load_from_csv(csv_path)
-    existing_rubric = rubric_crud.get_rubric_by_name(db, rubric_create.name)
+    existing_rubric = await rubric_crud.get_rubric_by_name(db, rubric_create.name)
     if not existing_rubric:
-        super_user = user_crud.get_user_by_email(db, settings.FIRST_SUPERUSER)
+        super_user = await user_crud.get_user_by_email(db, settings.FIRST_SUPERUSER)
         rubric_create.created_by = super_user.id
-        db_rubric = rubric_crud.create_rubric(db, rubric_create)
+        db_rubric = await rubric_crud.create_rubric(db, rubric_create)
 
         for row in data:
             score = row.pop("score")
@@ -122,7 +124,7 @@ def store_default_rubric(
 
             for _criterion_name, _description in row.items():
                 existing_criterion = (
-                    rubric_criterion_crud.get_criterion_by_name_and_score(
+                    await rubric_criterion_crud.get_criterion_by_name_and_score(
                         db=db, name=_criterion_name, score=score
                     )
                 )
@@ -133,41 +135,41 @@ def store_default_rubric(
                         description=_description,
                         score=score,
                     )
-                    _ = rubric_criterion_crud.create_rubric_criterion(
+                    _ = await rubric_criterion_crud.create_rubric_criterion(
                         db, criterion_create
                     )
 
 
-def store_default_bots(db: Session, csv_path: str) -> None:
+async def store_default_bots(db: AsyncSession, csv_path: str) -> None:
     data = load_from_csv(csv_path)
     for row in data:
-        existing_bot = bot_crud.get_bot_by_name(db, row["name"].strip())
+        existing_bot = await bot_crud.get_bot_by_name(db, row["name"].strip())
         if not existing_bot:
             bot_create = bot_schema.BotCreate(
                 name=row["name"].strip(),
                 version=row.get("version").strip(),
                 description=row.get("description").strip(),
             )
-            bot_crud.create_bot(db, bot_create)
+            await bot_crud.create_bot(db, bot_create)
 
 
-def store_default_ai_providers(db: Session, csv_path: str) -> None:
+async def store_default_ai_providers(db: AsyncSession, csv_path: str) -> None:
     data = load_from_csv(csv_path)
     for row in data:
-        existing_provider = ai_provider_crud.get_provider_by_name(
+        existing_provider = await ai_provider_crud.get_provider_by_name(
             db, provider_name=row["provider_name"]
         )
         if not existing_provider:
             ai_provider_create = ai_provider_schema.AIProviderCreate(
                 name=row["provider_name"]
             )
-            ai_provider_crud.create_provider(db, ai_provider_create)
+            await ai_provider_crud.create_provider(db, ai_provider_create)
 
 
-def store_default_api_models(db: Session, csv_path: str) -> None:
+async def store_default_api_models(db: AsyncSession, csv_path: str) -> None:
     data = load_from_csv(csv_path)
     for row in data:
-        existing_api_model = api_model_crud.get_api_model_by_name_and_provider(
+        existing_api_model = await api_model_crud.get_api_model_by_name_and_provider(
             db, api_model_name=row["api_model_name"], provider_name=row["provider_name"]
         )
         if not existing_api_model:
@@ -176,11 +178,11 @@ def store_default_api_models(db: Session, csv_path: str) -> None:
                 alias=row.get("alias"),
                 provider_name=row["provider_name"],
             )
-            api_model_crud.create_api_model(db, api_model_create)
+            await api_model_crud.create_api_model(db, api_model_create)
 
 
-def store_default_api_key(db: Session) -> None:
-    super_user = user_crud.get_user_by_email(db, settings.FIRST_SUPERUSER)
+async def store_default_api_key(db: AsyncSession) -> None:
+    super_user = await user_crud.get_user_by_email(db, settings.FIRST_SUPERUSER)
 
     api_keys = [
         ("OPENAI_API_KEY", "OpenAI"),
@@ -192,11 +194,11 @@ def store_default_api_key(db: Session) -> None:
         if not api_key_value:
             continue
 
-        provider = ai_provider_crud.get_provider_by_name(db, provider_name)
+        provider = await ai_provider_crud.get_provider_by_name(db, provider_name)
         if not provider:
             continue
 
-        existing_key = user_api_key_crud.get_user_api_key(
+        existing_key = await user_api_key_crud.get_user_api_key(
             db,
             super_user.id,
             provider_id=provider.id,
@@ -209,4 +211,4 @@ def store_default_api_key(db: Session) -> None:
                 name=env_var,
                 api_key=encrypt_api_key(api_key_value),
             )
-            user_api_key_crud.create_user_api_key(db, user_api_key_create)
+            await user_api_key_crud.create_user_api_key(db, user_api_key_create)

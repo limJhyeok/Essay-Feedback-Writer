@@ -7,8 +7,9 @@ services:
       retries: 5
       start_period: 30s
       timeout: 10s
-    volumes: # by changing volume we can turn the dev(or prod) DB off and turn test DB on: app-db-data -> test-db-data
-      - test-db-data:/var/lib/postgresql/data/pgdata
+    volumes: []
+    tmpfs:
+      - /var/lib/postgresql/data/pgdata:mode=0700,uid=999,gid=999
     environment:
       - PGDATA=/var/lib/postgresql/data/pgdata
       - POSTGRES_PASSWORD=${TEST_POSTGRES_PASSWORD?Variable not set}
@@ -22,6 +23,3 @@ services:
       - POSTGRES_DB=${TEST_POSTGRES_DB}
       - POSTGRES_USER=${TEST_POSTGRES_USER?Variable not set}
       - POSTGRES_PASSWORD=${TEST_POSTGRES_PASSWORD?Variable not set}
-
-volumes:
-  test-db-data:

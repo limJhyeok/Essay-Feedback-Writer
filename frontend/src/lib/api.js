@@ -68,4 +68,51 @@ const fastapi = (operation, url, params, success_callback, failure_callback) => 
         })
 }
 
+export const fastapiUpload = (url, formData, success_callback, failure_callback) => {
+    let _url = import.meta.env.VITE_SERVER_URL + url
+
+    let options = {
+        method: 'post',
+        headers: {},
+        body: formData,
+    }
+
+    const _access_token = get(accessToken)
+    if (_access_token) {
+        options.headers["Authorization"] = "Bearer " + _access_token
+    }
+
+    fetch(_url, options)
+        .then(response => {
+            if(response.status === 204) {
+                if(success_callback) {
+                    success_callback()
+                }
+                return
+            }
+            response.json()
+                .then(json => {
+                    if(response.status >= 200 && response.status < 300) {
+                        if(success_callback) {
+                            success_callback(json)
+                        }
+                    }else if(response.status === 401) {
+                        accessToken.set('')
+                        userEmail.set('')
+                        isLogin.set(false)
+                        push('/authorize')
+                    }else {
+                        if (failure_callback) {
+                            failure_callback(json)
+                        }else {
+                            alert(JSON.stringify(json))
+                        }
+                    }
+                })
+                .catch(error => {
+                    alert(JSON.stringify(error))
+                })
+        })
+}
+
 export default fastapi

@@ -56,6 +56,7 @@ services:
     volumes:
       - ./backend:/app
       - /app/.venv
+      - essay-uploads:/app/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -150,6 +151,7 @@ services:
       - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-http.middlewares=https-redirect
 volumes:
   app-db-data:
+  essay-uploads:
 
 
 networks:

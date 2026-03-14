@@ -1,11 +1,14 @@
 <script>
   import { isLogin, isSignUpPage, accessToken, userEmail } from "../lib/store"
+  import { get } from 'svelte/store'
   import fastapi from "../lib/api";
+  import { fastapiUpload } from "../lib/api";
   import { onMount, tick, onDestroy } from 'svelte';
   import { marked } from 'marked'
   import { push } from 'svelte-spa-router'
   import "./home.css";
   import Error from "../components/Error.svelte"
+  import HandwritingCanvas from "../components/HandwritingCanvas.svelte"
   import { BookOpen, FileText, Award, BarChart, RefreshCw, History, Search, CheckCircle, Info, Copy, Check, Trash2,  SquarePen} from 'lucide-svelte';
   import { User, Settings, LogOut, HelpCircle, Key } from 'lucide-svelte';
 
@@ -14,6 +17,28 @@
   let promptContent = '';
   let promptId = null;
   let essayContent = '';
+  let inputMode = 'text';
+  let canvasComponent;
+  let handwritingImageUrl = null;
+  let loadedImageEssayId = null;
+
+  async function loadEssayImage(essayId) {
+    if (essayId === loadedImageEssayId && handwritingImageUrl) return;
+    if (handwritingImageUrl) {
+      URL.revokeObjectURL(handwritingImageUrl);
+      handwritingImageUrl = null;
+    }
+    loadedImageEssayId = essayId;
+    const _access_token = get(accessToken);
+    const url = import.meta.env.VITE_SERVER_URL + `/api/v1/ielts/essays/${essayId}/image`;
+    const resp = await fetch(url, {
+      headers: { "Authorization": "Bearer " + _access_token }
+    });
+    if (resp.ok) {
+      const blob = await resp.blob();
+      handwritingImageUrl = URL.createObjectURL(blob);
+    }
+  }
   let showHistory = false;
   let showInfoDeskModalOpen = false;
   let showManageKeyModalOpen = false;
@@ -219,18 +244,51 @@
     )
   }
 
+  async function submitHandwritingEssay() {
+    if (!canvasComponent || canvasComponent.isEmpty()) {
+      alert("Please write something on the canvas first.");
+      return;
+    }
+    const blob = await canvasComponent.exportBlob();
+    const formData = new FormData();
+    formData.append("image", blob, "essay.png");
+    const url = `/api/v1/ielts/essays/handwriting?prompt_id=${promptId}`;
+    fastapiUpload(url, formData,
+      (json) => {
+        editing = false;
+        submittedEssayId = json.id;
+        submittedEssayContent = json.ocr_text || "(Handwriting submitted)";
+
+        getEssaysByPromptId().then(() => {
+          mainActiveTab = "feedback";
+          activeIdOfFeedbacks = 0;
+          activeIdOfessays = 0;
+          generateFeedback();
+        }).catch(err => {
+          error = err;
+        });
+      },
+      (json_error) => {
+        error = json_error;
+      }
+    )
+  }
+
   function generateFeedback(){
     let params = {
       prompt: promptContent,
       rubric_name: "IELTS Writing Task 2",
-      essay_content: essayContent,
       model_provider_name: selectedAIModelProvider.name,
       api_model_name: selectedFeedbackModel.api_model_name
+    }
+    if (essayContent && essayContent.trim()) {
+      params.essay_content = essayContent;
     }
     feedbackList = [];
     let url = `/api/v1/ielts/essays/${submittedEssayId}/feedback`;
     fastapi("post", url, params,
       (json) => {
+        getEssaysByPromptId();
         getFeedbacksByEssayId(submittedEssayId);
       },
       (json_error) => {
@@ -701,6 +759,24 @@
             background-color: #e1ebf5;
             border-left: 3px solid #3498db;
         }
+
+        :global(.mode-toggle-btn) {
+            padding: 4px 14px;
+            font-size: 13px;
+            border: none;
+            background: #fff;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        :global(.mode-toggle-btn:hover) {
+            background: #eee;
+        }
+
+        :global(.mode-toggle-btn.active) {
+            background: #4a90d9;
+            color: #fff;
+        }
 </style>
 
 
@@ -835,7 +911,7 @@
                       <button
                         class="btn btn-sm btn-outline-danger"
                         on:click={() => openCheckDeleteApiKeyModal(registeredKey)}
-                        aria-lxabel="Delete API key"
+                        aria-label="Delete API key"
                       >
                         <Trash2 class="h-4 w-4" />
                       </button>
@@ -1140,14 +1216,33 @@
 
             {#if promptContent}
               <div class="mb-4">
-                <h3 class="font-semibold">Your Essay</h3>
-                <textarea
-                  bind:value={essayContent}
-                  on:keydown={handleKeyDown}
-                  placeholder="Write your essay here..."
-                  class="message-input"
-                  style="width: 100%; height: 52vh"
-                ></textarea>
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                  <h3 class="font-semibold" style="margin:0;">Your Essay</h3>
+                  <div style="display:flex; border:1px solid #ccc; border-radius:4px; overflow:hidden; margin-left:8px;">
+                    <button
+                      class="mode-toggle-btn"
+                      class:active={inputMode === 'text'}
+                      on:click={() => inputMode = 'text'}
+                    >Text</button>
+                    <button
+                      class="mode-toggle-btn"
+                      class:active={inputMode === 'handwriting'}
+                      on:click={() => inputMode = 'handwriting'}
+                    >Handwriting</button>
+                  </div>
+                </div>
+
+                {#if inputMode === 'text'}
+                  <textarea
+                    bind:value={essayContent}
+                    on:keydown={handleKeyDown}
+                    placeholder="Write your essay here..."
+                    class="message-input"
+                    style="width: 100%; height: 52vh"
+                  ></textarea>
+                {:else}
+                  <HandwritingCanvas bind:this={canvasComponent} />
+                {/if}
               </div>
               <div class="d-flex justify-content-between " style = "padding: 10px; margin-bottom: 10px;
             background-color: #f5f7fa;
@@ -1171,22 +1266,34 @@
               </div>
               <div style="display: flex; gap: 10px;">
 
-              <div class="text-gray-500 text-sm mt-2">
-                Word count: {wordCount}
-              </div>
-              <div class="upload-tooltip">
-                <button
-                class="btn relative btn-primary btn-small"
-                on:click={submitEssay}
-                disabled={!essayContent.trim()}
-                style = "box-shadow: 0 1px 3px rgba(0,0,0,0.1);"
-                >
-                Submit for Feedback
-                </button>
-                {#if !essayContent.trim()}
-                  <span class="tooltiptext">Please write your essay</span>
-                {/if}
-              </div>
+              {#if inputMode === 'text'}
+                <div class="text-gray-500 text-sm mt-2">
+                  Word count: {wordCount}
+                </div>
+                <div class="upload-tooltip">
+                  <button
+                  class="btn relative btn-primary btn-small"
+                  on:click={submitEssay}
+                  disabled={!essayContent.trim()}
+                  style = "box-shadow: 0 1px 3px rgba(0,0,0,0.1);"
+                  >
+                  Submit for Feedback
+                  </button>
+                  {#if !essayContent.trim()}
+                    <span class="tooltiptext">Please write your essay</span>
+                  {/if}
+                </div>
+              {:else}
+                <div class="upload-tooltip">
+                  <button
+                  class="btn relative btn-primary btn-small"
+                  on:click={submitHandwritingEssay}
+                  style = "box-shadow: 0 1px 3px rgba(0,0,0,0.1);"
+                  >
+                  Submit for Feedback
+                  </button>
+                </div>
+              {/if}
             </div>
             </div>
             {/if}
@@ -1222,6 +1329,23 @@
                 class="p-2 border rounded"
                 style = "width: 100%;"
               ></textarea>
+            {:else if registeredEssayList[activeIdOfessays]?.input_type === 'handwriting'}
+              {void loadEssayImage(registeredEssayList[activeIdOfessays].id) ?? ''}
+              <div class="essay-area" style="box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                {#if handwritingImageUrl}
+                  <img
+                    src={handwritingImageUrl}
+                    alt="Handwritten essay"
+                    style="max-width:100%; border-radius:4px;"
+                  />
+                {/if}
+                {#if registeredEssayList[activeIdOfessays].ocr_text}
+                  <details style="margin-top:12px;">
+                    <summary style="cursor:pointer; color:#4a90d9; font-size:14px;">Show OCR transcription</summary>
+                    <p style="margin-top:8px; padding:8px; background:#f9f9f9; border-radius:4px; white-space:pre-wrap;">{registeredEssayList[activeIdOfessays].ocr_text}</p>
+                  </details>
+                {/if}
+              </div>
             {:else}
               <div class="essay-area" style = "box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                 <p>{registeredEssayList[activeIdOfessays]["content"]}</p>

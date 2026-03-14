@@ -157,19 +157,28 @@ class Prompt(Base):
     feedbacks = relationship("Feedback", back_populates="prompt")
 
 
+class InputType(enum.Enum):
+    text = "text"
+    handwriting = "handwriting"
+
+
 class Essay(Base):
     __tablename__ = "essays"
 
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     prompt_id = Column(Integer, ForeignKey("prompts.id"))
-    content = Column(Text, nullable=False)
+    input_type = Column(
+        Enum(InputType), default=InputType.text, nullable=False, server_default="text"
+    )
+    content = Column(Text, nullable=True)
+    image_path = Column(String, nullable=True)
+    ocr_text = Column(Text, nullable=True)
     submitted_at = Column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
-    # submitted_at = Column(DateTime, default=lambda: datetime.now(), nullable=False)
 
     author = relationship("User", back_populates="essays")
     prompt = relationship("Prompt", back_populates="essays")

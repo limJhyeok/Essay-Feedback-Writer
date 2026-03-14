@@ -1,4 +1,6 @@
+import base64
 from datetime import datetime, timezone
+from pathlib import Path
 
 from fastapi import HTTPException
 from langchain_anthropic import ChatAnthropic
@@ -82,6 +84,7 @@ def generate_feedback(
     user_id: int,
     essay_id: int,
     request: feedback_schema.FeedbackCreateRequest,
+    override_content: str | None = None,
 ) -> None:
     student_essay = essay_crud.get_essay_by_id(db, essay_id)
     criterion_names = rubric_criterion_crud.get_unique_criterion_names_by_rubric(
@@ -116,8 +119,9 @@ def generate_feedback(
         system_prompt, human_template = get_llm_prompt_for_ielts(
             criterion_name, IELTS_SUB_SYSTEM_PROMPT.get(criterion_name, ""), rubric_text
         )
+        essay_text = override_content or student_essay.content
         human_prompt = human_template.format(
-            essay_prompt=request.prompt, student_essay=student_essay.content
+            essay_prompt=request.prompt, student_essay=essay_text
         )
 
         result: FeedbackResponse = structured_llm.invoke(
@@ -157,3 +161,67 @@ def generate_feedback(
 
     feedback_crud.create_feedback(db, feedback_create)
     user_api_key_crud.update_last_used(db, db_api_key.id)
+
+
+def get_vlm_client(
+    db_api_key: user_api_key_schema.UserAPIKey,
+    provider_name: str,
+    model_name: str,
+) -> BaseChatModel:
+    cls = _PROVIDER_MAP.get(provider_name)
+    if cls is None:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported provider: {provider_name}",
+        )
+    decrypted_api_key = security.decrypt_api_key(db_api_key.api_key)
+    return cls(model=model_name, api_key=decrypted_api_key)
+
+
+def generate_feedback_for_handwriting(
+    db: Session,
+    user_id: int,
+    essay_id: int,
+    request: feedback_schema.FeedbackCreateRequest,
+) -> None:
+    essay = essay_crud.get_essay_by_id(db, essay_id)
+    if not essay.image_path:
+        raise HTTPException(status_code=400, detail="No image found for this essay")
+
+    image_bytes = Path(essay.image_path).read_bytes()
+    image_b64 = base64.b64encode(image_bytes).decode("utf-8")
+
+    db_provider = ai_provider_crud.get_provider_by_name(db, request.model_provider_name)
+    if db_provider is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Unknown provider: {request.model_provider_name}",
+        )
+    db_api_key = user_api_key_crud.get_user_api_key(db, user_id, db_provider.id)
+    if db_api_key is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"We couldn't find an active API key for {request.model_provider_name}. Please register your API key to proceed.",
+        )
+
+    vlm = get_vlm_client(
+        db_api_key, request.model_provider_name, request.api_model_name
+    )
+
+    ocr_message = HumanMessage(
+        content=[
+            {
+                "type": "text",
+                "text": "Transcribe ONLY the handwritten text visible in this image. Do NOT add, infer, or generate any text that is not explicitly written. If only a few words are written, output only those words. Preserve paragraph breaks. Output nothing besides the exact transcription.",
+            },
+            {
+                "type": "image_url",
+                "image_url": {"url": f"data:image/png;base64,{image_b64}"},
+            },
+        ]
+    )
+    extracted_text = vlm.invoke([ocr_message]).content
+
+    essay_crud.update_ocr_text(db, essay_id, extracted_text)
+
+    generate_feedback(db, user_id, essay_id, request, override_content=extracted_text)

@@ -1,27 +1,30 @@
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import AIProvider
 from app.schemas import ai_provider_schema
 
 
-def get_provider_by_name(
-    db: Session, provider_name: str
+async def get_provider_by_name(
+    db: AsyncSession, provider_name: str
 ) -> ai_provider_schema.AIProvider:
-    api_model = db.query(AIProvider).filter(AIProvider.name == provider_name).first()
-    return api_model
+    result = await db.execute(
+        select(AIProvider).where(AIProvider.name == provider_name)
+    )
+    return result.scalars().first()
 
 
-def create_provider(
-    db: Session, provider_create: ai_provider_schema.AIProviderCreate
+async def create_provider(
+    db: AsyncSession, provider_create: ai_provider_schema.AIProviderCreate
 ) -> ai_provider_schema.AIProvider:
     new_ai_provider = AIProvider(name=provider_create.name)
     db.add(new_ai_provider)
-    db.commit()
-    db.refresh(new_ai_provider)
+    await db.commit()
+    await db.refresh(new_ai_provider)
 
     return ai_provider_schema.AIProvider.from_orm(new_ai_provider)
 
 
-def get_providers(db: Session) -> list[ai_provider_schema.AIProvider]:
-    providers = db.query(AIProvider).all()
-    return providers
+async def get_providers(db: AsyncSession) -> list[ai_provider_schema.AIProvider]:
+    result = await db.execute(select(AIProvider))
+    return result.scalars().all()

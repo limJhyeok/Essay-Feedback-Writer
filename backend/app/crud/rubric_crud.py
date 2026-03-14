@@ -1,11 +1,13 @@
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.models import Rubric
 from app.schemas import rubric_schema
 
 
-def create_rubric(
-    db: Session, rubric_create: rubric_schema.RubricCreate
+async def create_rubric(
+    db: AsyncSession, rubric_create: rubric_schema.RubricCreate
 ) -> rubric_schema.Rubric:
     db_rubric = Rubric(
         name=rubric_create.name,
@@ -17,10 +19,14 @@ def create_rubric(
         created_by=rubric_create.created_by,
     )
     db.add(db_rubric)
-    db.commit()
+    await db.commit()
     return db_rubric
 
 
-def get_rubric_by_name(db: Session, name: str) -> rubric_schema.Rubric:
-    rubric = db.query(Rubric).filter(Rubric.name == name.strip()).first()
-    return rubric
+async def get_rubric_by_name(db: AsyncSession, name: str) -> rubric_schema.Rubric:
+    result = await db.execute(
+        select(Rubric)
+        .options(selectinload(Rubric.criteria))
+        .where(Rubric.name == name.strip())
+    )
+    return result.scalars().first()

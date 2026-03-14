@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi import HTTPException
@@ -84,16 +84,20 @@ def test_get_llm_client_returns_structured_output(mock_decrypt):
 
 @patch(
     "app.services.feedback_service.ai_provider_crud.get_provider_by_name",
+    new_callable=AsyncMock,
     return_value=None,
 )
 @patch(
     "app.services.feedback_service.rubric_criterion_crud.get_unique_criterion_names_by_rubric",
+    new_callable=AsyncMock,
     return_value=["Task Response"],
 )
 @patch(
-    "app.services.feedback_service.essay_crud.get_essay_by_id", return_value=MagicMock()
+    "app.services.feedback_service.essay_crud.get_essay_by_id",
+    new_callable=AsyncMock,
+    return_value=MagicMock(),
 )
-def test_generate_feedback_unknown_provider_raises_404(
+async def test_generate_feedback_unknown_provider_raises_404(
     mock_essay, mock_criteria, mock_provider
 ):
     """generate_feedback should raise HTTP 404 when provider is not found."""
@@ -102,7 +106,7 @@ def test_generate_feedback_unknown_provider_raises_404(
     request.model_provider_name = "UnknownProvider"
 
     with pytest.raises(HTTPException) as exc_info:
-        generate_feedback(db, user_id=1, essay_id=1, request=request)
+        await generate_feedback(db, user_id=1, essay_id=1, request=request)
 
     assert exc_info.value.status_code == 404
     assert "UnknownProvider" in exc_info.value.detail

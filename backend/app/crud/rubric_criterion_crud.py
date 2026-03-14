@@ -1,12 +1,13 @@
-from sqlalchemy.orm import Session
-from sqlalchemy import and_, desc, distinct
+from sqlalchemy import and_, desc, distinct, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import RubricCriterion, Rubric
 from app.schemas import rubric_criterion_schema
 
 
-def create_rubric_criterion(
-    db: Session, rubric_create_criterion: rubric_criterion_schema.RubricCriterionCreate
+async def create_rubric_criterion(
+    db: AsyncSession,
+    rubric_create_criterion: rubric_criterion_schema.RubricCriterionCreate,
 ) -> rubric_criterion_schema.RubricCriterion:
     db_rubric_criterion = RubricCriterion(
         rubric_id=rubric_create_criterion.rubric_id,
@@ -15,41 +16,39 @@ def create_rubric_criterion(
         score=rubric_create_criterion.score,
     )
     db.add(db_rubric_criterion)
-    db.commit()
+    await db.commit()
     return db_rubric_criterion
 
 
-def get_criterion_by_name_and_score(
-    db: Session, name: str, score: int
+async def get_criterion_by_name_and_score(
+    db: AsyncSession, name: str, score: int
 ) -> rubric_criterion_schema.RubricCriterion:
-    rubric_criterion = (
-        db.query(RubricCriterion)
-        .filter(
+    result = await db.execute(
+        select(RubricCriterion).where(
             and_(RubricCriterion.name == name.strip(), RubricCriterion.score == score)
         )
-        .first()
     )
-    return rubric_criterion
+    return result.scalars().first()
 
 
-def get_criterion_by_name(
-    db: Session, criteria_name: str
+async def get_criterion_by_name(
+    db: AsyncSession, criteria_name: str
 ) -> list[rubric_criterion_schema.RubricCriterion]:
-    rubric_criteria = (
-        db.query(RubricCriterion)
-        .filter(RubricCriterion.name == criteria_name.strip())
+    result = await db.execute(
+        select(RubricCriterion)
+        .where(RubricCriterion.name == criteria_name.strip())
         .order_by(desc(RubricCriterion.score))
-        .all()
     )
-    return rubric_criteria
+    return result.scalars().all()
 
 
-def get_unique_criterion_names_by_rubric(db: Session, rubric_name: str) -> list[str]:
-    names = (
-        db.query(distinct(RubricCriterion.name))
+async def get_unique_criterion_names_by_rubric(
+    db: AsyncSession, rubric_name: str
+) -> list[str]:
+    result = await db.execute(
+        select(distinct(RubricCriterion.name))
         .join(Rubric)
-        .filter(Rubric.name == rubric_name)
-        .all()
+        .where(Rubric.name == rubric_name)
     )
 
-    return [name[0] for name in names]
+    return [name for (name,) in result.all()]

@@ -1,3 +1,4 @@
+import asyncio
 import os
 from datetime import datetime, timezone
 from pathlib import Path
@@ -37,49 +38,53 @@ router = APIRouter()
 
 
 @router.post("/create", status_code=status.HTTP_204_NO_CONTENT)
-def prompt_create(prompt_in: prompt_schema.PromptCreate, db: SessionDep) -> None:
-    prompt_crud.create_prompt(db=db, prompt_create=prompt_in)
+async def prompt_create(prompt_in: prompt_schema.PromptCreate, db: SessionDep) -> None:
+    await prompt_crud.create_prompt(db=db, prompt_create=prompt_in)
 
 
 @router.get("/prompts", response_model=list[prompt_schema.Prompt])
-def get_prompts(db: SessionDep) -> list[prompt_schema.Prompt]:
-    prompt_list = prompt_crud.get_prompts(db)
+async def get_prompts(db: SessionDep) -> list[prompt_schema.Prompt]:
+    prompt_list = await prompt_crud.get_prompts(db)
     return prompt_list
 
 
 @router.get("/example", response_model=example_essay_schema.ExampleEssay)
-def get_example_by_prompt_id(
+async def get_example_by_prompt_id(
     db: SessionDep, prompt_id: int
 ) -> example_essay_schema.ExampleEssay:
-    example_essay = example_essay_crud.get_example_essay_by_prompt_id(db, prompt_id)
+    example_essay = await example_essay_crud.get_example_essay_by_prompt_id(
+        db, prompt_id
+    )
     return example_essay
 
 
 @router.get(
     "/criteria", response_model=list[rubric_criterion_schema.RubricCriterionPublic]
 )
-def get_rubric_criteria(
+async def get_rubric_criteria(
     db: SessionDep, name: str
 ) -> list[rubric_criterion_schema.RubricCriterionPublic]:
-    rubric = rubric_crud.get_rubric_by_name(db, name)
+    rubric = await rubric_crud.get_rubric_by_name(db, name)
     rubric_criteria = sorted(rubric.criteria, key=lambda x: x.id)
 
     return rubric_criteria
 
 
 @router.get("/essays", response_model=list[essay_schema.EssayPublic])
-def get_essays_by_prompt_id(
+async def get_essays_by_prompt_id(
     db: SessionDep, current_user: CurrentUser, prompt_id: int
 ) -> list[essay_schema.EssayPublic]:
-    essay_list = essay_crud.get_essay_list_by_prompt_id(db, current_user.id, prompt_id)
+    essay_list = await essay_crud.get_essay_list_by_prompt_id(
+        db, current_user.id, prompt_id
+    )
     return essay_list
 
 
 @router.get("/feedbacks", response_model=list[feedback_schema.FeedbackPublic])
-def get_feedbacks_by_user_prompt(
+async def get_feedbacks_by_user_prompt(
     db: SessionDep, current_user: CurrentUser, prompt_id: int, essay_id: int
 ) -> list[feedback_schema.FeedbackPublic]:
-    db_feedback_list = feedback_crud.get_feedbacks_by_user_prompt_essay(
+    db_feedback_list = await feedback_crud.get_feedbacks_by_user_prompt_essay(
         db, current_user.id, prompt_id, essay_id
     )
     feedback_list = []
@@ -92,29 +97,29 @@ def get_feedbacks_by_user_prompt(
 
 
 @router.get("/bots", response_model=list[bot_schema.BotPublic])
-def read_bots(db: SessionDep) -> list[bot_schema.BotPublic]:
-    return bot_crud.get_bots(db)
+async def read_bots(db: SessionDep) -> list[bot_schema.BotPublic]:
+    return await bot_crud.get_bots(db)
 
 
 @router.get("/providers", response_model=list[ai_provider_schema.AIProviderPublic])
-def read_providers(db: SessionDep) -> list[ai_provider_schema.AIProviderPublic]:
-    return ai_provider_crud.get_providers(db)
+async def read_providers(db: SessionDep) -> list[ai_provider_schema.AIProviderPublic]:
+    return await ai_provider_crud.get_providers(db)
 
 
 @router.get(
     "/api_models/{provider_name}", response_model=list[api_model_schema.APIModelPublic]
 )
-def read_api_models(
+async def read_api_models(
     db: SessionDep, provider_name: str
 ) -> list[api_model_schema.APIModelPublic]:
-    return api_model_crud.get_api_models_by_provider(db, provider_name)
+    return await api_model_crud.get_api_models_by_provider(db, provider_name)
 
 
 @router.post("/essays")
-def submit_essay(
+async def submit_essay(
     db: SessionDep, current_user: CurrentUser, request: essay_schema.EssayCreateRequest
 ) -> essay_schema.Essay:
-    essay = essay_crud.get_duplicated_essay(
+    essay = await essay_crud.get_duplicated_essay(
         db, current_user.id, request.prompt_id, request.content
     )
     if essay is None:
@@ -124,46 +129,46 @@ def submit_essay(
             content=request.content,
             submitted_at=datetime.now(),
         )
-        essay = essay_crud.create_essay(db, essay_create)
+        essay = await essay_crud.create_essay(db, essay_create)
 
     return essay
 
 
 @router.post("/essays/handwriting")
-def submit_handwriting_essay(
+async def submit_handwriting_essay(
     db: SessionDep,
     current_user: CurrentUser,
     prompt_id: int,
     image: UploadFile = File(...),
 ) -> essay_schema.Essay:
     max_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
-    contents = image.file.read()
+    contents = await image.read()
     if len(contents) > max_bytes:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail=f"Image exceeds {settings.MAX_UPLOAD_SIZE_MB}MB limit",
         )
 
-    db_essay = essay_crud.create_handwriting_essay(
+    db_essay = await essay_crud.create_handwriting_essay(
         db, current_user.id, prompt_id, datetime.now(timezone.utc)
     )
 
     upload_dir = Path(settings.UPLOAD_DIR) / "essays" / str(current_user.id)
     upload_dir.mkdir(parents=True, exist_ok=True)
     file_path = upload_dir / f"{db_essay.id}.png"
-    file_path.write_bytes(contents)
+    await asyncio.to_thread(file_path.write_bytes, contents)
 
-    essay_crud.update_essay_image_path(db, db_essay.id, str(file_path))
+    await essay_crud.update_essay_image_path(db, db_essay.id, str(file_path))
 
-    db.refresh(db_essay)
+    await db.refresh(db_essay)
     return essay_schema.Essay.model_validate(db_essay)
 
 
 @router.get("/essays/{essay_id}/image")
-def get_essay_image(
+async def get_essay_image(
     db: SessionDep, current_user: CurrentUser, essay_id: int
 ) -> FileResponse:
-    essay = essay_crud.get_essay_by_id(db, essay_id)
+    essay = await essay_crud.get_essay_by_id(db, essay_id)
     if essay is None or essay.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Essay not found")
     if not essay.image_path or not os.path.isfile(essay.image_path):
@@ -176,25 +181,28 @@ def generate_key_name():
 
 
 @router.post("/api_keys", status_code=status.HTTP_204_NO_CONTENT)
-def create_api_key(
+async def create_api_key(
     db: SessionDep,
     current_user: CurrentUser,
     request: user_api_key_schema.UserAPIKeyCreateRequest,
 ):
+    provider = await ai_provider_crud.get_provider_by_name(db, request.provider_name)
     user_api_key_create = user_api_key_schema.UserAPIKeyCreate(
         user_id=current_user.id,
-        provider_id=ai_provider_crud.get_provider_by_name(db, request.provider_name).id,
+        provider_id=provider.id,
         name=request.name or generate_key_name(),
         api_key=security.encrypt_api_key(request.api_key),
     )
-    _ = user_api_key_crud.create_user_api_key(db, user_api_key_create)
+    _ = await user_api_key_crud.create_user_api_key(db, user_api_key_create)
 
 
 @router.get("/api_keys", response_model=list[user_api_key_schema.UserAPIKeyPublic])
-def get_api_key_list(
+async def get_api_key_list(
     db: SessionDep, current_user: CurrentUser
 ) -> list[user_api_key_schema.UserAPIKeyPublic]:
-    user_api_key_list = user_api_key_crud.get_user_api_key_list(db, current_user.id)
+    user_api_key_list = await user_api_key_crud.get_user_api_key_list(
+        db, current_user.id
+    )
     response = []
     for user_api_key in user_api_key_list:
         item = user_api_key_schema.UserAPIKeyPublic(
@@ -211,17 +219,17 @@ def get_api_key_list(
 
 
 @router.put("/api_keys/{api_key_id}/name", status_code=status.HTTP_204_NO_CONTENT)
-def rename_api_key(
+async def rename_api_key(
     db: SessionDep,
     api_key_id: int,
     request: user_api_key_schema.UserAPIKeyRenameRequest,
 ) -> None:
-    user_api_key_crud.update_api_key_name(db, api_key_id, request.name)
+    await user_api_key_crud.update_api_key_name(db, api_key_id, request.name)
 
 
 @router.delete("/api_keys/{api_key_id}")
-def delete_api_key_route(db: SessionDep, api_key_id: int) -> None:
-    user_api_key_crud.delete_api_key(db, api_key_id)
+async def delete_api_key_route(db: SessionDep, api_key_id: int) -> None:
+    await user_api_key_crud.delete_api_key(db, api_key_id)
 
 
 @router.post("/essays/{essay_id}/feedback")
@@ -231,12 +239,12 @@ async def trigger_feedback_generation(
     essay_id: int,
     request: feedback_schema.FeedbackCreateRequest,
 ) -> None:
-    essay = essay_crud.get_essay_by_id(db, essay_id)
+    essay = await essay_crud.get_essay_by_id(db, essay_id)
     if essay is None:
         raise HTTPException(status_code=404, detail="Essay not found")
     if essay.input_type.value == "handwriting":
-        feedback_service.generate_feedback_for_handwriting(
+        await feedback_service.generate_feedback_for_handwriting(
             db, current_user.id, essay_id, request
         )
     else:
-        feedback_service.generate_feedback(db, current_user.id, essay_id, request)
+        await feedback_service.generate_feedback(db, current_user.id, essay_id, request)

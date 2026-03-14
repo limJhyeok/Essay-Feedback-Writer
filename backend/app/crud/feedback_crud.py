@@ -1,12 +1,13 @@
-from sqlalchemy import and_, desc
-from sqlalchemy.orm import Session
+from sqlalchemy import and_, desc, select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.models import Feedback
 from app.schemas import feedback_schema
 
 
-def create_feedback(
-    db: Session, feedback_create: feedback_schema.FeedbackCreate
+async def create_feedback(
+    db: AsyncSession, feedback_create: feedback_schema.FeedbackCreate
 ) -> feedback_schema.Feedback:
     db_feedback = Feedback(
         user_id=feedback_create.user_id,
@@ -17,18 +18,19 @@ def create_feedback(
         created_at=feedback_create.created_at,
     )
     db.add(db_feedback)
-    db.commit()
-    db.refresh(db_feedback)
+    await db.commit()
+    await db.refresh(db_feedback)
 
     return feedback_schema.Feedback.from_orm(db_feedback)
 
 
-def get_feedbacks_by_user_prompt_essay(
-    db: Session, user_id: int, prompt_id: int, essay_id: int
+async def get_feedbacks_by_user_prompt_essay(
+    db: AsyncSession, user_id: int, prompt_id: int, essay_id: int
 ) -> list[Feedback]:
-    db_feedback_list = (
-        db.query(Feedback)
-        .filter(
+    result = await db.execute(
+        select(Feedback)
+        .options(selectinload(Feedback.bot))
+        .where(
             and_(
                 Feedback.user_id == user_id,
                 Feedback.prompt_id == prompt_id,
@@ -36,6 +38,5 @@ def get_feedbacks_by_user_prompt_essay(
             )
         )
         .order_by(desc(Feedback.created_at))
-        .all()
     )
-    return db_feedback_list
+    return result.scalars().all()

@@ -7,11 +7,12 @@ services:
       retries: 5
       start_period: 30s
       timeout: 10s
-    volumes: []
+    volumes:
+      - /var/lib/postgresql/data/pgdata
     tmpfs:
-      - /var/lib/postgresql/data/pgdata:mode=0700,uid=999,gid=999
+      - /var/lib/postgresql/data/test-pgdata:mode=0700,uid=999,gid=999
     environment:
-      - PGDATA=/var/lib/postgresql/data/pgdata
+      - PGDATA=/var/lib/postgresql/data/test-pgdata
       - POSTGRES_PASSWORD=${TEST_POSTGRES_PASSWORD?Variable not set}
       - POSTGRES_USER=${TEST_POSTGRES_USER?Variable not set}
       - POSTGRES_DB=${TEST_POSTGRES_DB?Variable not set}

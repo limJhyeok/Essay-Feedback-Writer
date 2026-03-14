@@ -1,5 +1,6 @@
 <script>
   import { onMount, onDestroy, createEventDispatcher } from 'svelte';
+  import { Pencil, Hand, Eraser as EraserIcon, Undo2, Redo2, Trash2 } from 'lucide-svelte';
 
   const dispatch = createEventDispatcher();
 
@@ -8,7 +9,7 @@
   let cursorCtx;
   let ctx;
   let isDrawing = false;
-  let tool = 'pen';
+  let tool = 'pen'; // 'pen' | 'touch' | 'eraser'
   let penSize = 2;
   let penColor = '#000000';
   let eraserSize = 20;
@@ -90,6 +91,7 @@
   }
 
   function handlePointerMoveCanvas(e) {
+    if (tool === 'touch') return;
     if (e.pointerType !== 'touch' && tool === 'eraser') {
       showEraserCursor = true;
       const { x, y } = getPos(e);
@@ -99,7 +101,8 @@
   }
 
   function startDraw(e) {
-    if (e.pointerType === 'touch') return;
+    if (tool === 'touch') return;
+    if (e.pointerType === 'touch' && tool === 'pen') return;
     e.preventDefault();
     e.stopPropagation();
     canvas.setPointerCapture(e.pointerId);
@@ -223,7 +226,7 @@
   }
 </script>
 
-<div class="canvas-wrapper">
+<div class="canvas-wrapper" style="touch-action:{tool === 'pen' ? 'none' : 'auto'};">
   <!-- svelte-ignore a11y-no-static-element-interactions -->
   <div class="toolbar" on:pointerdown={handleToolbarPointerDown} on:pointerup={handleToolbarPointerUp} on:click|capture={handleToolbarClick}>
     <div class="tool-group">
@@ -232,16 +235,22 @@
         class:active={tool === 'pen'}
         on:click={() => tool = 'pen'}
         title="Pen"
-      >Pen</button>
+      ><Pencil size={16} /></button>
+      <button
+        class="tool-btn"
+        class:active={tool === 'touch'}
+        on:click={() => tool = 'touch'}
+        title="Touch (zoom & pan)"
+      ><Hand size={16} /></button>
       <button
         class="tool-btn"
         class:active={tool === 'eraser'}
         on:click={() => tool = 'eraser'}
         title="Eraser"
-      >Eraser</button>
-      <button class="tool-btn" on:click={undo} title="Undo" disabled={historyIndex <= 0}>Undo</button>
-      <button class="tool-btn" on:click={redo} title="Redo" disabled={historyIndex >= history.length - 1}>Redo</button>
-      <button class="tool-btn" on:click={clearCanvas} title="Clear">Clear</button>
+      ><EraserIcon size={16} /></button>
+      <button class="tool-btn" on:click={undo} title="Undo" disabled={historyIndex <= 0}><Undo2 size={16} /></button>
+      <button class="tool-btn" on:click={redo} title="Redo" disabled={historyIndex >= history.length - 1}><Redo2 size={16} /></button>
+      <button class="tool-btn" on:click={clearCanvas} title="Clear"><Trash2 size={16} /></button>
     </div>
 
     <div class="tool-group">
@@ -279,7 +288,7 @@
       on:pointerup={endDraw}
       on:pointerleave={handlePointerLeaveCanvas}
       on:lostpointercapture={endDraw}
-      style="touch-action:none; cursor:{tool === 'eraser' ? 'none' : 'crosshair'}; border:1px solid #ccc; border-radius:0 0 6px 6px; background:#fff; width:100%; display:block;"
+      style="touch-action:{tool === 'pen' ? 'none' : 'auto'}; cursor:{tool === 'touch' ? 'grab' : tool === 'eraser' ? 'none' : 'crosshair'}; border:1px solid #ccc; border-radius:0 0 6px 6px; background:#fff; width:100%; display:block;"
     ></canvas>
     <canvas
       bind:this={cursorCanvas}
@@ -337,13 +346,16 @@
   }
 
   .tool-btn {
-    padding: 4px 10px;
+    padding: 6px 8px;
     font-size: 13px;
     border: 1px solid #ccc;
     border-radius: 4px;
     background: #fff;
     cursor: pointer;
     transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .tool-btn:hover {

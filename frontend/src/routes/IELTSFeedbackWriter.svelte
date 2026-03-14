@@ -911,7 +911,7 @@
                       <button
                         class="btn btn-sm btn-outline-danger"
                         on:click={() => openCheckDeleteApiKeyModal(registeredKey)}
-                        aria-lxabel="Delete API key"
+                        aria-label="Delete API key"
                       >
                         <Trash2 class="h-4 w-4" />
                       </button>

@@ -9,6 +9,11 @@ on:
         description: "Issue number to develop"
         required: true
         type: number
+      base_branch:
+        description: "Base branch to branch from (optional, for dependency chaining)"
+        required: false
+        type: string
+        default: ""
 
 concurrency:
   group: claude-develop-${{ github.event.issue.number || github.event.inputs.issue_number }}
@@ -28,6 +33,10 @@ jobs:
     env:
       COMPOSE_FILE: docker-compose.yaml:docker-compose.override.yaml:docker-compose.test.yaml
       ISSUE_NUMBER: ${{ github.event.issue.number || github.event.inputs.issue_number }}
+      BASE_BRANCH: ${{ github.event.inputs.base_branch || '' }}
+    outputs:
+      pr_branch: ${{ steps.get-pr-info.outputs.pr_branch }}
+      issue_number: ${{ steps.get-pr-info.outputs.issue_number }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -94,20 +103,27 @@ jobs:
 
             Read the issue title, body, and labels carefully.
 
-            ## Step 2: Check for dependencies
+            ## Step 2: Determine the base branch
 
-            Look in the issue body for dependency patterns like:
-            - "depends on #X"
-            - "after #X"
-            - "blocked by #X"
+            The pipeline has pre-resolved dependencies for you.
 
-            If you find a dependency on issue #X:
-            1. Check if there is a PR for issue #X: `gh pr list --search "Closes #X" --repo ${{ github.repository }} --json number,headRefName,state`
-            2. If the dep PR is **merged**: branch from `main` (default behavior)
-            3. If the dep PR is **open**: checkout its branch and branch from there. When creating your PR, set the base to the dep's branch.
-            4. If no dep PR exists yet: comment on the issue saying the dependency hasn't been started yet, then exit.
+            - If BASE_BRANCH is set to "${{ env.BASE_BRANCH }}", use that as your starting point:
+              ```bash
+              git fetch origin ${{ env.BASE_BRANCH }}
+              git checkout ${{ env.BASE_BRANCH }}
+              ```
+            - If BASE_BRANCH is empty, check the issue body for dependency patterns like:
+              - "depends on #X"
+              - "after #X"
+              - "blocked by #X"
 
-            If there are no dependencies, branch from `main`.
+              If you find a dependency on issue #X:
+              1. Check if there is a PR for issue #X: `gh pr list --search "Closes #X" --repo ${{ github.repository }} --json number,headRefName,state`
+              2. If the dep PR is **merged**: branch from `main` (default behavior)
+              3. If the dep PR is **open**: checkout its branch and branch from there. When creating your PR, set the base to the dep's branch.
+              4. If no dep PR exists yet: comment on the issue saying the dependency hasn't been started yet, then exit.
+
+            If there are no dependencies and no BASE_BRANCH, branch from `main`.
 
             ## Step 3: Create a branch and implement
 
@@ -152,6 +168,10 @@ jobs:
 
             Determine the appropriate label from the issue labels or content. Use one of: feature, bug, refactor, docs, upgrade, internal.
 
+            Determine the base branch for the PR:
+            - If you checked out from a dependency branch (either via BASE_BRANCH or from Step 2), use `--base <that-branch-name>`
+            - Otherwise, omit --base (defaults to main)
+
             Create the PR:
             ```bash
             gh pr create \
@@ -170,8 +190,122 @@ jobs:
               --repo ${{ github.repository }}
             ```
 
-            If branching from a dependency PR's branch, add `--base <dep-branch-name>` to the PR create command.
+      - name: Get PR info for chaining
+        id: get-pr-info
+        if: success()
+        run: |
+          # Find the PR that was just created for this issue
+          PR_JSON=$(gh pr list \
+            --search "Closes #${{ env.ISSUE_NUMBER }}" \
+            --repo ${{ github.repository }} \
+            --json number,headRefName,state \
+            --limit 1)
+
+          PR_BRANCH=$(echo "$PR_JSON" | jq -r '.[0].headRefName // empty')
+
+          echo "pr_branch=$PR_BRANCH" >> "$GITHUB_OUTPUT"
+          echo "issue_number=${{ env.ISSUE_NUMBER }}" >> "$GITHUB_OUTPUT"
+          echo "✅ PR branch: $PR_BRANCH"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Teardown Docker
         if: always()
         run: docker compose down -v --remove-orphans
+
+  # ─── Chain: trigger any issues that depend on this one ───
+  trigger-dependents:
+    needs: develop
+    if: success() && needs.develop.outputs.pr_branch != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+      actions: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Find and trigger dependent issues
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMPLETED_ISSUE: ${{ needs.develop.outputs.issue_number }}
+          PR_BRANCH: ${{ needs.develop.outputs.pr_branch }}
+        run: |
+          echo "🔍 Looking for issues that depend on #${COMPLETED_ISSUE}..."
+
+          # Search for open issues that mention this issue as a dependency
+          # We look for common dependency patterns in issue bodies
+          DEPENDENT_ISSUES=$(gh issue list \
+            --repo ${{ github.repository }} \
+            --state open \
+            --label "claude-develop" \
+            --json number,body \
+            --limit 100 | jq -r --arg num "$COMPLETED_ISSUE" '
+              .[] | select(
+                .body != null and (
+                  (.body | test("(?i)depends on #" + $num + "\\b")) or
+                  (.body | test("(?i)after #" + $num + "\\b")) or
+                  (.body | test("(?i)blocked by #" + $num + "\\b"))
+                )
+              ) | .number
+            ')
+
+          if [ -z "$DEPENDENT_ISSUES" ]; then
+            echo "✅ No dependent issues found. Pipeline complete."
+            exit 0
+          fi
+
+          echo "📋 Found dependent issues: $DEPENDENT_ISSUES"
+
+          for ISSUE_NUM in $DEPENDENT_ISSUES; do
+            echo "──────────────────────────────────"
+            echo "🔗 Checking issue #${ISSUE_NUM}..."
+
+            # Check if this issue has OTHER unresolved dependencies
+            ISSUE_BODY=$(gh issue view "$ISSUE_NUM" \
+              --repo ${{ github.repository }} \
+              --json body -q '.body')
+
+            # Extract all dependency issue numbers
+            ALL_DEPS=$(echo "$ISSUE_BODY" | grep -oiE '(depends on|after|blocked by) #[0-9]+' | grep -oE '[0-9]+' || true)
+
+            ALL_DEPS_MET=true
+            for DEP in $ALL_DEPS; do
+              if [ "$DEP" = "$COMPLETED_ISSUE" ]; then
+                continue  # This is the one we just completed
+              fi
+
+              # Check if this other dependency has a merged PR or is closed
+              DEP_STATE=$(gh issue view "$DEP" \
+                --repo ${{ github.repository }} \
+                --json state -q '.state')
+              DEP_PR=$(gh pr list \
+                --search "Closes #${DEP}" \
+                --repo ${{ github.repository }} \
+                --json state --limit 1 | jq -r '.[0].state // "NONE"')
+
+              if [ "$DEP_STATE" != "CLOSED" ] && [ "$DEP_PR" != "MERGED" ] && [ "$DEP_PR" != "OPEN" ]; then
+                echo "⏸️  Issue #${ISSUE_NUM} still blocked by unresolved #${DEP}. Skipping."
+                ALL_DEPS_MET=false
+                break
+              fi
+            done
+
+            if [ "$ALL_DEPS_MET" = true ]; then
+              echo "🚀 Triggering Claude Develop for issue #${ISSUE_NUM} (base: ${PR_BRANCH})"
+              gh workflow run "Claude Develop" \
+                --repo ${{ github.repository }} \
+                --field issue_number="$ISSUE_NUM" \
+                --field base_branch="$PR_BRANCH"
+
+              # Add a comment on the dependent issue
+              gh issue comment "$ISSUE_NUM" \
+                --repo ${{ github.repository }} \
+                --body "🔗 **Pipeline**: Dependency #${COMPLETED_ISSUE} has been developed (branch: \`${PR_BRANCH}\`). Automatically triggering development for this issue.
+
+              🤖 *Triggered by Claude Develop pipeline*"
+            fi
+          done
+
+          echo "✅ Pipeline chaining complete."

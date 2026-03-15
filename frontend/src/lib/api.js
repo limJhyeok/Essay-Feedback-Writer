@@ -66,6 +66,13 @@ const fastapi = (operation, url, params, success_callback, failure_callback) => 
                     alert(JSON.stringify(error))
                 })
         })
+        .catch(() => {
+            if (failure_callback) {
+                failure_callback({ detail: "Network error. Please check your connection and try again." });
+            } else {
+                alert("Network error. Please check your connection and try again.");
+            }
+        })
 }
 
 export const fastapiUpload = (url, formData, success_callback, failure_callback) => {
@@ -112,6 +119,13 @@ export const fastapiUpload = (url, formData, success_callback, failure_callback)
                 .catch(error => {
                     alert(JSON.stringify(error))
                 })
+        })
+        .catch(() => {
+            if (failure_callback) {
+                failure_callback({ detail: "Network error. Please check your connection and try again." });
+            } else {
+                alert("Network error. Please check your connection and try again.");
+            }
         })
 }
 

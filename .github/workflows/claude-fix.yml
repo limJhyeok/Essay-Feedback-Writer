@@ -1,0 +1,172 @@
+name: Claude Fix
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+concurrency:
+  group: claude-fix-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  fix:
+    if: |
+      github.event.review.state == 'changes_requested' &&
+      contains(github.event.pull_request.labels.*.name, 'agent-pr')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      COMPOSE_FILE: docker-compose.yaml:docker-compose.override.yaml:docker-compose.test.yaml
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+    steps:
+      - name: Check review iteration count
+        id: check-iterations
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          COUNT=$(gh api repos/${{ github.repository }}/pulls/${{ env.PR_NUMBER }}/reviews \
+            --jq '[.[] | select(.state == "CHANGES_REQUESTED")] | length')
+          echo "changes_requested_count=$COUNT" >> "$GITHUB_OUTPUT"
+          if [ "$COUNT" -gt 3 ]; then
+            echo "exceeded=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exceeded=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Add needs-human-review label if iterations exceeded
+        if: steps.check-iterations.outputs.exceeded == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr edit ${{ env.PR_NUMBER }} --add-label "needs-human-review" --repo ${{ github.repository }}
+          gh pr comment ${{ env.PR_NUMBER }} --body "⚠️ Auto-fix has exceeded 3 iterations. Adding \`needs-human-review\` label for human attention." --repo ${{ github.repository }}
+
+      - name: Checkout PR branch
+        if: steps.check-iterations.outputs.exceeded == 'false'
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Create .env file
+        if: steps.check-iterations.outputs.exceeded == 'false'
+        run: |
+          echo "ENVIRONMENT=${{ secrets.ENVIRONMENT }}" >> .env
+          echo "PROJECT_NAME=${{ secrets.PROJECT_NAME }}" >> .env
+          echo "STACK_NAME=${{ secrets.STACK_NAME }}" >> .env
+          echo "DOMAIN=${{ secrets.DOMAIN }}" >> .env
+          echo "VITE_SERVER_URL=${{ secrets.VITE_SERVER_URL }}" >> .env
+          echo "BACKEND_CORS_ORIGINS=${{ secrets.BACKEND_CORS_ORIGINS }}" >> .env
+          echo "DOMAIN_PORT=${{ secrets.DOMAIN_PORT }}" >> .env
+          echo "FIRST_SUPERUSER=${{ secrets.FIRST_SUPERUSER }}" >> .env
+          echo "FIRST_SUPERUSER_PASSWORD=${{ secrets.FIRST_SUPERUSER_PASSWORD }}" >> .env
+          echo "USE_HASH_ROUTER=${{ secrets.USE_HASH_ROUTER }}" >> .env
+          echo "ACCESS_TOKEN_EXPIRE_MINUTES=${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }}" >> .env
+          echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> .env
+          echo "ALGORITHM=${{ secrets.ALGORITHM }}" >> .env
+          echo "FERNET_SECRET=${{ secrets.FERNET_SECRET }}" >> .env
+          echo "SMTP_HOST=${{ secrets.SMTP_HOST }}" >> .env
+          echo "SMTP_PORT=${{ secrets.SMTP_PORT }}" >> .env
+          echo "SMTP_USERNAME=${{ secrets.SMTP_USERNAME }}" >> .env
+          echo "SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}" >> .env
+          echo "EMAILS_FROM_EMAIL=${{ secrets.EMAILS_FROM_EMAIL }}" >> .env
+          echo "EMAILS_FROM_NAME=${{ secrets.EMAILS_FROM_NAME }}" >> .env
+          echo "POSTGRES_SERVER=${{ secrets.POSTGRES_SERVER }}" >> .env
+          echo "POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}" >> .env
+          echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> .env
+          echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
+          echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+          echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
+
+          echo "TEST_POSTGRES_SERVER=db" >> .env
+          echo "TEST_POSTGRES_PORT=5432" >> .env
+          echo "TEST_POSTGRES_DB=test" >> .env
+          echo "TEST_POSTGRES_USER=postgres" >> .env
+          echo "TEST_POSTGRES_PASSWORD=changethis" >> .env
+
+      - name: Build and start Docker services
+        if: steps.check-iterations.outputs.exceeded == 'false'
+        run: |
+          docker compose build db backend
+          docker compose down -v --remove-orphans
+          docker compose up -d db backend
+          docker compose exec -T backend uv sync --no-install-project
+
+      - name: Run Claude Code (Fix)
+        if: steps.check-iterations.outputs.exceeded == 'false'
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            You are an autonomous fix agent. Your task is to address the review feedback on PR #${{ env.PR_NUMBER }}.
+
+            ## Step 1: Read the review comments
+
+            Get all review comments:
+            ```bash
+            gh api repos/${{ github.repository }}/pulls/${{ env.PR_NUMBER }}/reviews \
+              --jq '.[] | select(.state == "CHANGES_REQUESTED") | {user: .user.login, body: .body}'
+            ```
+
+            Also get inline review comments:
+            ```bash
+            gh api repos/${{ github.repository }}/pulls/${{ env.PR_NUMBER }}/comments \
+              --jq '.[] | {path: .path, line: .line, body: .body}'
+            ```
+
+            ## Step 2: Understand the PR context
+
+            Read the PR description to understand the original intent:
+            ```bash
+            gh pr view ${{ env.PR_NUMBER }} --repo ${{ github.repository }}
+            ```
+
+            ## Step 3: Fix the issues
+
+            Address each review comment. Read CLAUDE.md for project conventions.
+
+            Rules:
+            - Fix all issues raised in the review
+            - Do not introduce new unrelated changes
+            - Read existing code before modifying it
+            - Follow existing patterns and conventions
+
+            ## Step 4: Lint and test
+
+            Run lint:
+            ```bash
+            docker compose exec -T backend bash /app/scripts/format.sh
+            ```
+
+            Run tests:
+            ```bash
+            docker compose exec -T backend bash /app/scripts/test.sh
+            ```
+
+            Fix any failures before proceeding.
+
+            ## Step 5: Commit and push
+
+            Stage and commit with a descriptive message like: "fix: address review feedback on PR #${{ env.PR_NUMBER }}"
+
+            Push (do NOT force push):
+            ```bash
+            git push
+            ```
+
+            ## Step 6: Comment on the PR
+
+            Summarize what was fixed:
+            ```bash
+            gh pr comment ${{ env.PR_NUMBER }} --body "## Fixes applied
+
+            <bullet points of what was changed in response to each review comment>
+
+            🤖 Generated by Claude Code automation" --repo ${{ github.repository }}
+            ```
+
+      - name: Teardown Docker
+        if: always() && steps.check-iterations.outputs.exceeded == 'false'
+        run: docker compose down -v --remove-orphans

@@ -24,6 +24,7 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
+      id-token: write
     env:
       COMPOSE_FILE: docker-compose.yaml:docker-compose.override.yaml:docker-compose.test.yaml
       ISSUE_NUMBER: ${{ github.event.issue.number || github.event.inputs.issue_number }}

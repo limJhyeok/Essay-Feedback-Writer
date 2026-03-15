@@ -69,6 +69,9 @@ jobs:
           echo "TEST_POSTGRES_USER=postgres" >> .env
           echo "TEST_POSTGRES_PASSWORD=changethis" >> .env
 
+      - name: Install playwright-cli
+        run: npm install -g @anthropic-ai/playwright-cli@latest
+
       - name: Build and start Docker services
         run: |
           docker compose build db backend

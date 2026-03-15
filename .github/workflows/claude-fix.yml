@@ -87,6 +87,10 @@ jobs:
           echo "TEST_POSTGRES_USER=postgres" >> .env
           echo "TEST_POSTGRES_PASSWORD=changethis" >> .env
 
+      - name: Install playwright-cli
+        if: steps.check-iterations.outputs.exceeded == 'false'
+        run: npm install -g @anthropic-ai/playwright-cli@latest
+
       - name: Build and start Docker services
         if: steps.check-iterations.outputs.exceeded == 'false'
         run: |

@@ -100,6 +100,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: "--allowed-tools Bash Read Write Edit Grep Glob"
           prompt: |
             You are an autonomous fix agent. Your task is to address the review feedback on PR #${{ env.PR_NUMBER }}.
 

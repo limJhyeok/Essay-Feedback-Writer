@@ -1,23 +1,17 @@
 name: Claude Code Review
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, synchronize, ready_for_review, reopened]
-    # Optional: Only run on specific file changes
-    # paths:
-    #   - "src/**/*.ts"
-    #   - "src/**/*.tsx"
-    #   - "src/**/*.js"
-    #   - "src/**/*.jsx"
+
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
+  # Standard review for all PRs (read-only comments)
   claude-review:
-    # Optional: Filter by PR author
-    # if: |
-    #   github.event.pull_request.user.login == 'external-contributor' ||
-    #   github.event.pull_request.user.login == 'new-developer' ||
-    #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
-
+    if: "!contains(github.event.pull_request.labels.*.name, 'agent-pr')"
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -29,6 +23,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 1
 
       - name: Run Claude Code Review
@@ -39,6 +34,73 @@ jobs:
           plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
           plugins: 'code-review@claude-code-plugins'
           prompt: '/code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}'
-          # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
-          # or https://code.claude.com/docs/en/cli-reference for available options
 
+  # Agent PR review — can approve or request changes to drive the fix loop
+  agent-review:
+    if: contains(github.event.pull_request.labels.*.name, 'agent-pr')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Run Claude Code Review (Agent PR)
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            You are an autonomous code review agent. Review PR #${{ github.event.pull_request.number }} in ${{ github.repository }}.
+
+            ## Step 1: Understand the PR
+
+            Get the PR details and diff:
+            ```bash
+            gh pr view ${{ github.event.pull_request.number }} --repo ${{ github.repository }}
+            gh pr diff ${{ github.event.pull_request.number }} --repo ${{ github.repository }}
+            ```
+
+            ## Step 2: Review the changes
+
+            Read the changed files and review for:
+
+            1. **Correctness**: Does the code do what the PR/issue describes? Are there logic errors?
+            2. **Security**: SQL injection, XSS, command injection, hardcoded secrets, insecure defaults
+            3. **Consistency**: Does the code follow existing patterns in the codebase? Read CLAUDE.md for conventions.
+            4. **Test coverage**: Are there tests for new functionality? Do they test edge cases?
+            5. **DB migrations**: If there are model changes, is there a corresponding Alembic migration? Are migrations reversible?
+            6. **API design**: Are endpoints following existing conventions (path structure, schema naming, error handling)?
+
+            ## Step 3: Submit your review
+
+            Based on your findings, submit ONE of these review types:
+
+            If the code is good with no significant issues:
+            ```bash
+            gh pr review ${{ github.event.pull_request.number }} --approve \
+              --body "Code review passed. <brief summary of what looks good>" \
+              --repo ${{ github.repository }}
+            ```
+
+            If there are minor suggestions but nothing blocking:
+            ```bash
+            gh pr review ${{ github.event.pull_request.number }} --comment \
+              --body "<detailed feedback with suggestions>" \
+              --repo ${{ github.repository }}
+            ```
+
+            If there are issues that must be fixed:
+            ```bash
+            gh pr review ${{ github.event.pull_request.number }} --request-changes \
+              --body "<detailed description of issues that need fixing>" \
+              --repo ${{ github.repository }}
+            ```
+
+            Be specific in your feedback. Reference file names and line numbers. Distinguish between blocking issues and nice-to-haves.

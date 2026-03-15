@@ -12,16 +12,17 @@
 ## 기술 스택 및 기능
 
 - ⚡ [**FastAPI**](https://fastapi.tiangolo.com): Python 백엔드 API 구축.
-    - 🧰 [SQLAlchemy](https://www.sqlalchemy.org/): Python SQL 데이터베이스 상호작용(ORM) 처리.
+    - 🧰 [SQLAlchemy](https://www.sqlalchemy.org/): Python SQL 데이터베이스 상호작용(ORM) 처리 — `AsyncSession`을 이용한 완전 비동기 아키텍처.
     - 🔍 [Pydantic](https://docs.pydantic.dev): FastAPI에서 사용하며 데이터 유효성 검사 및 설정 관리.
     - 💾 [PostgreSQL](https://www.postgresql.org): 데이터베이스 사용.
     - 📁 [Adminer](https://www.adminer.org/): 데이터베이스 관리 시스템.
 - 🚀 [Svelte](https://svelte.dev/): 프론트엔드.
+- ✍️ 스타일러스/터치 필기 입력 및 VLM 기반 OCR을 통한 손글씨 에세이 제출 기능.
 - 🐋 [Docker Compose](https://www.docker.com): 개발 및 배포 환경.
 - 🔒 기본적인 비밀번호 해싱 기능.
 - 🔑 JWT (JSON Web Token) 인증.
 - 📫 이메일 기반 비밀번호 복구.
-- ✅ [Pytest](https://pytest.org): 테스트.
+- ✅ [Pytest](https://pytest.org) 및 [pytest-asyncio](https://pytest-asyncio.readthedocs.io/): 테스트.
 - 📞 [Traefik](https://traefik.io): 리버스 프록시 / 로드 밸런서.
 - 🚢 Docker Compose를 사용한 배포 지침, 자동 HTTPS 인증서를 처리하는 프론트엔드 Traefik 프록시 설정.
 
@@ -131,7 +132,7 @@ Attaching to backend, chatgpt-clone-adminer-1, chatgpt-clone-db-1, chatgpt-clone
 ```bash
 sudo docker-compose -f docker-compose.yaml -f docker-compose.override.yaml -f docker-compose.test.yaml up
 ```
-위 명령어를 실행하면 개발(dev) 또는 운영(prod) 환경의 데이터베이스와 격리된 테스트 전용 데이터베이스(test DB)가 실행됩니다.
+위 명령어를 실행하면 개발(dev) 또는 운영(prod) 환경의 데이터베이스와 격리된 테스트 전용 데이터베이스(test DB)가 실행됩니다. test DB는 빠른 임시 스토리지를 위해 **RAM(`tmpfs`)** 기반으로 동작합니다.
 
 백엔드에서 테스트를 수행하면, 해당 데이터가 test DB 에 저장됩니다.
 테스트 진행 시 데이터 분리를 위해 test DB 를 사용하는 것을 권장합니다.

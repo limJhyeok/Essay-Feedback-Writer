@@ -10,16 +10,17 @@
 ## Technology Stack and Features
 
 - ⚡ [**FastAPI**](https://fastapi.tiangolo.com) for the Python backend API.
-    - 🧰 [SQLAlchemy](https://www.sqlalchemy.org/) for the Python SQL database interactions (ORM).
+    - 🧰 [SQLAlchemy](https://www.sqlalchemy.org/) for the Python SQL database interactions (ORM) — fully async with `AsyncSession`.
     - 🔍 [Pydantic](https://docs.pydantic.dev) used by FastAPI, for the data validation and settings management.
     - 💾 [PostgreSQL](https://www.postgresql.org) as the SQL database.
     - 📁 [Adminer](https://www.adminer.org/) as the Database Management System
 - 🚀 [Svelte](https://svelte.dev/) for the frontend
+- ✍️ Stylus/touch handwriting input with VLM-based OCR for handwritten essay submission
 - 🐋 [Docker Compose](https://www.docker.com) for development and production.
 - 🔒 Secure password hashing by default.
 - 🔑 JWT (JSON Web Token) authentication.
 - 📫 Email based password recovery.
-- ✅ Tests with [Pytest](https://pytest.org).
+- ✅ Tests with [Pytest](https://pytest.org) and [pytest-asyncio](https://pytest-asyncio.readthedocs.io/).
 - 📞 [Traefik](https://traefik.io) as a reverse proxy / load balancer.
 - 🚢 Deployment instructions using Docker Compose, including how to set up a frontend Traefik proxy to handle automatic HTTPS certificates.
 
@@ -133,7 +134,7 @@ To run containers in the test environment, use the following command:
 sudo docker-compose -f docker-compose.yaml -f docker-compose.override.yaml -f docker-compose.test.yaml up
 ```
 
-Running this command will start a **test database (test DB)** that is **isolated** from the development (dev) and production (prod) databases.
+Running this command will start a **test database (test DB)** that is **isolated** from the development (dev) and production (prod) databases. The test DB is backed by **RAM (`tmpfs`)** for fast, ephemeral storage.
 
 When running tests in the **backend**, all test-related data will be stored in the **test DB**.
 To ensure data separation during testing, it is strongly recommended to use the **test DB**.

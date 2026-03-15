@@ -59,12 +59,13 @@ Svelte SPA (frontend/)
 Traefik (reverse proxy, HTTPS, Let's Encrypt)
     │
     ▼
-FastAPI (backend/app/)
+FastAPI (backend/app/)  [fully async — AsyncSession + asyncio]
     │
     ├── JWT auth (python-jose + bcrypt)
-    ├── OpenAI API for essay feedback generation
+    ├── LangChain LLM clients (OpenAI, Anthropic) for essay feedback
+    ├── VLM-based OCR for handwriting input
     ├── SMTP email for password recovery
-    └── SQLAlchemy ORM
+    └── Async SQLAlchemy ORM
     │
     ▼
 PostgreSQL (separate DB for tests)
@@ -77,28 +78,31 @@ PostgreSQL (separate DB for tests)
 | Entry | `main.py` | FastAPI app init, CORS, routers |
 | Models | `models.py` | All SQLAlchemy ORM models |
 | Schemas | `schemas/` | Pydantic validation (input/output) |
-| CRUD | `crud/` | Database query logic per entity |
+| CRUD | `crud/` | Async database query logic per entity |
 | Routes | `api/routes/` | HTTP endpoints (3 routers) |
-| Core | `core/` | config, security (JWT/Fernet), DB session |
+| Services | `services/` | Business logic (e.g., `feedback_service.py`) |
+| Prompts | `prompts/` | LLM prompt constants (e.g., `ielts_prompt.py`) |
+| Core | `core/` | config, security (JWT/Fernet), async DB session |
 
 **API base path**: `/api/v1`
 - `user_router.py` — auth: login, register, password reset
-- `ielts_router.py` — core app: prompts, essays, feedbacks, bots, rubrics
+- `ielts_router.py` — core app: prompts, essays, feedbacks, bots, rubrics; also `POST /essays/handwriting` and `GET /essays/{id}/image`
 - `util_router.py` — health check
 
-**Dependency injection** (`api/deps.py`): `SessionDep` (DB session) and `CurrentUser` (JWT-validated user) are injected into route handlers via `Annotated` + `Depends`.
+**Dependency injection** (`api/deps.py`): `SessionDep` (async DB session) and `CurrentUser` (JWT-validated user) are injected into route handlers via `Annotated` + `Depends`.
 
 ### Frontend Structure (`frontend/src/`)
 
 - `App.svelte` — root component with `svelte-spa-router` route definitions
 - `routes/` — page-level components (Auth, IELTSFeedbackWriter, Password, ResetPassword)
+- `components/HandwritingCanvas.svelte` — stylus/touch canvas for handwriting input
 - `lib/api.js` — fetch wrapper that attaches JWT Bearer token from the store
 - `lib/store.js` — Svelte writable stores persisted to `localStorage` (`isLogin`, `accessToken`)
 
 ### Key Data Models
 
 - **User** — email/password, superuser flag, linked to essays, feedbacks, API keys
-- **Essay** — student submission, linked to a Prompt
+- **Essay** — student submission, linked to a Prompt; includes `input_type` (`text`/`handwriting`), `image_path` (uploaded image), and `ocr_text` (VLM-extracted text)
 - **Feedback** — AI-generated feedback stored as JSONB, linked to Essay + Bot
 - **Bot** — AI model configuration (name, version, deprecated flag)
 - **AIProvider / APIModel** — provider registry (e.g., OpenAI, Anthropic) and their models
@@ -107,10 +111,19 @@ PostgreSQL (separate DB for tests)
 - **ExampleEssay** — sample essays per prompt
 
 ### Feedback Generation Flow
-1. User submits essay → backend stores `Essay` in DB
+
+**Text path:**
+1. User submits essay → backend stores `Essay` (input_type=`text`) in DB
 2. Backend retrieves user's encrypted API key (or falls back to superuser's key)
-3. Backend calls OpenAI API with essay + prompt + rubric criteria
+3. `feedback_service.generate_feedback()` calls LLM with essay + prompt + rubric criteria via `.ainvoke()`
 4. Response stored as JSONB in `Feedback` model
+5. Frontend renders feedback using `marked.js`
+
+**Handwriting path:**
+1. User draws on `HandwritingCanvas.svelte` → image uploaded to `POST /essays/handwriting`
+2. Backend stores `Essay` (input_type=`handwriting`) + image file in `UPLOAD_DIR`
+3. `feedback_service.generate_feedback_for_handwriting()` uses VLM (`get_vlm_client()`) to OCR the image
+4. Extracted text saved to `essay.ocr_text`; then standard feedback generation runs with extracted text
 5. Frontend renders feedback using `marked.js`
 
 ## Environment Configuration
@@ -122,12 +135,15 @@ Copy `.env.example` to `.env` and fill in:
 - `POSTGRES_SERVER=db` when using Docker Compose, `localhost` for local dev
 - `VITE_SERVER_URL` — backend URL seen by the browser (not the container name)
 - `ENVIRONMENT=local|staging|production` — `production` disables Swagger docs at `/docs`
+- `UPLOAD_DIR` — directory for uploaded essay images (default: `/app/uploads`); mounted as the `essay-uploads` Docker volume
+- `MAX_UPLOAD_SIZE_MB` — maximum allowed upload size in MB (default: `10`)
 
 ## Testing
 
-- **Framework**: pytest
+- **Framework**: pytest + pytest-asyncio
 - **Location**: `backend/app/tests/` with `conftest.py` fixtures
-- **Test DB**: separate database configured via `TEST_POSTGRES_*` env vars
+- **Test DB**: separate database configured via `TEST_POSTGRES_*` env vars; runs on RAM-backed `tmpfs` in Docker for speed
+- **HTTP client**: `httpx.AsyncClient` with `ASGITransport` (replaces synchronous `TestClient`)
 - **Coverage**: HTML report generated in `htmlcov/`
 
 ```bash

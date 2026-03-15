@@ -3,6 +3,7 @@
 	import { isSignUpPage } from "../lib/store"
     import fastapi from '../lib/api';
 	let user_email = ''
+	let error = ""
 
 	function handlePasswordSubmit(){
 		let url = "/api/v1/user/password"
@@ -40,6 +41,12 @@
 		  </div>
 		  <button type="submit" class="btn btn-primary w-100">계속</button>
 		</form>
+
+		{#if error}
+		  <div class="alert alert-danger mt-3">
+		    {typeof error === 'object' ? JSON.stringify(error.detail || error) : error}
+		  </div>
+		{/if}
 
 		<a use:link href="/authorize" on:click|preventDefault={handleLoginClick} class="d-block mt-4">
 			Login 페이지로 돌아가기

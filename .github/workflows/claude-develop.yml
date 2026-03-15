@@ -70,7 +70,7 @@ jobs:
           echo "TEST_POSTGRES_PASSWORD=changethis" >> .env
 
       - name: Install playwright-cli
-        run: npm install -g @anthropic-ai/playwright-cli@latest
+        run: npm install -g @playwright/cli@latest
 
       - name: Build and start Docker services
         run: |

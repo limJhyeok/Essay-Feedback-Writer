@@ -89,7 +89,7 @@ jobs:
 
       - name: Install playwright-cli
         if: steps.check-iterations.outputs.exceeded == 'false'
-        run: npm install -g @anthropic-ai/playwright-cli@latest
+        run: npm install -g @playwright/cli@latest
 
       - name: Build and start Docker services
         if: steps.check-iterations.outputs.exceeded == 'false'

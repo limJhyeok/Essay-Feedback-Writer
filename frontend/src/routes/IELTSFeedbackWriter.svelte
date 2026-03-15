@@ -4,7 +4,7 @@
   import fastapi from "../lib/api";
   import { fastapiUpload } from "../lib/api";
   import { onMount, tick, onDestroy } from 'svelte';
-  import { marked } from 'marked'
+  import { safeHtml } from "../lib/sanitize"
   import { push } from 'svelte-spa-router'
   import "./home.css";
   import Error from "../components/Error.svelte"
@@ -816,7 +816,7 @@
               <div>
                 <h5><strong>Band Score {criterion.score}</strong></h5>
                 <p><strong>{criterion.name}:</strong>
-                  {@html marked.parse(criterion.description)}
+                  {@html safeHtml(criterion.description)}
                 </p>
               </div>
             {/each}
@@ -958,7 +958,7 @@
                 bind:value={APIKey}
                 class="form-control mb-2"
                 placeholder="sk-...eGNK"
-                type="text"
+                type="password"
                 required
               />
 
@@ -1424,7 +1424,7 @@
                         <i>△</i> feedback for the {CRITERIA_LABELS[key] ?? key}
                     </div>
                     <ul class="feedback-list">
-                        <li>{@html marked.parse(feedback ?? '')}</li>
+                        <li>{@html safeHtml(feedback ?? '')}</li>
                     </ul>
                   </div>
                 {/each}
@@ -1433,7 +1433,7 @@
                       <i>△</i> Overall feedback
                   </div>
                   <ul class="feedback-list">
-                      <li>{@html marked.parse(feedbackList[activeIdOfFeedbacks]["content"]?.overall_feedback ?? '')}</li>
+                      <li>{@html safeHtml(feedbackList[activeIdOfFeedbacks]["content"]?.overall_feedback ?? '')}</li>
                   </ul>
                 </div>
               </div>
@@ -1462,7 +1462,7 @@
 
           </div>
           <div class="border rounded mx-4 p-4 bg-gray-50 whitespace-pre-line" style = "box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-            {@html marked.parse(exampleAnswer)}
+            {@html safeHtml(exampleAnswer)}
           </div>
         </div>
         {/if}

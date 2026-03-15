@@ -83,6 +83,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          model: claude-opus-4-20250918
           claude_args: "--allowed-tools Bash Read Write Edit Grep Glob"
           prompt: |
             You are an autonomous development agent. Your task is to implement the feature or fix described in GitHub issue #${{ env.ISSUE_NUMBER }}.

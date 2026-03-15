@@ -30,6 +30,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          model: claude-opus-4-20250918
           plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
           plugins: 'code-review@claude-code-plugins'
           prompt: '/code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}'
@@ -54,6 +55,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          model: claude-opus-4-20250918
           claude_args: "--allowed-tools 'Bash(gh pr:*)' 'Bash(gh api:*)' Read Grep Glob"
           prompt: |
             You are an autonomous code review agent. Review PR #${{ github.event.pull_request.number }} in ${{ github.repository }}.

@@ -22,6 +22,7 @@ function _handleResponse(response, operation, success_callback, failure_callback
                 userEmail.set('')
                 isLogin.set(false)
                 push('/authorize')
+                if (failure_callback) failure_callback({ detail: 'Session expired' })
             } else {
                 if (failure_callback) {
                     failure_callback(json)
@@ -32,6 +33,7 @@ function _handleResponse(response, operation, success_callback, failure_callback
         })
         .catch(error => {
             alert(JSON.stringify(error))
+            if (failure_callback) failure_callback(error)
         })
 }
 

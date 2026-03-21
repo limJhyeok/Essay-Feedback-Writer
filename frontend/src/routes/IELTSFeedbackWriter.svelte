@@ -3,7 +3,7 @@
   import { get } from 'svelte/store'
   import fastapi from "../lib/api";
   import { fastapiUpload } from "../lib/api";
-  import { onMount, tick, onDestroy } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import { safeHtml } from "../lib/sanitize"
   import { push } from 'svelte-spa-router'
   import "./home.css";
@@ -349,7 +349,7 @@
   }
   read_providers();
 
-  if ($isLogin == false){
+  $: if ($isLogin === false) {
     handleUnauthorized();
   }
 
@@ -386,27 +386,25 @@
   }
   getPrompts();
 
+  let exampleRequestId = 0;
+
   function getExampleAnswer(){
+    const requestId = ++exampleRequestId;
     let params = {
       prompt_id: promptId
     }
     let url = "/api/v1/ielts/example"
     fastapi("get", url, params,
       (json) => {
-        exampleAnswer = json.content
+        if (requestId === exampleRequestId) {
+          exampleAnswer = json.content;
+        }
       },
       (json_error) => {
             error = json_error
       }
     )
   }
-  function handleKeyDown(event) {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      sendMessage();
-    }
-  }
-
   function goToSignUp(){
     $isSignUpPage = true
     window.location.hash = '#/authorize';
@@ -494,21 +492,14 @@
   }
 
   let activePopupId = null
-  let popupContainer;
   function closePopup() {
     activePopupId = null;
-    if (popupContainer) {
-      popupContainer.style.display = 'none';
-    }
   }
 
   function handleClickOutside(event) {
     if (!event.target.closest('.dropdown-wrapper')) {
       showDropdown = false;
       showUserProfile = false;
-    }
-    if (popupContainer && !popupContainer.contains(event.target) && !event.target.closest('.options-container')) {
-      closePopup();
     }
   }
 
@@ -517,9 +508,6 @@
     return () => {
       document.removeEventListener('click', handleClickOutside);
     };
-  });
-  onDestroy(() => {
-    document.removeEventListener('click', handleClickOutside);
   });
 
   function closeInfoDeskModal(){
@@ -1235,7 +1223,6 @@
                 {#if inputMode === 'text'}
                   <textarea
                     bind:value={essayContent}
-                    on:keydown={handleKeyDown}
                     placeholder="Write your essay here..."
                     class="message-input"
                     style="width: 100%; height: 52vh"
@@ -1304,7 +1291,7 @@
               <div
                 class="attempt-item {index === activeIdOfessays ? 'active' : ''}"
                 style="min-width: 15%; box-shadow: 0 1px 3px rgba(0,0,0,0.1);"
-                on:click={() => {activeIdOfessays = index; getFeedbacksByEssayId(registeredEssay.id);}}
+                on:click={() => {editing = false; activeIdOfessays = index; getFeedbacksByEssayId(registeredEssay.id);}}
               >
                 <div>
                   <div>Attempt #{(registeredEssayList.length - index)}</div>
@@ -1393,7 +1380,7 @@
               <div class="feedback-tabs">
                   {#each feedbackList as feedback, index}
                     <div class="feedback-tab"
-                    class:active={activeIdOfFeedbacks === index ? 'active': ''}
+                    class:active={activeIdOfFeedbacks === index}
                     on:click={() => activeIdOfFeedbacks = index}
                     style = "box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
                     {feedback.bot_name} ({feedback.created_at})

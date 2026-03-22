@@ -25,6 +25,7 @@ dependencies = [
     "langchain-anthropic>=0.3,<0.4",
     "langsmith>=0.2,<0.3",
     "cryptography>=45.0.3,<46.0.0",
+    "pyyaml>=6.0,<7.0",
 ]
 
 [dependency-groups]

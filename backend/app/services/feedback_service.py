@@ -6,12 +6,16 @@ from pathlib import Path
 from fastapi import HTTPException
 from langchain_anthropic import ChatAnthropic
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage
 from langchain_core.runnables import Runnable
 from langchain_openai import ChatOpenAI
-from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agents.aggregator import Aggregator
+from app.agents.builder import generate_aggregator_agent, generate_criterion_agents
+from app.agents.loader import load_rubric
+from app.agents.schema import CriterionResult, ScoringResult
+from app.agents.swarm import ScoringSwarm
 from app.core import security
 from app.crud import (
     ai_provider_crud,
@@ -19,21 +23,9 @@ from app.crud import (
     essay_crud,
     feedback_crud,
     prompt_crud,
-    rubric_criterion_crud,
     user_api_key_crud,
 )
-from app.prompts.ielts_prompt import (
-    IELTS_HOLISTIC_SYSTEM_PROMPT,
-    IELTS_HUMAN_TEMPLATE,
-    IELTS_SUB_SYSTEM_PROMPT,
-    IELTS_SYSTEM_PROMPT_TEMPLATE,
-)
 from app.schemas import feedback_schema, user_api_key_schema
-
-
-class FeedbackResponse(BaseModel):
-    score: float
-    feedback: str
 
 
 _PROVIDER_MAP: dict[str, type[BaseChatModel]] = {
@@ -56,28 +48,18 @@ def get_llm_client(
 
     decrypted_api_key = security.decrypt_api_key(db_api_key.api_key)
     llm = cls(model=model_name, api_key=decrypted_api_key)
-    return llm.with_structured_output(FeedbackResponse)
+    return llm.with_structured_output(CriterionResult)
 
 
-def get_llm_prompt_for_ielts(
-    criteria_name: str, subsystem_prompt: str, rubric_for_criteria: str
-) -> tuple[str, str]:
-    system_prompt = IELTS_SYSTEM_PROMPT_TEMPLATE.format(
-        criteria_name=criteria_name,
-        subsystem_prompt=subsystem_prompt,
-        rubric_for_criteria=rubric_for_criteria,
-    )
-    return system_prompt, IELTS_HUMAN_TEMPLATE
-
-
-def get_llm_prompt_for_ielts_holistic_feedback(
-    criteria_feedbacks: dict[str, str],
-) -> tuple[str, str]:
-    human_prompt = "Below are scores and feedback for four IELTS Writing Task 2 scoring criteria.\n"
-    for criterion, text in criteria_feedbacks.items():
-        human_prompt += f"\n### {criterion}\n{text}\n"
-    human_prompt += "\nNow give the final score and your justification."
-    return IELTS_HOLISTIC_SYSTEM_PROMPT, human_prompt
+def _scoring_result_to_jsonb(result: ScoringResult) -> dict:
+    return {
+        "feedback_by_criteria": {
+            cr.name: {"score": cr.score, "feedback": cr.feedback}
+            for cr in result.criteria
+        },
+        "overall_score": result.overall_score,
+        "overall_feedback": result.overall_feedback,
+    }
 
 
 async def generate_feedback(
@@ -88,9 +70,6 @@ async def generate_feedback(
     override_content: str | None = None,
 ) -> None:
     student_essay = await essay_crud.get_essay_by_id(db, essay_id)
-    criterion_names = await rubric_criterion_crud.get_unique_criterion_names_by_rubric(
-        db, request.rubric_name
-    )
 
     db_provider = await ai_provider_crud.get_provider_by_name(
         db, request.model_provider_name
@@ -110,46 +89,26 @@ async def generate_feedback(
         db_api_key, request.model_provider_name, request.api_model_name
     )
 
-    feedback_response = {"feedback_by_criteria": {}}
-    holistic_feedback_inputs: dict[str, str] = {}
+    # Load rubric from YAML config
+    rubric = load_rubric(rubric_name=request.rubric_name)
 
-    for criterion_name in criterion_names:
-        criterion_list = await rubric_criterion_crud.get_criterion_by_name(
-            db, criterion_name
-        )
-        rubric_text = "\n".join(
-            f"- **{criterion.score}**: {criterion.description}"
-            for criterion in criterion_list
-        )
-        system_prompt, human_template = get_llm_prompt_for_ielts(
-            criterion_name, IELTS_SUB_SYSTEM_PROMPT.get(criterion_name, ""), rubric_text
-        )
-        essay_text = override_content or student_essay.content
-        human_prompt = human_template.format(
-            essay_prompt=request.prompt, student_essay=essay_text
-        )
+    # Build criterion agents and score in parallel
+    criterion_agents = generate_criterion_agents(rubric)
+    swarm = ScoringSwarm(structured_llm)
+    swarm.add_agents(criterion_agents)
 
-        result: FeedbackResponse = await structured_llm.ainvoke(
-            [SystemMessage(content=system_prompt), HumanMessage(content=human_prompt)]
-        )
-
-        feedback_response["feedback_by_criteria"][criterion_name] = {
-            "score": result.score,
-            "feedback": result.feedback,
-        }
-
-        holistic_feedback_inputs[criterion_name] = result.feedback
-
-    holistic_system, holistic_human = get_llm_prompt_for_ielts_holistic_feedback(
-        holistic_feedback_inputs
+    essay_text = override_content or student_essay.content
+    criteria_results = await swarm.score(
+        essay_prompt=request.prompt, student_essay=essay_text
     )
 
-    holistic_result: FeedbackResponse = await structured_llm.ainvoke(
-        [SystemMessage(content=holistic_system), HumanMessage(content=holistic_human)]
-    )
+    # Aggregate results
+    aggregator_agent = generate_aggregator_agent(rubric)
+    aggregator = Aggregator(rubric, structured_llm)
+    scoring_result = await aggregator.aggregate(criteria_results, aggregator_agent)
 
-    feedback_response["overall_score"] = holistic_result.score
-    feedback_response["overall_feedback"] = holistic_result.feedback
+    # Convert to JSONB format and store
+    feedback_response = _scoring_result_to_jsonb(scoring_result)
 
     api_model = await api_model_crud.get_api_model_by_name_and_provider(
         db, request.api_model_name, request.model_provider_name

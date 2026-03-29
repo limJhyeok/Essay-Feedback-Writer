@@ -12,9 +12,16 @@ from app.agents.schema import (
 )
 
 
-def _round_half_band(value: float) -> float:
-    """Round to nearest 0.5 using round-half-up (IELTS convention)."""
-    return floor(value * 2 + 0.5) / 2
+def _round_score(value: float, method: str = "half_band") -> float:
+    """Round a score using the specified rounding method."""
+    if method == "half_band":
+        return floor(value * 2 + 0.5) / 2
+    elif method == "integer":
+        return round(value)
+    elif method == "none":
+        return value
+    else:
+        raise ValueError(f"Unknown rounding method: {method}")
 
 
 class Aggregator:
@@ -29,7 +36,7 @@ class Aggregator:
         for result in criteria:
             w = weight_map.get(result.name, 1.0)
             weighted_sum += result.score * w
-        return _round_half_band(weighted_sum / total_weight)
+        return _round_score(weighted_sum / total_weight, self._rubric.rounding)
 
     async def llm_holistic(
         self, criteria: list[CriterionResult], aggregator_agent: AgentConfig
@@ -37,7 +44,9 @@ class Aggregator:
         if self._llm is None:
             raise RuntimeError("LLM client required for holistic aggregation")
 
-        human_prompt = "Below are scores and feedback for four IELTS Writing Task 2 scoring criteria.\n"
+        n_criteria = len(self._rubric.criteria)
+        rubric_name = self._rubric.name
+        human_prompt = f"Below are scores and feedback for {n_criteria} {rubric_name} scoring criteria.\n"
         for result in criteria:
             human_prompt += f"\n### {result.name}\n{result.feedback}\n"
         human_prompt += "\nNow give the final score and your justification."
@@ -56,6 +65,7 @@ class Aggregator:
         aggregator_agent: AgentConfig | None = None,
     ) -> ScoringResult:
         method = self._rubric.aggregation
+        rounding = self._rubric.rounding
 
         if method == AggregationMethod.weighted_average:
             overall_score = self.weighted_average(criteria)
@@ -64,13 +74,13 @@ class Aggregator:
             if aggregator_agent is None:
                 raise ValueError("aggregator_agent required for llm_holistic")
             holistic = await self.llm_holistic(criteria, aggregator_agent)
-            overall_score = _round_half_band(holistic.score)
+            overall_score = _round_score(holistic.score, rounding)
             overall_feedback = holistic.feedback
         elif method == AggregationMethod.both:
             if aggregator_agent is None:
                 raise ValueError("aggregator_agent required for 'both' aggregation")
             holistic = await self.llm_holistic(criteria, aggregator_agent)
-            overall_score = _round_half_band(holistic.score)
+            overall_score = _round_score(holistic.score, rounding)
             overall_feedback = holistic.feedback
         else:
             raise ValueError(f"Unknown aggregation method: {method}")

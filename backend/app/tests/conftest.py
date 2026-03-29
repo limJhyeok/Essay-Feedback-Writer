@@ -8,12 +8,12 @@ from app.api.deps import get_db
 from app.core.config import settings
 from app.crud import user_crud
 from app.main import app
-from app.models import User
+from app.models import Bot, Prompt, User
 from app.schemas import user_schema
 from app.tests.utils.user import authentication_token_from_email
 from app.tests.utils.utils import random_email, random_lower_string
-from app.crud import ai_provider_crud
-from app.schemas import ai_provider_schema
+from app.crud import ai_provider_crud, bot_crud, prompt_crud
+from app.schemas import ai_provider_schema, bot_schema, prompt_schema
 from app.crud import user_api_key_crud
 
 ALLOWED_TEST_DB_NAMES = ["test"]  # .env variable: TEST_POSTGRES_DB
@@ -75,6 +75,31 @@ async def anthropic_provider(db: AsyncSession):
             db, ai_provider_schema.AIProviderCreate(name="Anthropic")
         )
     return provider
+
+
+@pytest_asyncio.fixture(scope="module", loop_scope="session")
+async def test_prompt(db: AsyncSession, test_user) -> Prompt:
+    """Create a reusable prompt for essay/feedback tests."""
+    from datetime import datetime, timezone
+
+    pc = prompt_schema.PromptCreate(
+        content="Describe the impact of technology on education.",
+        created_by=test_user.id,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+    return await prompt_crud.create_prompt(db, pc)
+
+
+@pytest_asyncio.fixture(scope="module", loop_scope="session")
+async def test_bot(db: AsyncSession) -> Bot:
+    """Ensure a test bot exists and return it."""
+    bot = await bot_crud.get_bot_by_name(db, "TestBot")
+    if not bot:
+        bot = await bot_crud.create_bot(
+            db, bot_schema.BotCreate(name="TestBot", version="1.0")
+        )
+    return bot
 
 
 @pytest_asyncio.fixture(scope="module", loop_scope="session")

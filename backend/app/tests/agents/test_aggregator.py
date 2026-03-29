@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from app.agents.aggregator import Aggregator, _round_half_band
+from app.agents.aggregator import Aggregator, _round_score
 from app.agents.schema import (
     AgentConfig,
     AggregationMethod,
@@ -43,13 +43,25 @@ def _make_aggregator_agent() -> AgentConfig:
     )
 
 
-def test_round_half_band():
-    assert _round_half_band(6.25) == 6.5
-    assert _round_half_band(6.75) == 7.0
-    assert _round_half_band(6.0) == 6.0
-    assert _round_half_band(6.5) == 6.5
-    assert _round_half_band(6.1) == 6.0
-    assert _round_half_band(6.9) == 7.0
+def test_round_score_half_band():
+    assert _round_score(6.25, "half_band") == 6.5
+    assert _round_score(6.75, "half_band") == 7.0
+    assert _round_score(6.0, "half_band") == 6.0
+    assert _round_score(6.5, "half_band") == 6.5
+    assert _round_score(6.1, "half_band") == 6.0
+    assert _round_score(6.9, "half_band") == 7.0
+
+
+def test_round_score_integer():
+    assert _round_score(6.25, "integer") == 6
+    assert _round_score(6.75, "integer") == 7
+    assert _round_score(6.5, "integer") == 6  # Python banker's rounding
+    assert _round_score(7.5, "integer") == 8
+
+
+def test_round_score_none():
+    assert _round_score(6.25, "none") == 6.25
+    assert _round_score(6.789, "none") == 6.789
 
 
 def test_weighted_average_equal_weights():

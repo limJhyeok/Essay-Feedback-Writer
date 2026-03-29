@@ -85,3 +85,45 @@ ruff-format..........................................(no files to check)Skipped
 - 자동 대체 문서 (ReDoc): http://localhost:8000/redoc
 - Adminer: http://localhost:8080
 - Traefik UI: http://localhost:8090
+
+## 커스텀 Claude Code 에이전트 & 스킬
+
+이 프로젝트에는 전문화된 워크플로를 위한 커스텀 Claude Code 에이전트와 스킬이 포함되어 있습니다. `.claude/agents/`와 `.claude/skills/`에 위치합니다.
+
+### 에이전트 (`.claude/agents/`)
+
+에이전트는 작업이 설명과 일치할 때 Claude가 자동으로 위임하는 전문화된 서브에이전트입니다.
+
+| 에이전트 | 용도 |
+|----------|------|
+| `tdd-backend-enforcer` | 모든 백엔드 코드 변경에 대해 엄격한 TDD (Red → Green → Refactor) 적용 |
+| `solution-architect` | 요구사항으로부터 시스템 아키텍처 설계 |
+| `api-spec-writer` | 요구사항으로부터 OpenAPI 3.0 명세서 작성 |
+| `db-architect` | 데이터베이스 아키텍처 설계 및 평가 |
+| `db-schema-reviewer` | 프로덕션 준비 상태를 위한 데이터베이스 스키마 감사 |
+| `infra-architect` | 인프라, CI/CD, 스케일링 전략 설계 |
+| `web-design-evaluator` | 읽기 전용 UX/UI 감사 — 프론트엔드 디자인을 평가하고 `docs/web-design-evaluation.md`에 결과 출력 |
+| `frontend-design-fixer` | 평가 보고서를 읽고 우선순위 순서대로 수정 (Blocking → Major → Moderate) |
+
+**웹 디자인 워크플로 예시:**
+```
+# 1단계: 평가 (docs/web-design-evaluation.md 생성)
+"프론트엔드 디자인을 web-design-evaluator 에이전트로 평가해줘"
+
+# 2단계: 평가 결과의 이슈 수정
+"docs/web-design-evaluation.md의 디자인 이슈를 고쳐줘"
+```
+
+### 스킬 (`.claude/skills/`)
+
+스킬은 `/command-name` 형태로 호출하는 슬래시 커맨드입니다.
+
+| 스킬 | 커맨드 | 용도 |
+|------|--------|------|
+| `interaction-mode` | `/interaction-mode` | 단계별 확인이 포함된 페어 프로그래밍 워크플로 |
+| `frontend-design` | `/frontend-design` | 프로젝트 디자인 컨벤션에 맞춰 프론트엔드 컴포넌트 빌드 또는 수정 |
+| `github-commit` | `/github-commit` | Conventional Commits 표준에 맞는 커밋 메시지 생성 |
+| `github-issue` | `/github-issue` | 구조화된 GitHub 이슈 생성 |
+| `github-pull-request` | `/github-pull-request` | PR 제목 및 설명 생성 |
+| `github-workflow` | `/github-workflow` | 이슈 생성부터 PR 머지까지의 전체 워크플로 가이드 |
+| `playwright-cli` | `/playwright-cli` | UI 테스트를 위한 브라우저 자동화 |

@@ -95,3 +95,45 @@ Automatic Alternative Docs (ReDoc): http://localhost:8000/redoc
 Adminer: http://localhost:8080
 
 Traefik UI: http://localhost:8090
+
+## Custom Claude Code Agents & Skills
+
+This project includes custom Claude Code agents and skills for specialized workflows. They live in `.claude/agents/` and `.claude/skills/`.
+
+### Agents (`.claude/agents/`)
+
+Agents are specialized subagents that Claude delegates to automatically when a task matches their description.
+
+| Agent | Purpose |
+|-------|---------|
+| `tdd-backend-enforcer` | Enforces strict TDD (Red → Green → Refactor) for all backend code changes |
+| `solution-architect` | Designs system architecture from requirements |
+| `api-spec-writer` | Writes OpenAPI 3.0 specifications from requirements |
+| `db-architect` | Designs and evaluates database architecture |
+| `db-schema-reviewer` | Audits database schemas for production readiness |
+| `infra-architect` | Designs infrastructure, CI/CD, and scaling strategies |
+| `web-design-evaluator` | Read-only UX/UI audit — evaluates frontend design and outputs `docs/web-design-evaluation.md` |
+| `frontend-design-fixer` | Reads evaluation reports and implements fixes in priority order (Blocking → Major → Moderate) |
+
+**Web design workflow example:**
+```
+# Step 1: Evaluate (produces docs/web-design-evaluation.md)
+"Evaluate the frontend design using the web-design-evaluator agent"
+
+# Step 2: Fix issues from the evaluation
+"Fix the design issues from docs/web-design-evaluation.md"
+```
+
+### Skills (`.claude/skills/`)
+
+Skills are slash commands invoked with `/command-name`.
+
+| Skill | Command | Purpose |
+|-------|---------|---------|
+| `interaction-mode` | `/interaction-mode` | Pair-programming workflow with step-by-step confirmation |
+| `frontend-design` | `/frontend-design` | Build or fix frontend components with project design conventions |
+| `github-commit` | `/github-commit` | Generate conventional commit messages |
+| `github-issue` | `/github-issue` | Create well-structured GitHub issues |
+| `github-pull-request` | `/github-pull-request` | Generate PR titles and descriptions |
+| `github-workflow` | `/github-workflow` | Full issue-to-PR-to-merge workflow guide |
+| `playwright-cli` | `/playwright-cli` | Browser automation for UI testing |

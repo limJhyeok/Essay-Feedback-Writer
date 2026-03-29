@@ -15,6 +15,8 @@
     - 💾 [PostgreSQL](https://www.postgresql.org) as the SQL database.
     - 📁 [Adminer](https://www.adminer.org/) as the Database Management System
 - 🚀 [Svelte](https://svelte.dev/) for the frontend
+- 🤖 Multi-agent scoring system — parallel per-criterion evaluation with configurable YAML rubrics, weighted aggregation, and LLM-based holistic synthesis
+- 🌐 Multi-domain support — IELTS Writing and Korean university entrance exams (수능 논술), with extensible architecture for additional domains
 - ✍️ Stylus/touch handwriting input with VLM-based OCR for handwritten essay submission
 - 🐋 [Docker Compose](https://www.docker.com) for development and production.
 - 🔒 Secure password hashing by default.
@@ -23,6 +25,9 @@
 - ✅ Tests with [Pytest](https://pytest.org) and [pytest-asyncio](https://pytest-asyncio.readthedocs.io/).
 - 📞 [Traefik](https://traefik.io) as a reverse proxy / load balancer.
 - 🚢 Deployment instructions using Docker Compose, including how to set up a frontend Traefik proxy to handle automatic HTTPS certificates.
+
+### Domain Selection
+Users choose their essay domain (IELTS Writing, Korean university entrance exams, with more coming soon).
 
 ### Dashboard Login
 
@@ -102,9 +107,10 @@ OPENAI_API_KEY=sk-....
 - **SECRET_KEY**: The secret key for the project, used for security, stored in .env.
 - **SMTP_USERNAME**: The SMTP server user to send emails.
 - **SMTP_PASSWORD**: The SMTP server password to send emails.
+- **FERNET_SECRET**: Secret key for encrypting/decrypting user AI API keys
 - **OPENAI_API_KEY**: OpenAI API Key for the super user
 
-### Execute Containers using docker compsoe
+### Execute Containers using docker compose
 ```bash
 sudo docker-compose up
 ```

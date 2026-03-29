@@ -9,8 +9,7 @@
 ## Requirements
 
 * [Docker](https://www.docker.com/)
-* [Nvidia Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
-* [Poetry](https://python-poetry.org/) - Python 패키지 및 환경 관리
+* [uv](https://docs.astral.sh/uv/) - Python 패키지 및 환경 관리 (Poetry 대체)
 
 ## 로컬 개발
 
@@ -49,23 +48,31 @@ docker compose logs backend
 
 ### 일반적인 워크플로우
 
-기본적으로 의존성은 [Poetry](https://python-poetry.org/)로 관리됩니다. Poetry를 설치한 후 아래 명령어로 의존성을 설치하세요.
+의존성은 [uv](https://docs.astral.sh/uv/)로 관리됩니다.
 
 `./backend/` 폴더에서 모든 의존성을 설치하려면:
 
 ```console
-$ poetry install
+$ uv sync
 ```
 
-그 후 새로운 환경으로 셸 세션을 시작하려면:
+가상 환경 내에서 명령어를 실행하려면:
 
 ```console
-$ poetry shell
+$ uv run pytest
+$ uv run ruff check --fix
 ```
 
 편집기가 올바른 Python 가상 환경을 사용하고 있는지 확인하세요.
 
-데이터 및 SQL 테이블에 대한 SqlAlchemy 모델은 `./backend/app/models.py`에서 수정하거나 추가할 수 있습니다. API 엔드포인트는 `./backend/app/api/`에, CRUD(Create, Read, Update, Delete) 유틸리티는 `./backend/app/crud.py`에 있습니다.
+#### 주요 백엔드 디렉터리
+
+- SQLAlchemy 모델: `./backend/app/models.py`
+- API 엔드포인트: `./backend/app/api/routes/` (4개 라우터: user, ielts, ksat, shared)
+- CRUD 작업: `./backend/app/crud/` (엔티티별 모듈)
+- Pydantic 스키마: `./backend/app/schemas/`
+- 멀티 에이전트 채점: `./backend/app/agents/` (swarm, aggregator, builder, loader)
+- 루브릭 설정: `./backend/app/agents/configs/` (도메인별 YAML 루브릭)
 
 ### pre-commit 설정
 1. pre-commit을 설치하세요

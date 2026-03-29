@@ -35,6 +35,7 @@ from app.crud import (
     ai_provider_crud,
     user_api_key_crud,
 )
+from app.models import DomainType, Exam, ExamQuestion, ExampleEssay, Prompt, TrackType
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -212,3 +213,101 @@ async def store_default_api_key(db: AsyncSession) -> None:
                 api_key=encrypt_api_key(api_key_value),
             )
             await user_api_key_crud.create_user_api_key(db, user_api_key_create)
+
+
+async def store_ksat_exam_data(db: AsyncSession) -> None:
+    """Seed KSAT exam data (2025 CAU Mock Essay, Humanities)."""
+    from sqlalchemy import select
+
+    from app.data.ksat.seed_ksat_data import (
+        EXAM_META,
+        EXAMPLE_ANSWERS,
+        QUESTIONS,
+    )
+
+    # Check if exam already exists
+    result = await db.execute(
+        select(Exam).where(
+            Exam.university == EXAM_META["university"],
+            Exam.year == EXAM_META["year"],
+            Exam.track == TrackType(EXAM_META["track"]),
+        )
+    )
+    if result.scalars().first():
+        logger.info("KSAT exam data already exists, skipping")
+        return
+
+    super_user = await user_crud.get_user_by_email(db, settings.FIRST_SUPERUSER)
+
+    # Read full exam content (passages section) from markdown
+    exam_content = _read_exam_content(
+        "app/data/ksat/2025_cau_mock_essay/humanities/prompt.md"
+    )
+
+    # Create exam with full content
+    from app.models import ExamType
+
+    db_exam = Exam(
+        domain=DomainType.ksat,
+        university=EXAM_META["university"],
+        year=EXAM_META["year"],
+        track=TrackType(EXAM_META["track"]),
+        exam_type=ExamType(EXAM_META["exam_type"]),
+        content=exam_content,
+    )
+    db.add(db_exam)
+    await db.commit()
+    await db.refresh(db_exam)
+
+    # Create prompts and exam questions
+    for q_data in QUESTIONS:
+        db_prompt = Prompt(
+            domain=DomainType.ksat,
+            content=q_data["content"],
+            created_by=super_user.id,
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+        )
+        db.add(db_prompt)
+        await db.commit()
+        await db.refresh(db_prompt)
+
+        db_question = ExamQuestion(
+            exam_id=db_exam.id,
+            prompt_id=db_prompt.id,
+            question_number=q_data["question_number"],
+            max_points=q_data["max_points"],
+            char_min=q_data.get("char_min"),
+            char_max=q_data.get("char_max"),
+            passage_refs=q_data.get("passage_refs"),
+        )
+        db.add(db_question)
+
+        # Create example answer
+        example_content = EXAMPLE_ANSWERS.get(q_data["question_number"])
+        if example_content:
+            db_example = ExampleEssay(
+                prompt_id=db_prompt.id,
+                content=example_content,
+            )
+            db.add(db_example)
+
+    await db.commit()
+    logger.info("KSAT exam data seeded successfully")
+
+
+def _read_exam_content(md_path: str) -> str:
+    """Read the reading section of a KSAT exam from a markdown file.
+
+    Returns everything before the first [문제 marker — the continuous
+    passage text that students read before answering questions.
+    """
+    try:
+        with open(md_path, encoding="utf-8") as f:
+            text = f.read()
+    except FileNotFoundError:
+        logger.warning(f"KSAT questions file not found: {md_path}")
+        return ""
+
+    idx = text.find("[문제")
+    return text[:idx].strip() if idx > 0 else text.strip()

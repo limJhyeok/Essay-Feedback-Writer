@@ -48,12 +48,24 @@
   let selectedFeedbackModel = null;
 
   let error = { detail: [] };
+  let isSubmitting = false;
+  let isGeneratingFeedback = false;
+  let feedbackError = '';
+  let hasApiKeys = null; // null = unknown, true/false
+
+  function checkApiKeys() {
+    fastapi('get', '/api/v1/shared/api_keys', {},
+      (json) => { hasApiKeys = json.length > 0; },
+      () => { hasApiKeys = null; }
+    );
+  }
 
   // Auth check
   function checkAuth() {
     fastapi('get', '/api/v1/user/auth', {}, () => {}, (json_error) => { error = json_error; });
   }
   checkAuth();
+  checkApiKeys();
 
   $: if ($isLogin === false) {
     handleUnauthorized();
@@ -68,7 +80,7 @@
   // Providers / models
   function read_bots() {
     if (!selectedAIModelProvider) return;
-    fastapi('get', `/api/v1/ielts/api_models/${selectedAIModelProvider.name}`, {},
+    fastapi('get', `/api/v1/shared/api_models/${selectedAIModelProvider.name}`, {},
       (json) => {
         feedbackModels = json;
         if (feedbackModels.length > 0) selectedFeedbackModel = feedbackModels[0];
@@ -79,7 +91,7 @@
   $: selectedAIModelProvider && read_bots();
 
   function read_providers() {
-    fastapi('get', '/api/v1/ielts/providers', {},
+    fastapi('get', '/api/v1/shared/providers', {},
       (json) => {
         AIModelProviders = json;
         if (AIModelProviders.length > 0) {
@@ -156,10 +168,13 @@
   }
 
   // Computed word count
-  $: wordCount = essayContent.replace(/[\t\n\r]/g, '').length;
+  $: wordCount = essayContent.trim() ? essayContent.trim().split(/\s+/).filter(w => w.length > 0).length : 0;
 
   // Essay submission
   function submitEssay() {
+    if (isSubmitting) return;
+    isSubmitting = true;
+    feedbackError = '';
     fastapi('post', '/api/v1/ielts/essays', { prompt_id: promptId, content: essayContent },
       (json) => {
         editing = false;
@@ -169,18 +184,22 @@
           mainActiveTab = 'feedback';
           activeIdOfFeedbacks = 0;
           activeIdOfessays = 0;
+          isSubmitting = false;
           generateFeedback();
-        }).catch((err) => { error = err; });
+        }).catch((err) => { error = err; isSubmitting = false; });
       },
-      (json_error) => { error = json_error; }
+      (json_error) => { error = json_error; isSubmitting = false; }
     );
   }
 
   async function submitHandwritingEssay(canvasComponent) {
+    if (isSubmitting) return;
     if (!canvasComponent || canvasComponent.isEmpty()) {
-      alert('Please write something on the canvas first.');
+      feedbackError = 'Please write something on the canvas first.';
       return;
     }
+    isSubmitting = true;
+    feedbackError = '';
     const blob = await canvasComponent.exportBlob();
     const formData = new FormData();
     formData.append('image', blob, 'essay.png');
@@ -193,14 +212,18 @@
           mainActiveTab = 'feedback';
           activeIdOfFeedbacks = 0;
           activeIdOfessays = 0;
+          isSubmitting = false;
           generateFeedback();
-        }).catch((err) => { error = err; });
+        }).catch((err) => { error = err; isSubmitting = false; });
       },
-      (json_error) => { error = json_error; }
+      (json_error) => { error = json_error; isSubmitting = false; }
     );
   }
 
   function generateFeedback() {
+    if (isGeneratingFeedback) return;
+    isGeneratingFeedback = true;
+    feedbackError = '';
     let params = {
       prompt: promptContent,
       rubric_name: 'IELTS Writing Task 2',
@@ -211,16 +234,13 @@
     feedbackList = [];
     fastapi('post', `/api/v1/ielts/essays/${submittedEssayId}/feedback`, params,
       () => {
+        isGeneratingFeedback = false;
         getEssaysByPromptId();
         getFeedbacksByEssayId(submittedEssayId);
       },
       (json_error) => {
-        if (json_error?.detail) {
-          error = json_error.detail;
-          alert(`Error: ${error}`);
-        } else {
-          alert('Unknown error occurred.');
-        }
+        isGeneratingFeedback = false;
+        feedbackError = json_error?.detail || 'An unknown error occurred. Please check your API key and try again.';
       }
     );
   }
@@ -262,50 +282,62 @@
 <div class="d-flex">
   <div class="message-container">
     <TopBar
+      domainName="IELTS Feedback Writer"
       onInfoClick={() => (showInfoDeskModalOpen = true)}
       onManageKeyClick={() => (showManageKeyModalOpen = true)}
     />
 
+    {#if hasApiKeys === false}
+      <div class="onboarding-banner">
+        <strong>Getting Started:</strong> You need an API key to generate feedback.
+        <button class="onboarding-link" on:click={() => (showManageKeyModalOpen = true)}>Register your API key</button>
+        to get started. You can get one from <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">OpenAI</a> or <a href="https://console.anthropic.com/" target="_blank" rel="noopener">Anthropic</a>.
+      </div>
+    {/if}
+
     <div class="messages">
       <!-- Main tab bar -->
-      <div class="main-tabs flex mb-6" style="border-bottom: 1px solid #ddd;">
+      <div class="main-tabs flex mb-6" style="border-bottom: 1px solid var(--color-border, #ddd);">
         <button
           class="border border-gray-300 px-4 py-2 flex items-center {mainActiveTab === 'prompts' ? 'active' : ''}"
-          style="box-shadow: 0 1px 3px rgba(0,0,0,0.1);"
           on:click={() => (mainActiveTab = 'prompts')}
         >
           <Search class="w-4 h-4 mr-2" />
           Prompts
         </button>
-        {#if promptContent}
-          <button
-            class="border border-gray-300 px-4 py-2 flex items-center {mainActiveTab === 'write' ? 'active' : ''}"
-            style="box-shadow: 0 1px 3px rgba(0,0,0,0.1);"
-            on:click={() => (mainActiveTab = 'write')}
-          >
-            <FileText class="w-4 h-4 mr-2" />
-            Write Essay
-          </button>
-          <button
-            class="border border-gray-300 px-4 py-2 flex items-center {mainActiveTab === 'example' ? 'active' : ''}"
-            style="box-shadow: 0 1px 3px rgba(0,0,0,0.1);"
-            on:click={() => (mainActiveTab = 'example')}
-          >
-            <BookOpen class="w-4 h-4 mr-2" />
-            Example
-          </button>
-          {#if registeredEssayList.length > 0}
-            <button
-              class="border border-gray-300 px-4 py-2 flex items-center {mainActiveTab === 'feedback' ? 'active' : ''}"
-              style="box-shadow: 0 1px 3px rgba(0,0,0,0.1);"
-              on:click={() => (mainActiveTab = 'feedback')}
-            >
-              <BarChart class="w-4 h-4 mr-2" />
-              Feedback
-            </button>
-          {/if}
-        {/if}
+        <button
+          class="border border-gray-300 px-4 py-2 flex items-center {mainActiveTab === 'write' ? 'active' : ''}"
+          disabled={!promptContent}
+          on:click={() => promptContent && (mainActiveTab = 'write')}
+        >
+          <FileText class="w-4 h-4 mr-2" />
+          Write Essay
+        </button>
+        <button
+          class="border border-gray-300 px-4 py-2 flex items-center {mainActiveTab === 'example' ? 'active' : ''}"
+          disabled={!promptContent}
+          on:click={() => promptContent && (mainActiveTab = 'example')}
+        >
+          <BookOpen class="w-4 h-4 mr-2" />
+          Example
+        </button>
+        <button
+          class="border border-gray-300 px-4 py-2 flex items-center {mainActiveTab === 'feedback' ? 'active' : ''}"
+          disabled={!promptContent || registeredEssayList.length === 0}
+          on:click={() => promptContent && registeredEssayList.length > 0 && (mainActiveTab = 'feedback')}
+        >
+          <BarChart class="w-4 h-4 mr-2" />
+          Feedback
+        </button>
       </div>
+
+      <!-- Error banner -->
+      {#if feedbackError}
+        <div class="error-banner">
+          <span>{feedbackError}</span>
+          <button class="error-dismiss" on:click={() => (feedbackError = '')}>✕</button>
+        </div>
+      {/if}
 
       <!-- Tab content -->
       <div class="flex-1">
@@ -323,8 +355,15 @@
             bind:selectedAIModelProvider
             {feedbackModels}
             bind:selectedFeedbackModel
+            {isSubmitting}
           />
         {:else if mainActiveTab === 'feedback'}
+          {#if isGeneratingFeedback}
+            <div class="loading-indicator">
+              <div class="spinner"></div>
+              <p>Generating feedback... This may take 10–30 seconds.</p>
+            </div>
+          {/if}
           <FeedbackView
             {registeredEssayList}
             bind:activeIdOfessays
@@ -352,14 +391,85 @@
 
 <style>
   .main-tabs button {
-    background-color: #f9f9f9;
+    background-color: var(--color-bg-surface, #f9fafb);
   }
   .main-tabs button:hover {
-    background-color: #eef2f7;
+    background-color: var(--color-bg-hover, #eef2f7);
   }
   .main-tabs button.active {
-    background-color: #3498db;
+    background-color: var(--color-ielts, #2c5f8a);
     color: white;
-    border-color: #3498db;
+    border-color: var(--color-ielts, #2c5f8a);
+  }
+  .main-tabs button:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+  .main-tabs button:disabled:hover {
+    background-color: var(--color-bg-surface, #f9fafb);
+  }
+  .error-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    padding: 12px 16px;
+    border-radius: var(--radius-md, 8px);
+    margin-bottom: 16px;
+    font-size: 14px;
+  }
+  .error-dismiss {
+    background: none;
+    border: none;
+    color: #991b1b;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0 4px;
+  }
+  .loading-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    color: var(--color-text-secondary, #6b7280);
+    font-size: 14px;
+  }
+  .spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--color-border, #e5e7eb);
+    border-top-color: var(--color-ielts, #2c5f8a);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 16px;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  .onboarding-banner {
+    background: var(--color-ielts-pale, #e8f0f8);
+    border: 1px solid var(--color-ielts, #2c5f8a);
+    border-radius: var(--radius-md, 8px);
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--color-text-primary, #1f2937);
+  }
+  .onboarding-banner a {
+    color: var(--color-ielts, #2c5f8a);
+    text-decoration: underline;
+  }
+  .onboarding-link {
+    background: none;
+    border: none;
+    color: var(--color-ielts, #2c5f8a);
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+    font-size: inherit;
   }
 </style>

@@ -18,13 +18,16 @@
   export let selectedAIModelProvider = null;
   export let feedbackModels = [];
   export let selectedFeedbackModel = null;
+  export let criteriaLabels = {};
 
-  const CRITERIA_LABELS = {
+  const DEFAULT_CRITERIA_LABELS = {
     taskResponse: 'Task Response',
     coherenceCohesion: 'Coherence & Cohesion',
     lexicalResource: 'Lexical Resource',
     grammaticalRange: 'Grammatical Range & Accuracy',
   };
+
+  $: CRITERIA_LABELS = Object.keys(criteriaLabels).length > 0 ? criteriaLabels : DEFAULT_CRITERIA_LABELS;
 </script>
 
 <!-- Attempt tabs -->
@@ -32,12 +35,23 @@
   {#each registeredEssayList as registeredEssay, index}
     <div
       class="attempt-item {index === activeIdOfessays ? 'active' : ''}"
-      style="min-width: 15%; box-shadow: 0 1px 3px rgba(0,0,0,0.1);"
+      style="min-width: 15%; box-shadow: var(--shadow-sm);"
+      role="button"
+      tabindex="0"
       on:click={() => {
         editing = false;
         activeIdOfessays = index;
         activeIdOfFeedbacks = 0;
         onEssaySelect(registeredEssay);
+      }}
+      on:keydown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          editing = false;
+          activeIdOfessays = index;
+          activeIdOfFeedbacks = 0;
+          onEssaySelect(registeredEssay);
+        }
       }}
     >
       <div>
@@ -51,7 +65,7 @@
 
 <!-- Feedback display -->
 <div class="feedback-content">
-  <div class="prompt-area" style="box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+  <div class="prompt-area" style="box-shadow: var(--shadow-sm);">
     <strong>Essay Prompt:</strong>
     {promptContent}
   </div>
@@ -65,7 +79,7 @@
     ></textarea>
   {:else if registeredEssayList[activeIdOfessays]?.input_type === 'handwriting'}
     {void onLoadImage(registeredEssayList[activeIdOfessays].id) ?? ''}
-    <div class="essay-area" style="box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+    <div class="essay-area" style="box-shadow: var(--shadow-sm);">
       {#if handwritingImageUrl}
         <img
           src={handwritingImageUrl}
@@ -81,12 +95,12 @@
       {/if}
     </div>
   {:else}
-    <div class="essay-area" style="box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+    <div class="essay-area" style="box-shadow: var(--shadow-sm);">
       <p>{registeredEssayList[activeIdOfessays]?.['content'] ?? ''}</p>
     </div>
   {/if}
 
-  <div class="feedback-controls" style="box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+  <div class="feedback-controls" style="box-shadow: var(--shadow-sm);">
     <ModelSelector
       {AIModelProviders}
       bind:selectedAIModelProvider
@@ -96,7 +110,7 @@
     <div class="feedback-actions">
       <button
         class="btn btn-secondary"
-        style="box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);"
+        style="box-shadow: var(--shadow-sm);"
         on:click={() => (editing = !editing)}
       >
         {editing ? 'Done Editing' : 'Edit Essay'}
@@ -106,7 +120,7 @@
           class="btn btn-primary"
           on:click={onSubmitEssay}
           disabled={!essayContent.trim()}
-          style="box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);"
+          style="box-shadow: var(--shadow-sm);"
         >
           Submit for Feedback
         </button>
@@ -123,8 +137,11 @@
         <div
           class="feedback-tab"
           class:active={activeIdOfFeedbacks === index}
+          role="button"
+          tabindex="0"
           on:click={() => (activeIdOfFeedbacks = index)}
-          style="box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);"
+          on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), activeIdOfFeedbacks = index)}
+          style="box-shadow: var(--shadow-sm);"
         >
           {feedback.bot_name} ({feedback.created_at})
         </div>
@@ -171,7 +188,7 @@
     padding: 10px;
     background-color: #f9f9f9;
     border-radius: 8px;
-    border-left: 3px solid #3498db;
+    border-left: 3px solid var(--color-ielts, #2c5f8a);
   }
   .essay-area {
     margin-bottom: 20px;
@@ -212,9 +229,9 @@
     background-color: #eef2f7;
   }
   .feedback-tab.active {
-    background-color: #3498db;
+    background-color: var(--color-ielts, #2c5f8a);
     color: white;
-    border-color: #3498db;
+    border-color: var(--color-ielts, #2c5f8a);
   }
   .feedback-section {
     margin-bottom: 20px;
@@ -251,6 +268,6 @@
   }
   .attempt-item.active {
     background-color: #e1ebf5;
-    border-left: 3px solid #3498db;
+    border-left: 3px solid var(--color-ielts, #2c5f8a);
   }
 </style>

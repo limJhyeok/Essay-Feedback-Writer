@@ -27,6 +27,7 @@ class RubricSpec(BaseModel):
     overall_scale_min: int = 0
     overall_scale_max: int = 9
     aggregation: AggregationMethod = AggregationMethod.both
+    rounding: str = "half_band"  # "half_band", "integer", or "none"
     system_prompt_template: str = ""
     human_prompt_template: str = ""
     aggregator_system_prompt: str = ""

@@ -22,7 +22,6 @@ from app.crud import (
     api_model_crud,
     essay_crud,
     feedback_crud,
-    prompt_crud,
     user_api_key_crud,
 )
 from app.schemas import feedback_schema, user_api_key_schema
@@ -113,10 +112,9 @@ async def generate_feedback(
     api_model = await api_model_crud.get_api_model_by_name_and_provider(
         db, request.api_model_name, request.model_provider_name
     )
-    prompt = await prompt_crud.get_prompt_by_content(db, request.prompt)
     feedback_create = feedback_schema.FeedbackCreate(
         user_id=user_id,
-        prompt_id=prompt.id,
+        prompt_id=student_essay.prompt_id,
         essay_id=essay_id,
         bot_id=api_model.bot.id,
         content=feedback_response,

@@ -1,13 +1,27 @@
 <script>
   import { isLogin, isSignUpPage, accessToken, userEmail } from '../lib/store.js';
   import Dropdown from './Dropdown.svelte';
-  import { Info, User, Key, LogOut } from 'lucide-svelte';
+  import { Info, User, Key, LogOut, ArrowLeft } from 'lucide-svelte';
 
   export let onInfoClick = () => {};
   export let onManageKeyClick = () => {};
+  export let domainName = 'IELTS Feedback Writer';
+  export let showBackLink = true;
+  export let locale = 'en';
 
-  const models = ['IELTS Feedback Writer'];
-  let selectedModel = models[0];
+  $: t = locale === 'ko' ? {
+    info: '안내',
+    login: '로그인',
+    signup: '회원가입',
+    manageKey: 'API 키 관리',
+    logout: '로그아웃',
+  } : {
+    info: 'Info',
+    login: 'Log In',
+    signup: 'Sign Up',
+    manageKey: 'Manage API key',
+    logout: 'Log out',
+  };
 
   function goToSignUp() {
     $isSignUpPage = true;
@@ -25,39 +39,28 @@
     $userEmail = '';
     window.location.reload();
   }
+
+  function goToDomains() {
+    window.location.hash = '#/';
+  }
 </script>
 
 <div class="top-bar">
   <div class="d-flex align-items-start gap-2 position-relative">
-    <!-- Model selector dropdown -->
-    <Dropdown>
-      <svelte:fragment slot="trigger" let:toggle>
-        <button
-          type="button"
-          aria-haspopup="menu"
-          aria-expanded="false"
-          class="d-flex align-items-center gap-1 py-2 fw-semibold text-secondary border-0 bg-white hover-bg-lightgray"
-          on:click={toggle}
-          style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
-        >
-          <div class="hover-bg-lightgray active-bg-lightgray">{selectedModel}</div>
-          <i class="fas fa-chevron-down"></i>
-        </button>
-      </svelte:fragment>
-      <svelte:fragment slot="menu" let:close>
-        {#each models as model}
-          <button
-            class="dropdown-item w-100 text-start py-2 px-3"
-            on:click={() => {
-              selectedModel = model;
-              close();
-            }}
-          >
-            <div class="hover-bg-lightgray active-bg-lightgray">{model}</div>
-          </button>
-        {/each}
-      </svelte:fragment>
-    </Dropdown>
+    {#if showBackLink}
+      <button
+        type="button"
+        class="d-flex align-items-center gap-1 py-2 px-2 fw-semibold text-secondary border-0 bg-white hover-bg-lightgray"
+        on:click={goToDomains}
+        style="white-space: nowrap;"
+      >
+        <ArrowLeft class="w-4 h-4" />
+      </button>
+    {/if}
+
+    <div class="d-flex align-items-center gap-1 py-2 fw-semibold text-secondary" style="white-space: nowrap;">
+      {domainName}
+    </div>
 
     <!-- Info desk button -->
     <button
@@ -65,17 +68,17 @@
       on:click={onInfoClick}
     >
       <Info class="w-4 h-4 mr-1" />
-      Info
+      {t.info}
     </button>
   </div>
 
   {#if $isLogin == false}
     <div style="justify-content: end;">
       <button class="btn relative btn-primary btn-small mr-6" on:click|preventDefault={goToLogin}>
-        <div class="flex items-center justify-center">Log In</div>
+        <div class="flex items-center justify-center">{t.login}</div>
       </button>
       <button class="btn relative btn-secondary btn-small" on:click|preventDefault={goToSignUp}>
-        <div class="flex items-center justify-center">Sign Up</div>
+        <div class="flex items-center justify-center">{t.signup}</div>
       </button>
     </div>
   {:else}
@@ -105,7 +108,7 @@
           >
             <div class="hover-bg-lightgray active-bg-lightgray" style="border-radius: 5px;">
               <Key class="h-4 w-4 mr-3 text-gray-500" />
-              Manage API key
+              {t.manageKey}
             </div>
           </button>
           <button
@@ -117,7 +120,7 @@
           >
             <div class="hover-bg-lightgray active-bg-lightgray" style="border-radius: 5px;">
               <LogOut class="h-4 w-4 mr-3 text-gray-500" />
-              Log out
+              {t.logout}
             </div>
           </button>
         </svelte:fragment>

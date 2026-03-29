@@ -12,6 +12,7 @@
   export let selectedAIModelProvider = null;
   export let feedbackModels = [];
   export let selectedFeedbackModel = null;
+  export let isSubmitting = false;
 
   let canvasComponent;
 
@@ -76,10 +77,10 @@
             <button
               class="btn relative btn-primary btn-small"
               on:click={onSubmitEssay}
-              disabled={!essayContent.trim()}
-              style="box-shadow: 0 1px 3px rgba(0,0,0,0.1);"
+              disabled={!essayContent.trim() || isSubmitting}
+              style="box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.1));"
             >
-              Submit for Feedback
+              {isSubmitting ? 'Submitting...' : 'Submit for Feedback'}
             </button>
             {#if !essayContent.trim()}
               <span class="tooltiptext">Please write your essay</span>
@@ -90,9 +91,10 @@
             <button
               class="btn relative btn-primary btn-small"
               on:click={() => onSubmitHandwriting(canvasComponent)}
-              style="box-shadow: 0 1px 3px rgba(0,0,0,0.1);"
+              disabled={isSubmitting}
+              style="box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.1));"
             >
-              Submit for Feedback
+              {isSubmitting ? 'Submitting...' : 'Submit for Feedback'}
             </button>
           </div>
         {/if}
@@ -113,7 +115,7 @@
     padding: 10px;
     background-color: #f9f9f9;
     border-radius: 8px;
-    border-left: 3px solid #3498db;
+    border-left: 3px solid var(--color-ielts, #2c5f8a);
   }
   :global(.mode-toggle-btn) {
     padding: 4px 14px;
@@ -127,7 +129,7 @@
     background: #eee;
   }
   :global(.mode-toggle-btn.active) {
-    background: #4a90d9;
+    background: var(--color-ielts, #2c5f8a);
     color: #fff;
   }
 </style>

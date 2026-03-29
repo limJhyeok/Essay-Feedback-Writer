@@ -227,11 +227,6 @@ _MOCK_SCORING_RESULT = ScoringResult(
     new_callable=AsyncMock,
 )
 @patch(
-    "app.services.feedback_service.prompt_crud.get_prompt_by_content",
-    new_callable=AsyncMock,
-    return_value=MagicMock(id=10),
-)
-@patch(
     "app.services.feedback_service.api_model_crud.get_api_model_by_name_and_provider",
     new_callable=AsyncMock,
     return_value=MagicMock(bot=MagicMock(id=5)),
@@ -256,7 +251,7 @@ _MOCK_SCORING_RESULT = ScoringResult(
 @patch(
     "app.services.feedback_service.essay_crud.get_essay_by_id",
     new_callable=AsyncMock,
-    return_value=MagicMock(content="My essay about climate change"),
+    return_value=MagicMock(content="My essay about climate change", prompt_id=10),
 )
 async def test_generate_feedback_happy_path(
     mock_get_essay,
@@ -269,7 +264,6 @@ async def test_generate_feedback_happy_path(
     mock_gen_agg_agent,
     mock_agg_cls,
     mock_get_api_model,
-    mock_get_prompt,
     mock_create_feedback,
     mock_update_last_used,
 ):
@@ -320,11 +314,6 @@ async def test_generate_feedback_happy_path(
     new_callable=AsyncMock,
 )
 @patch(
-    "app.services.feedback_service.prompt_crud.get_prompt_by_content",
-    new_callable=AsyncMock,
-    return_value=MagicMock(id=10),
-)
-@patch(
     "app.services.feedback_service.api_model_crud.get_api_model_by_name_and_provider",
     new_callable=AsyncMock,
     return_value=MagicMock(bot=MagicMock(id=5)),
@@ -349,7 +338,7 @@ async def test_generate_feedback_happy_path(
 @patch(
     "app.services.feedback_service.essay_crud.get_essay_by_id",
     new_callable=AsyncMock,
-    return_value=MagicMock(content="Original essay text"),
+    return_value=MagicMock(content="Original essay text", prompt_id=10),
 )
 async def test_generate_feedback_uses_override_content(
     mock_get_essay,
@@ -362,7 +351,6 @@ async def test_generate_feedback_uses_override_content(
     mock_gen_agg_agent,
     mock_agg_cls,
     mock_get_api_model,
-    mock_get_prompt,
     mock_create_feedback,
     mock_update_last_used,
 ):

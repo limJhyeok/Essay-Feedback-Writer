@@ -22,6 +22,7 @@ class PromptReaction(BaseModel):
 
 class Prompt(BaseModel):
     id: int
+    domain: str
     content: str = Field(..., description="The text content of the prompt")
     created_by: int
     created_at: datetime

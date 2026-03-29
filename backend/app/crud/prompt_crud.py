@@ -2,7 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models import Prompt
+from app.models import DomainType, Prompt
 from app.schemas import prompt_schema
 
 
@@ -20,8 +20,13 @@ async def create_prompt(
     return db_prompt
 
 
-async def get_prompts(db: AsyncSession) -> list[Prompt]:
-    result = await db.execute(select(Prompt).options(selectinload(Prompt.reactions)))
+async def get_prompts(
+    db: AsyncSession, domain: DomainType | None = None
+) -> list[Prompt]:
+    stmt = select(Prompt).options(selectinload(Prompt.reactions))
+    if domain is not None:
+        stmt = stmt.where(Prompt.domain == domain)
+    result = await db.execute(stmt)
     return result.scalars().all()
 
 

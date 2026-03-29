@@ -133,10 +133,21 @@ class UserAPIKey(Base):
     provider = relationship("AIProvider", back_populates="user_keys")
 
 
+class DomainType(enum.Enum):
+    ielts = "ielts"
+    ksat = "ksat"
+
+
 class Prompt(Base):
     __tablename__ = "prompts"
 
     id = Column(Integer, primary_key=True)
+    domain = Column(
+        Enum(DomainType),
+        default=DomainType.ielts,
+        nullable=False,
+        server_default="ielts",
+    )
     content = Column(Text, nullable=False)
     created_by = Column(Integer, ForeignKey("users.id"))
     created_at = Column(
@@ -326,3 +337,52 @@ class RubricCriterion(Base):
     score = Column(Integer, nullable=False)
 
     rubric = relationship("Rubric", back_populates="criteria")
+
+
+class TrackType(enum.Enum):
+    humanities = "humanities"
+    sciences = "sciences"
+
+
+class ExamType(enum.Enum):
+    mock = "mock"
+    official = "official"
+
+
+class Exam(Base):
+    __tablename__ = "exams"
+
+    id = Column(Integer, primary_key=True)
+    domain = Column(
+        Enum(DomainType), default=DomainType.ksat, nullable=False, server_default="ksat"
+    )
+    university = Column(String, nullable=False)
+    year = Column(Integer, nullable=False)
+    track = Column(Enum(TrackType), nullable=False)
+    exam_type = Column(Enum(ExamType), nullable=False, server_default="official")
+    created_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+    content = Column(Text, nullable=True)
+
+    questions = relationship(
+        "ExamQuestion", back_populates="exam", cascade="all, delete-orphan"
+    )
+
+
+class ExamQuestion(Base):
+    __tablename__ = "exam_questions"
+
+    id = Column(Integer, primary_key=True)
+    exam_id = Column(Integer, ForeignKey("exams.id"), nullable=False)
+    prompt_id = Column(Integer, ForeignKey("prompts.id"), nullable=False)
+    question_number = Column(Integer, nullable=False)
+    max_points = Column(Integer, nullable=False)
+    char_min = Column(Integer, nullable=True)
+    char_max = Column(Integer, nullable=True)
+    passage_refs = Column(JSON, nullable=True)  # e.g. ["가", "나", "다", "라"]
+
+    exam = relationship("Exam", back_populates="questions")
+    prompt = relationship("Prompt")

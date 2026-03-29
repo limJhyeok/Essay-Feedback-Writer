@@ -9,8 +9,7 @@
 ## Requirements
 
 * [Docker](https://www.docker.com/).
-* [Nvidia Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
-* [Poetry](https://python-poetry.org/) for Python package and environment management.
+* [uv](https://docs.astral.sh/uv/) for Python package and environment management (replaces Poetry).
 
 ## Local Development
 
@@ -52,23 +51,31 @@ docker compose logs backend
 
 ### General workflow
 
-By default, the dependencies are managed with [Poetry](https://python-poetry.org/), go there and install it.
+Dependencies are managed with [uv](https://docs.astral.sh/uv/).
 
 From `./backend/` you can install all the dependencies with:
 
 ```console
-$ poetry install
+$ uv sync
 ```
 
-Then you can start a shell session with the new environment with:
+To run commands in the virtual environment:
 
 ```console
-$ poetry shell
+$ uv run pytest
+$ uv run ruff check --fix
 ```
 
 Make sure your editor is using the correct Python virtual environment.
 
-Modify or add SqlAchemy models for data and SQL tables in `./backend/app/models.py`, API endpoints in `./backend/app/api/`, CRUD (Create, Read, Update, Delete) utils in `./backend/app/crud.py`.
+#### Key backend directories
+
+- SQLAlchemy models: `./backend/app/models.py`
+- API endpoints: `./backend/app/api/routes/` (4 routers: user, ielts, ksat, shared)
+- CRUD operations: `./backend/app/crud/` (per-entity modules)
+- Pydantic schemas: `./backend/app/schemas/`
+- Multi-agent scoring: `./backend/app/agents/` (swarm, aggregator, builder, loader)
+- Rubric configs: `./backend/app/agents/configs/` (YAML rubrics per domain)
 
 ### pre-commit setting
 1. Install pre-commit

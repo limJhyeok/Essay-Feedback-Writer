@@ -17,6 +17,8 @@
     - 💾 [PostgreSQL](https://www.postgresql.org): 데이터베이스 사용.
     - 📁 [Adminer](https://www.adminer.org/): 데이터베이스 관리 시스템.
 - 🚀 [Svelte](https://svelte.dev/): 프론트엔드.
+- 🤖 멀티 에이전트 채점 시스템 — 기준별 병렬 평가, YAML 기반 루브릭 설정, 가중 평균 집계 및 LLM 기반 종합 평가.
+- 🌐 멀티 도메인 지원 — IELTS Writing 및 대학별 논술(수능 논술), 추가 도메인 확장 가능한 아키텍처.
 - ✍️ 스타일러스/터치 필기 입력 및 VLM 기반 OCR을 통한 손글씨 에세이 제출 기능.
 - 🐋 [Docker Compose](https://www.docker.com): 개발 및 배포 환경.
 - 🔒 기본적인 비밀번호 해싱 기능.
@@ -25,6 +27,9 @@
 - ✅ [Pytest](https://pytest.org) 및 [pytest-asyncio](https://pytest-asyncio.readthedocs.io/): 테스트.
 - 📞 [Traefik](https://traefik.io): 리버스 프록시 / 로드 밸런서.
 - 🚢 Docker Compose를 사용한 배포 지침, 자동 HTTPS 인증서를 처리하는 프론트엔드 Traefik 프록시 설정.
+
+### 도메인 선택
+사용자가 에세이 도메인을 선택합니다 (IELTS Writing, 대학별 논술, 추가 도메인 준비 중).
 
 ### 대시보드 로그인
 
@@ -100,8 +105,8 @@ OPENAI_API_KEY=sk-....
 - **SECRET_KEY**: 프로젝트의 보안을 위한 secret key, .env 파일에 저장.
 - **SMTP_USERNAME**: 이메일 전송을 위한 SMTP 서버 사용자명.
 - **SMTP_PASSWORD**: 이메일 전송을 위한 SMTP 서버 비밀번호.
+- **FERNET_SECRET**: 사용자 AI API 키 암호화/복호화를 위한 시크릿 키
 - **OPENAI_API_KEY**: Super user용 AI key
-
 
 ### Docker Compose로 컨테이너 실행
 ```bash

@@ -10,6 +10,7 @@ from app.core.db import (
     store_default_api_key,
     store_default_api_models,
     store_default_bots,
+    store_ksat_exam_data,
 )
 from app.schemas import rubric_schema
 
@@ -37,6 +38,7 @@ async def init() -> None:
         await store_default_ai_providers(session, "app/data/AI_provider.csv")
         await store_default_api_models(session, "app/data/API_Model.csv")
         await store_default_api_key(session)
+        await store_ksat_exam_data(session)
 
 
 def main() -> None:

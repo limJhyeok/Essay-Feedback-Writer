@@ -9,6 +9,9 @@ _CONFIGS_DIR = Path(__file__).parent / "configs"
 
 _RUBRIC_REGISTRY: dict[str, str] = {
     "IELTS Writing Task 2": "ielts_task2.yaml",
+    "KSAT 2025 CAU Humanities Q1": "ksat/cau_2025_humanities_q1.yaml",
+    "KSAT 2025 CAU Humanities Q2": "ksat/cau_2025_humanities_q2.yaml",
+    "KSAT 2025 CAU Humanities Q3": "ksat/cau_2025_humanities_q3.yaml",
 }
 
 
@@ -51,6 +54,7 @@ def load_rubric(
         overall_scale_min=raw.get("overall_scale_min", 0),
         overall_scale_max=raw.get("overall_scale_max", 9),
         aggregation=AggregationMethod(raw.get("aggregation", "both")),
+        rounding=raw.get("rounding", "half_band"),
         system_prompt_template=raw.get("system_prompt_template", ""),
         human_prompt_template=raw.get("human_prompt_template", ""),
         aggregator_system_prompt=raw.get("aggregator_system_prompt", ""),

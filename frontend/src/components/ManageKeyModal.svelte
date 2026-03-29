@@ -9,6 +9,41 @@
   export let open = false;
   export let onClose = () => {};
   export let AIModelProviders = [];
+  export let locale = 'en';
+
+  $: t = locale === 'ko' ? {
+    title: 'API 키 관리',
+    manage: '관리',
+    register: '등록',
+    name: '이름',
+    provider: '제공자',
+    registered: '등록일',
+    lastUsed: '마지막 사용',
+    status: '상태',
+    action: '작업',
+    registerNew: '새 API 키 등록',
+    secretKey: '비밀 키',
+    optional: '(선택사항)',
+    cancel: '취소',
+    registerKey: '비밀 키 등록',
+    noKeys: '등록된 API 키가 없습니다.',
+  } : {
+    title: 'Manage API key',
+    manage: 'Manage',
+    register: 'Register',
+    name: 'Name',
+    provider: 'Provider',
+    registered: 'Registered',
+    lastUsed: 'Last Used',
+    status: 'Status',
+    action: 'Action',
+    registerNew: 'Register New API Key',
+    secretKey: 'Secret Key',
+    optional: '(optional)',
+    cancel: 'Cancel',
+    registerKey: 'Register Secret Key',
+    noKeys: 'No API keys registered yet.',
+  };
 
   $: providerNameList = AIModelProviders.map((p) => p.name);
 
@@ -27,10 +62,11 @@
   let renameActiveIndex = null;
   let inputElement = null;
   let editingNameOfApiKey = '';
+  let errorMessage = '';
 
-  const tabs = [
-    { id: 'manage', label: 'Manage' },
-    { id: 'register', label: 'Register' },
+  $: tabs = [
+    { id: 'manage', label: t.manage },
+    { id: 'register', label: t.register },
   ];
 
   function setTab(id) {
@@ -43,29 +79,32 @@
   function getRegisteredAPIKeys() {
     fastapi(
       'get',
-      '/api/v1/ielts/api_keys',
+      '/api/v1/shared/api_keys',
       {},
       (json) => {
         registeredAPIKeys = json;
       },
       (json_error) => {
-        console.error('Error fetching API keys:', json_error);
+        errorMessage = json_error?.detail || 'Failed to fetch API keys.';
       }
     );
   }
 
   function registerAPIKey() {
     if (!APIKey.trim()) return;
+    errorMessage = '';
     fastapi(
       'post',
-      '/api/v1/ielts/api_keys',
+      '/api/v1/shared/api_keys',
       { provider_name: providerName, name: APIKeyName, api_key: APIKey },
       () => {
         APIKeyName = '';
         APIKey = '';
+        activeTab = 'manage';
+        getRegisteredAPIKeys();
       },
       (json_error) => {
-        console.error('Error registering API key:', json_error);
+        errorMessage = json_error?.detail || 'Failed to register API key.';
       }
     );
   }
@@ -90,7 +129,7 @@
     if (editingNameOfApiKey.trim() === '' || editingNameOfApiKey === apiKey.name) return;
     fastapi(
       'put',
-      `/api/v1/ielts/api_keys/${apiKey.id}/name`,
+      `/api/v1/shared/api_keys/${apiKey.id}/name`,
       { name: editingNameOfApiKey },
       () => {
         inputElement = null;
@@ -99,7 +138,7 @@
         getRegisteredAPIKeys();
       },
       (json_error) => {
-        console.error('Error updating API key name:', json_error);
+        errorMessage = json_error?.detail || 'Failed to rename API key.';
       }
     );
   }
@@ -118,7 +157,7 @@
   function confirmDeleteApiKey() {
     fastapi(
       'delete',
-      `/api/v1/ielts/api_keys/${activeApiKeyForDeleting.id}`,
+      `/api/v1/shared/api_keys/${activeApiKeyForDeleting.id}`,
       {},
       () => {
         activeApiKeyForDeleting = null;
@@ -126,7 +165,7 @@
         getRegisteredAPIKeys();
       },
       (json_error) => {
-        console.error('Error deleting API key:', json_error);
+        errorMessage = json_error?.detail || 'Failed to delete API key.';
       }
     );
   }
@@ -144,24 +183,31 @@
   onCancel={() => (checkDeleteModalOpen = false)}
 />
 
-<Modal {open} title="Manage API key" {onClose}>
+<Modal {open} title={t.title} {onClose}>
   <svelte:fragment slot="icon">
     <Key class="w-4 h-4 mx-2" />
   </svelte:fragment>
 
   <TabBar {tabs} activeTab={activeTab} onTabChange={setTab} />
 
+  {#if errorMessage}
+    <div class="alert alert-danger d-flex align-items-center justify-content-between mt-2 mx-3" role="alert">
+      <span>{errorMessage}</span>
+      <button type="button" class="btn-close btn-sm" on:click={() => (errorMessage = '')} aria-label="Close"></button>
+    </div>
+  {/if}
+
   {#if activeTab === 'manage'}
     <div class="table-responsive mt-3">
       <table class="table table-hover align-middle">
         <thead class="table-light">
           <tr class="text-center">
-            <th>Name</th>
-            <th>Provider</th>
-            <th>Registered</th>
-            <th>Last Used</th>
-            <th>Status</th>
-            <th class="text-center">Action</th>
+            <th>{t.name}</th>
+            <th>{t.provider}</th>
+            <th>{t.registered}</th>
+            <th>{t.lastUsed}</th>
+            <th>{t.status}</th>
+            <th class="text-center">{t.action}</th>
           </tr>
         </thead>
         <tbody class="text-center">
@@ -207,15 +253,15 @@
       </table>
 
       {#if registeredAPIKeys.length === 0}
-        <div class="text-muted text-center py-4">No API keys registered yet.</div>
+        <div class="text-muted text-center py-4">{t.noKeys}</div>
       {/if}
     </div>
   {:else if activeTab === 'register'}
     <div class="p-3">
-      <h5 class="mb-3 fw-bold">Register New API Key</h5>
+      <h5 class="mb-3 fw-bold">{t.registerNew}</h5>
 
       <div class="mb-3">
-        <label class="form-label">Provider</label>
+        <label class="form-label">{t.provider}</label>
         <select bind:value={providerName} class="form-select">
           {#each providerNameList as _provider_name}
             <option>{_provider_name}</option>
@@ -224,8 +270,8 @@
       </div>
 
       <div class="mb-2 d-flex align-items-center">
-        <label class="me-2 mb-0">Name</label>
-        <span class="text-muted small">(optional)</span>
+        <label class="me-2 mb-0">{t.name}</label>
+        <span class="text-muted small">{t.optional}</span>
       </div>
       <input
         bind:value={APIKeyName}
@@ -234,7 +280,7 @@
         type="text"
       />
 
-      <label class="form-label">Secret Key</label>
+      <label class="form-label">{t.secretKey}</label>
       <input
         bind:value={APIKey}
         class="form-control mb-2"
@@ -244,9 +290,9 @@
       />
 
       <div class="d-flex justify-content-end gap-2 pt-3">
-        <button class="btn btn-secondary" on:click={onClose}>Cancel</button>
+        <button class="btn btn-secondary" on:click={onClose}>{t.cancel}</button>
         <button class="btn btn-primary" on:click={registerAPIKey} disabled={!APIKey.trim()}>
-          Register Secret Key
+          {t.registerKey}
         </button>
       </div>
     </div>

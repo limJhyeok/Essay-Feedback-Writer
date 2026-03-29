@@ -4,8 +4,12 @@
   import Passoword from './routes/Password.svelte';
   import ResetPassword from './routes/ResetPassword.svelte';
   import IeltsFeedbackWriter from './routes/IELTSFeedbackWriter.svelte';
+  import DomainSelector from './routes/DomainSelector.svelte';
+  import KSATFeedbackWriter from './routes/KSATFeedbackWriter.svelte';
   const routes = {
-    '/': IeltsFeedbackWriter,
+    '/': DomainSelector,
+    '/ielts': IeltsFeedbackWriter,
+    '/ksat': KSATFeedbackWriter,
     '/authorize': Auth,
     '/password': Passoword,
     '/reset-password': ResetPassword

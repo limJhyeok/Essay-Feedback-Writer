@@ -12,8 +12,11 @@
         key={index}
         class="prompt-item rounded p-4 mb-4"
         class:active={activePromptContent === p.content}
-        style="cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.1);"
+        style="cursor: pointer; box-shadow: var(--shadow-sm);"
+        role="button"
+        tabindex="0"
         on:click={() => onSelectPrompt(p)}
+        on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onSelectPrompt(p))}
       >
         {p.content}
       </div>
@@ -35,6 +38,6 @@
   }
   .prompt-item.active {
     background-color: #e1ebf5;
-    border-left: 3px solid #3498db;
+    border-left: 3px solid var(--color-ielts, #2c5f8a);
   }
 </style>

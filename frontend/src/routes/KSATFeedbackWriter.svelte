@@ -426,7 +426,7 @@
         <div class="write-layout">
           <div class="passages-panel">
             <h4 class="panel-title">제시문</h4>
-            <div class="exam-text">{activePassageContent}</div>
+            <div class="exam-text">{@html safeHtml(activePassageContent)}</div>
           </div>
 
           <div class="essay-panel">
@@ -838,9 +838,8 @@
     color: #1f2937;
   }
 
-  /* Exam paper (kept for write tab passage panel) */
+  /* Exam paper (passage panel renders markdown via safeHtml) */
   .exam-text {
-    white-space: pre-wrap;
     line-height: 1.8;
     font-size: 15px;
     color: #1f2937;
@@ -848,6 +847,67 @@
     background: #fff;
     border: 1px solid #e5e7eb;
     border-radius: 8px;
+  }
+
+  .exam-text :global(h3) {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 20px 0 10px 0;
+    color: #1f2937;
+  }
+
+  .exam-text :global(h3:first-child) {
+    margin-top: 0;
+  }
+
+  .exam-text :global(p) {
+    margin: 0 0 12px 0;
+  }
+
+  .exam-text :global(hr) {
+    border: none;
+    border-top: 1px dashed #d1d5db;
+    margin: 20px 0;
+  }
+
+  .exam-text :global(img) {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 12px auto;
+  }
+
+  .exam-text :global(table) {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 12px 0;
+    font-size: 13px;
+  }
+
+  .exam-text :global(th),
+  .exam-text :global(td) {
+    border: 1px solid #d1d5db;
+    padding: 6px 10px;
+    text-align: left;
+  }
+
+  .exam-text :global(th) {
+    background: #f9fafb;
+    font-weight: 600;
+  }
+
+  .exam-text :global(ul) {
+    padding-left: 20px;
+    margin: 8px 0;
+  }
+
+  .exam-text :global(li) {
+    margin-bottom: 4px;
+  }
+
+  .exam-text :global(em) {
+    color: #6b7280;
+    font-size: 13px;
   }
 
   .year-badge {

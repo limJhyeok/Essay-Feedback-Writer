@@ -14,6 +14,7 @@ class ExamQuestionPublic(BaseModel):
     char_min: Optional[int] = None
     char_max: Optional[int] = None
     passage_refs: Optional[list[str]] = None
+    content: Optional[str] = None
     prompt_content: Optional[str] = None
 
     @model_validator(mode="before")

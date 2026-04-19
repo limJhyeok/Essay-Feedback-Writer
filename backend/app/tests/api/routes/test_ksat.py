@@ -71,6 +71,7 @@ async def test_exam_question_content_round_trips(
         char_max=600,
         passage_refs=["가", "나"],
         content=passage_text,
+        rubric_name="KSAT Test Rubric",
     )
     db.add(question)
     await db.commit()
@@ -83,12 +84,14 @@ async def test_exam_question_content_round_trips(
     assert len(payload) == 1
     assert payload[0]["content"] == passage_text
     assert payload[0]["passage_refs"] == ["가", "나"]
+    assert payload[0]["rubric_name"] == "KSAT Test Rubric"
 
     r_detail = await client.get(f"{settings.API_V1_STR}/ksat/exams/{exam.id}")
     assert r_detail.status_code == 200
     questions = r_detail.json()["questions"]
     assert len(questions) == 1
     assert questions[0]["content"] == passage_text
+    assert questions[0]["rubric_name"] == "KSAT Test Rubric"
 
     await db.delete(question)
     await db.commit()

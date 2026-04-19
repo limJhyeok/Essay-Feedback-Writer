@@ -384,6 +384,7 @@ class ExamQuestion(Base):
     char_max = Column(Integer, nullable=True)
     passage_refs = Column(JSON, nullable=True)  # e.g. ["가", "나", "다", "라"]
     content = Column(Text, nullable=True)
+    rubric_name = Column(String, nullable=True)
 
     exam = relationship("Exam", back_populates="questions")
     prompt = relationship("Prompt")

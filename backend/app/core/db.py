@@ -285,6 +285,7 @@ async def store_ksat_exam_data(db: AsyncSession) -> None:
                 char_max=q_data.get("char_max"),
                 passage_refs=q_data.get("passage_refs"),
                 content=passage_text,
+                rubric_name=q_data.get("rubric_name"),
             )
             db.add(db_question)
 

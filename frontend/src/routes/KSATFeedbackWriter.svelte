@@ -127,8 +127,7 @@
           activeEssayIdxByQ[q.question_number] = 0;
           activeFeedbackIdxByQ[q.question_number] = 0;
           getEssaysByPromptId(q);
-          const rubricName = getQuestionRubricName(q);
-          if (rubricName) loadCriteriaLabels(rubricName);
+          if (q.rubric_name) loadCriteriaLabels(q.rubric_name);
         });
       },
       (json_error) => { error = json_error; }
@@ -196,17 +195,6 @@
     );
   }
 
-  // Rubric name mapping
-  function getQuestionRubricName(q) {
-    if (!q) return null;
-    const rubricMap = {
-      1: 'KSAT 2025 CAU Humanities Q1',
-      2: 'KSAT 2025 CAU Humanities Q2',
-      3: 'KSAT 2025 CAU Humanities Q3',
-    };
-    return rubricMap[q.question_number] || null;
-  }
-
   // At least one question has content
   $: anyEssayFilled = questions.length > 0 &&
     questions.some(q => (essayContents[q.question_number] || '').trim().length > 0);
@@ -244,7 +232,7 @@
         const essay = savedEssays[i];
         return apiCall('post', `/api/v1/ksat/essays/${essay.id}/feedback`, {
           prompt: `[문제 ${q.question_number}] ${q.prompt_content || ''}`,
-          rubric_name: getQuestionRubricName(q),
+          rubric_name: q.rubric_name,
           model_provider_name: selectedAIModelProvider?.name || '',
           api_model_name: selectedFeedbackModel?.api_model_name || '',
         });
@@ -593,7 +581,7 @@
                       <div class="feedback-content">
                         <ScoreCard
                           feedback={activeFb.content}
-                          criteriaLabels={criteriaLabelsMap[getQuestionRubricName(q)] || {}}
+                          criteriaLabels={criteriaLabelsMap[q.rubric_name] || {}}
                           maxScore={q.max_points || 40}
                         />
 

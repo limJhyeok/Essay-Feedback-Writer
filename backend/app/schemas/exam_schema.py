@@ -39,5 +39,4 @@ class ExamPublic(BaseModel):
 
 
 class ExamDetailPublic(ExamPublic):
-    content: Optional[str] = None
     questions: list[ExamQuestionPublic] = []

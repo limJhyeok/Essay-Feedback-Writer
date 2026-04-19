@@ -56,7 +56,6 @@ async def test_exam_question_content_round_trips(
         year=2099,
         track=TrackType.humanities,
         exam_type=ExamType.mock,
-        content=None,
     )
     db.add(exam)
     await db.commit()

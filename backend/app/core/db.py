@@ -255,7 +255,6 @@ async def store_ksat_exam_data(db: AsyncSession) -> None:
             year=meta["year"],
             track=track,
             exam_type=ExamType(meta["exam_type"]),
-            content=None,
         )
         db.add(db_exam)
         await db.commit()

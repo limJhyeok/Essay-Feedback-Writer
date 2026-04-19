@@ -365,7 +365,6 @@ class Exam(Base):
         default=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
-    content = Column(Text, nullable=True)
 
     questions = relationship(
         "ExamQuestion", back_populates="exam", cascade="all, delete-orphan"

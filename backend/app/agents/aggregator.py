@@ -39,16 +39,24 @@ class Aggregator:
         return _round_score(weighted_sum / total_weight, self._rubric.rounding)
 
     def weighted_sum(self, criteria: list[CriterionResult]) -> float:
-        """Sum each criterion's score times its weight, without dividing.
+        """Sum each criterion's score times its weight, clamped to rubric bounds.
 
         Suited to rubrics where criteria live on independent point scales
         whose maxima already add up to the overall maximum (e.g. 10+15+20+15=60).
         With weight=1.0 on each criterion the result is the plain sum.
+
+        Deduction-style criteria (negative scale_min) can push the raw total
+        below the declared overall_scale_min — when 기술적 감점 exceeds the
+        positive earnings. We clamp the result to
+        [overall_scale_min, overall_scale_max] so the output always honors
+        the rubric's declared range.
         """
         weight_map = {spec.name: spec.weight for spec in self._rubric.criteria}
         total = 0.0
         for result in criteria:
             total += result.score * weight_map.get(result.name, 1.0)
+        total = max(self._rubric.overall_scale_min, total)
+        total = min(self._rubric.overall_scale_max, total)
         return _round_score(total, self._rubric.rounding)
 
     async def llm_holistic(

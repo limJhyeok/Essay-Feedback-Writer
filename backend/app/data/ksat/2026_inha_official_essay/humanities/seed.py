@@ -32,7 +32,7 @@ QUESTIONS = [
         "char_min": 900,
         "char_max": 1100,
         "passage_refs": ["가", "나", "다", "라", "마"],
-        "rubric_name": None,
+        "rubric_name": "KSAT 2026 Inha Humanities Q1",
     },
     {
         "question_number": 2,
@@ -51,6 +51,6 @@ QUESTIONS = [
             "자료5",
             "자료6",
         ],
-        "rubric_name": None,
+        "rubric_name": "KSAT 2026 Inha Humanities Q2",
     },
 ]

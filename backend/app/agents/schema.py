@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 class AggregationMethod(str, Enum):
     weighted_average = "weighted_average"
+    weighted_sum = "weighted_sum"
     llm_holistic = "llm_holistic"
     both = "both"
 

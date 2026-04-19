@@ -12,6 +12,8 @@ _RUBRIC_REGISTRY: dict[str, str] = {
     "KSAT 2025 CAU Humanities Q1": "ksat/cau_2025_humanities_q1.yaml",
     "KSAT 2025 CAU Humanities Q2": "ksat/cau_2025_humanities_q2.yaml",
     "KSAT 2025 CAU Humanities Q3": "ksat/cau_2025_humanities_q3.yaml",
+    "KSAT 2026 Inha Humanities Q1": "ksat/inha_2026_humanities_q1.yaml",
+    "KSAT 2026 Inha Humanities Q2": "ksat/inha_2026_humanities_q2.yaml",
 }
 
 

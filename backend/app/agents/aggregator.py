@@ -38,6 +38,19 @@ class Aggregator:
             weighted_sum += result.score * w
         return _round_score(weighted_sum / total_weight, self._rubric.rounding)
 
+    def weighted_sum(self, criteria: list[CriterionResult]) -> float:
+        """Sum each criterion's score times its weight, without dividing.
+
+        Suited to rubrics where criteria live on independent point scales
+        whose maxima already add up to the overall maximum (e.g. 10+15+20+15=60).
+        With weight=1.0 on each criterion the result is the plain sum.
+        """
+        weight_map = {spec.name: spec.weight for spec in self._rubric.criteria}
+        total = 0.0
+        for result in criteria:
+            total += result.score * weight_map.get(result.name, 1.0)
+        return _round_score(total, self._rubric.rounding)
+
     async def llm_holistic(
         self, criteria: list[CriterionResult], aggregator_agent: AgentConfig
     ) -> CriterionResult:
@@ -69,6 +82,9 @@ class Aggregator:
 
         if method == AggregationMethod.weighted_average:
             overall_score = self.weighted_average(criteria)
+            overall_feedback = ""
+        elif method == AggregationMethod.weighted_sum:
+            overall_score = self.weighted_sum(criteria)
             overall_feedback = ""
         elif method == AggregationMethod.llm_holistic:
             if aggregator_agent is None:

@@ -32,8 +32,10 @@
   let exampleAnswers = {};
 
   let exams = [];
-  let examContent = '';
   let questions = [];
+  let activePassageQNum = null;
+  $: activePassageContent =
+    questions.find(q => q.question_number === activePassageQNum)?.content || '';
 
   let AIModelProviders = [];
   let selectedAIModelProvider = null;
@@ -109,8 +111,8 @@
     mainActiveTab = 'write';
     fastapi('get', `/api/v1/ksat/exams/${exam.id}`, {},
       (json) => {
-        examContent = json.content || '';
         questions = json.questions || [];
+        activePassageQNum = questions[0]?.question_number ?? null;
         // Initialize per-question state
         essayContents = {};
         essaysByQuestion = {};
@@ -424,11 +426,26 @@
         <div class="write-layout">
           <div class="passages-panel">
             <h4 class="panel-title">제시문</h4>
-            <div class="exam-text">{examContent}</div>
+            <div class="exam-text">{activePassageContent}</div>
           </div>
 
           <div class="essay-panel">
-            <h4 class="panel-title">답안 작성</h4>
+            <div class="essay-panel-header">
+              <h4 class="panel-title">답안 작성</h4>
+              {#if questions.length > 1}
+                <div class="passage-question-tabs">
+                  {#each questions as q (q.question_number)}
+                    <button
+                      class="passage-question-tab"
+                      class:active={activePassageQNum === q.question_number}
+                      on:click={() => (activePassageQNum = q.question_number)}
+                    >
+                      문제 {q.question_number}
+                    </button>
+                  {/each}
+                </div>
+              {/if}
+            </div>
             {#each questions as q (q.question_number)}
               <div class="question-write-section">
                 <div class="question-write-header">
@@ -885,6 +902,48 @@
 
   .passages-panel, .essay-panel {
     overflow-y: auto;
+  }
+
+  .essay-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .essay-panel-header .panel-title {
+    margin: 0;
+  }
+
+  .passage-question-tabs {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .passage-question-tab {
+    padding: 4px 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: #fff;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .passage-question-tab:hover {
+    border-color: #c44536;
+    color: #c44536;
+  }
+
+  .passage-question-tab.active {
+    background: #c44536;
+    color: white;
+    border-color: #c44536;
   }
 
   .panel-title {

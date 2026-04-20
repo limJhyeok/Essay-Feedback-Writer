@@ -126,6 +126,7 @@ services:
       - default
     volumes:
       - ./frontend/src:/frontend/src
+      - ./frontend/public:/frontend/public
     depends_on:
       - backend
     env_file:

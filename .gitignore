@@ -29,3 +29,6 @@ traefik-public/
 
 # Claude Code audit logs
 .claude/logs/
+
+# playwright-cli
+.playwright-cli

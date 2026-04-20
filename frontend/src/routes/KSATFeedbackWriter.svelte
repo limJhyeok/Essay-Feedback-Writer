@@ -32,8 +32,10 @@
   let exampleAnswers = {};
 
   let exams = [];
-  let examContent = '';
   let questions = [];
+  let activePassageQNum = null;
+  $: activePassageContent =
+    questions.find(q => q.question_number === activePassageQNum)?.content || '';
 
   let AIModelProviders = [];
   let selectedAIModelProvider = null;
@@ -109,8 +111,8 @@
     mainActiveTab = 'write';
     fastapi('get', `/api/v1/ksat/exams/${exam.id}`, {},
       (json) => {
-        examContent = json.content || '';
         questions = json.questions || [];
+        activePassageQNum = questions[0]?.question_number ?? null;
         // Initialize per-question state
         essayContents = {};
         essaysByQuestion = {};
@@ -125,8 +127,7 @@
           activeEssayIdxByQ[q.question_number] = 0;
           activeFeedbackIdxByQ[q.question_number] = 0;
           getEssaysByPromptId(q);
-          const rubricName = getQuestionRubricName(q);
-          if (rubricName) loadCriteriaLabels(rubricName);
+          if (q.rubric_name) loadCriteriaLabels(q.rubric_name);
         });
       },
       (json_error) => { error = json_error; }
@@ -194,17 +195,6 @@
     );
   }
 
-  // Rubric name mapping
-  function getQuestionRubricName(q) {
-    if (!q) return null;
-    const rubricMap = {
-      1: 'KSAT 2025 CAU Humanities Q1',
-      2: 'KSAT 2025 CAU Humanities Q2',
-      3: 'KSAT 2025 CAU Humanities Q3',
-    };
-    return rubricMap[q.question_number] || null;
-  }
-
   // At least one question has content
   $: anyEssayFilled = questions.length > 0 &&
     questions.some(q => (essayContents[q.question_number] || '').trim().length > 0);
@@ -242,7 +232,7 @@
         const essay = savedEssays[i];
         return apiCall('post', `/api/v1/ksat/essays/${essay.id}/feedback`, {
           prompt: `[문제 ${q.question_number}] ${q.prompt_content || ''}`,
-          rubric_name: getQuestionRubricName(q),
+          rubric_name: q.rubric_name,
           model_provider_name: selectedAIModelProvider?.name || '',
           api_model_name: selectedFeedbackModel?.api_model_name || '',
         });
@@ -424,11 +414,26 @@
         <div class="write-layout">
           <div class="passages-panel">
             <h4 class="panel-title">제시문</h4>
-            <div class="exam-text">{examContent}</div>
+            <div class="exam-text">{@html safeHtml(activePassageContent)}</div>
           </div>
 
           <div class="essay-panel">
-            <h4 class="panel-title">답안 작성</h4>
+            <div class="essay-panel-header">
+              <h4 class="panel-title">답안 작성</h4>
+              {#if questions.length > 1}
+                <div class="passage-question-tabs">
+                  {#each questions as q (q.question_number)}
+                    <button
+                      class="passage-question-tab"
+                      class:active={activePassageQNum === q.question_number}
+                      on:click={() => (activePassageQNum = q.question_number)}
+                    >
+                      문제 {q.question_number}
+                    </button>
+                  {/each}
+                </div>
+              {/if}
+            </div>
             {#each questions as q (q.question_number)}
               <div class="question-write-section">
                 <div class="question-write-header">
@@ -576,7 +581,7 @@
                       <div class="feedback-content">
                         <ScoreCard
                           feedback={activeFb.content}
-                          criteriaLabels={criteriaLabelsMap[getQuestionRubricName(q)] || {}}
+                          criteriaLabels={criteriaLabelsMap[q.rubric_name] || {}}
                           maxScore={q.max_points || 40}
                         />
 
@@ -821,9 +826,8 @@
     color: #1f2937;
   }
 
-  /* Exam paper (kept for write tab passage panel) */
+  /* Exam paper (passage panel renders markdown via safeHtml) */
   .exam-text {
-    white-space: pre-wrap;
     line-height: 1.8;
     font-size: 15px;
     color: #1f2937;
@@ -831,6 +835,67 @@
     background: #fff;
     border: 1px solid #e5e7eb;
     border-radius: 8px;
+  }
+
+  .exam-text :global(h3) {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 20px 0 10px 0;
+    color: #1f2937;
+  }
+
+  .exam-text :global(h3:first-child) {
+    margin-top: 0;
+  }
+
+  .exam-text :global(p) {
+    margin: 0 0 12px 0;
+  }
+
+  .exam-text :global(hr) {
+    border: none;
+    border-top: 1px dashed #d1d5db;
+    margin: 20px 0;
+  }
+
+  .exam-text :global(img) {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 12px auto;
+  }
+
+  .exam-text :global(table) {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 12px 0;
+    font-size: 13px;
+  }
+
+  .exam-text :global(th),
+  .exam-text :global(td) {
+    border: 1px solid #d1d5db;
+    padding: 6px 10px;
+    text-align: left;
+  }
+
+  .exam-text :global(th) {
+    background: #f9fafb;
+    font-weight: 600;
+  }
+
+  .exam-text :global(ul) {
+    padding-left: 20px;
+    margin: 8px 0;
+  }
+
+  .exam-text :global(li) {
+    margin-bottom: 4px;
+  }
+
+  .exam-text :global(em) {
+    color: #6b7280;
+    font-size: 13px;
   }
 
   .year-badge {
@@ -885,6 +950,48 @@
 
   .passages-panel, .essay-panel {
     overflow-y: auto;
+  }
+
+  .essay-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .essay-panel-header .panel-title {
+    margin: 0;
+  }
+
+  .passage-question-tabs {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .passage-question-tab {
+    padding: 4px 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: #fff;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .passage-question-tab:hover {
+    border-color: #c44536;
+    color: #c44536;
+  }
+
+  .passage-question-tab.active {
+    background: #c44536;
+    color: white;
+    border-color: #c44536;
   }
 
   .panel-title {

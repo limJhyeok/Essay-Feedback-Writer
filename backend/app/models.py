@@ -365,7 +365,6 @@ class Exam(Base):
         default=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
-    content = Column(Text, nullable=True)
 
     questions = relationship(
         "ExamQuestion", back_populates="exam", cascade="all, delete-orphan"
@@ -383,6 +382,8 @@ class ExamQuestion(Base):
     char_min = Column(Integer, nullable=True)
     char_max = Column(Integer, nullable=True)
     passage_refs = Column(JSON, nullable=True)  # e.g. ["가", "나", "다", "라"]
+    content = Column(Text, nullable=True)
+    rubric_name = Column(String, nullable=True)
 
     exam = relationship("Exam", back_populates="questions")
     prompt = relationship("Prompt")

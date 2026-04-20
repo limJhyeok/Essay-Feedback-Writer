@@ -5,6 +5,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.crud import prompt_crud
+from app.models import (
+    DomainType,
+    Exam,
+    ExamQuestion,
+    ExamType,
+    TrackType,
+)
 from app.schemas import prompt_schema
 
 
@@ -23,6 +30,72 @@ async def test_get_exam_not_found(client: AsyncClient, db: AsyncSession) -> None
 
     assert r.status_code == 404
     assert r.json()["detail"] == "Exam not found"
+
+
+async def test_exam_question_content_round_trips(
+    client: AsyncClient,
+    db: AsyncSession,
+    test_user,
+) -> None:
+    """Question-owned passage content must round-trip through the API."""
+    passage_text = "제시문 (가) 테스트 지문.\n\n제시문 (나) 또 다른 지문."
+
+    prompt = await prompt_crud.create_prompt(
+        db,
+        prompt_schema.PromptCreate(
+            content="지시문 테스트",
+            created_by=test_user.id,
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+        ),
+    )
+
+    exam = Exam(
+        domain=DomainType.ksat,
+        university="테스트대학교",
+        year=2099,
+        track=TrackType.humanities,
+        exam_type=ExamType.mock,
+    )
+    db.add(exam)
+    await db.commit()
+    await db.refresh(exam)
+
+    question = ExamQuestion(
+        exam_id=exam.id,
+        prompt_id=prompt.id,
+        question_number=1,
+        max_points=40,
+        char_min=500,
+        char_max=600,
+        passage_refs=["가", "나"],
+        content=passage_text,
+        rubric_name="KSAT Test Rubric",
+    )
+    db.add(question)
+    await db.commit()
+
+    r_questions = await client.get(
+        f"{settings.API_V1_STR}/ksat/exams/{exam.id}/questions"
+    )
+    assert r_questions.status_code == 200
+    payload = r_questions.json()
+    assert len(payload) == 1
+    assert payload[0]["content"] == passage_text
+    assert payload[0]["passage_refs"] == ["가", "나"]
+    assert payload[0]["rubric_name"] == "KSAT Test Rubric"
+
+    r_detail = await client.get(f"{settings.API_V1_STR}/ksat/exams/{exam.id}")
+    assert r_detail.status_code == 200
+    questions = r_detail.json()["questions"]
+    assert len(questions) == 1
+    assert questions[0]["content"] == passage_text
+    assert questions[0]["rubric_name"] == "KSAT Test Rubric"
+
+    await db.delete(question)
+    await db.commit()
+    await db.delete(exam)
+    await db.commit()
 
 
 async def test_submit_and_list_ksat_essays(

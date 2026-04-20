@@ -41,6 +41,7 @@ def test_rubric_spec_defaults():
 
 def test_aggregation_method_values():
     assert AggregationMethod.weighted_average == "weighted_average"
+    assert AggregationMethod.weighted_sum == "weighted_sum"
     assert AggregationMethod.llm_holistic == "llm_holistic"
     assert AggregationMethod.both == "both"
 

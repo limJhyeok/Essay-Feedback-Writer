@@ -71,6 +71,111 @@ def test_weighted_average_equal_weights():
     assert agg.weighted_average(criteria) == 6.5
 
 
+def test_weighted_sum_equal_weights():
+    """Sum of scores when all weights are 1.0."""
+    rubric = _make_rubric()
+    rubric.overall_scale_max = 36  # criterion scale_max=9 × 4
+    agg = Aggregator(rubric)
+    criteria = _make_criteria()  # 7 + 6 + 7 + 6 = 26
+    assert agg.weighted_sum(criteria) == 26
+
+
+def test_weighted_sum_point_scaled_criteria():
+    """Matches Inha-style rubrics where per-criterion maxima already add up."""
+    rubric = RubricSpec(
+        name="Inha-like",
+        description="",
+        criteria=[
+            CriterionSpec(name="정당화", description="", weight=1.0, scale_max=10),
+            CriterionSpec(name="반박", description="", weight=1.0, scale_max=15),
+            CriterionSpec(name="재반박", description="", weight=1.0, scale_max=20),
+            CriterionSpec(name="논리성", description="", weight=1.0, scale_max=15),
+        ],
+        overall_scale_max=60,
+        rounding="integer",
+    )
+    agg = Aggregator(rubric)
+    criteria = [
+        CriterionResult(name="정당화", score=8, feedback=""),
+        CriterionResult(name="반박", score=12, feedback=""),
+        CriterionResult(name="재반박", score=15, feedback=""),
+        CriterionResult(name="논리성", score=13, feedback=""),
+    ]
+    assert agg.weighted_sum(criteria) == 48
+
+
+def test_weighted_sum_clamps_to_overall_min_when_deductions_exceed_gains():
+    """기술적 감점이 적극 점수를 넘어서도 overall_scale_min을 뚫지 않는다."""
+    rubric = RubricSpec(
+        name="Inha-like with deductions",
+        description="",
+        criteria=[
+            CriterionSpec(name="정당화", description="", weight=1.0, scale_max=10),
+            CriterionSpec(
+                name="기술적 감점",
+                description="",
+                weight=1.0,
+                scale_min=-25,
+                scale_max=0,
+            ),
+        ],
+        overall_scale_min=0,
+        overall_scale_max=10,
+        rounding="integer",
+    )
+    agg = Aggregator(rubric)
+    criteria = [
+        CriterionResult(name="정당화", score=3, feedback=""),
+        CriterionResult(name="기술적 감점", score=-25, feedback=""),
+    ]
+    # Raw sum = 3 + (-25) = -22 → clamped to overall_scale_min = 0.
+    assert agg.weighted_sum(criteria) == 0
+
+
+def test_weighted_sum_clamps_to_overall_max_when_scores_overshoot():
+    """오채점으로 스케일 상한을 넘기면 overall_scale_max에서 잘린다."""
+    rubric = RubricSpec(
+        name="Test",
+        description="",
+        criteria=[
+            CriterionSpec(name="C1", description="", weight=1.0, scale_max=10),
+            CriterionSpec(name="C2", description="", weight=1.0, scale_max=10),
+        ],
+        overall_scale_min=0,
+        overall_scale_max=15,
+        rounding="integer",
+    )
+    agg = Aggregator(rubric)
+    criteria = [
+        CriterionResult(name="C1", score=10, feedback=""),
+        CriterionResult(name="C2", score=10, feedback=""),
+    ]
+    assert agg.weighted_sum(criteria) == 15
+
+
+async def test_aggregate_weighted_sum_only():
+    rubric = RubricSpec(
+        name="Test",
+        description="",
+        criteria=[
+            CriterionSpec(name="C1", description="", weight=1.0, scale_max=15),
+            CriterionSpec(name="C2", description="", weight=1.0, scale_max=15),
+        ],
+        overall_scale_max=30,
+        aggregation=AggregationMethod.weighted_sum,
+        rounding="integer",
+    )
+    agg = Aggregator(rubric)
+    criteria = [
+        CriterionResult(name="C1", score=10, feedback=""),
+        CriterionResult(name="C2", score=15, feedback=""),
+    ]
+
+    result = await agg.aggregate(criteria)
+    assert result.overall_score == 25
+    assert result.overall_feedback == ""
+
+
 def test_weighted_average_unequal_weights():
     rubric = RubricSpec(
         name="Test",

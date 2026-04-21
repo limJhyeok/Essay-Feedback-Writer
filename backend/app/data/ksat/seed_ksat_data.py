@@ -33,6 +33,9 @@ def _load_seed(path: Path) -> ModuleType:
 
 
 SEED_EXAMS: list[ModuleType] = [
+    _load_seed(_BASE / "2024_cau_mock_essay" / "humanities" / "seed.py"),
+    _load_seed(_BASE / "2024_cau_official_essay" / "humanities" / "seed.py"),
     _load_seed(_BASE / "2025_cau_mock_essay" / "humanities" / "seed.py"),
-    _load_seed(_BASE / "2026_inha_official_essay" / "humanities" / "seed.py"),
+    _load_seed(_BASE / "2025_cau_official_essay" / "humanities" / "seed.py"),
+    _load_seed(_BASE / "2026_inha_mock_essay" / "humanities" / "seed.py"),
 ]

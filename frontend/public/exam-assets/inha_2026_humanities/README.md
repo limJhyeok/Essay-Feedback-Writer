@@ -3,12 +3,12 @@
 This directory serves graph images for the 2026 Inha humanities mock
 essay, Question 2. Images are served as static files by Vite at
 `/exam-assets/inha_2026_humanities/<filename>` and referenced from
-`backend/app/data/ksat/2026_inha_official_essay/humanities/passages/q_2.md`.
+`backend/app/data/ksat/2026_inha_mock_essay/humanities/passages/q_2.md`.
 
 ## Required files
 
 Screenshot these from the source PDF
-(`backend/app/data/ksat/2026_inha_official_essay/humanities/(인문) 2026학년도 논술 모의고사 문제지.pdf`)
+(`backend/app/data/ksat/2026_inha_mock_essay/humanities/(인문) 2026학년도 논술 모의고사 문제지.pdf`)
 and drop them here with the exact filenames below:
 
 | Filename | Caption (PDF label) | Page |

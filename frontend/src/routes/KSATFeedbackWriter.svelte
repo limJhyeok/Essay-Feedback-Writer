@@ -898,6 +898,19 @@
     font-size: 13px;
   }
 
+  .exam-text :global(blockquote) {
+    margin: 12px 0;
+    padding: 4px 0 4px 2em;
+    border-left: 3px solid #e5e7eb;
+    color: #374151;
+    font-style: normal;
+  }
+
+  .exam-text :global(blockquote p) {
+    margin: 4px 0;
+    text-indent: 0;
+  }
+
   .year-badge {
     font-size: 12px;
     font-weight: 600;

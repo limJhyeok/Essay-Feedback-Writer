@@ -9,9 +9,18 @@ _CONFIGS_DIR = Path(__file__).parent / "configs"
 
 _RUBRIC_REGISTRY: dict[str, str] = {
     "IELTS Writing Task 2": "ielts_task2.yaml",
+    "KSAT 2024 CAU Humanities Q1": "ksat/cau_2024_humanities_q1.yaml",
+    "KSAT 2024 CAU Humanities Q2": "ksat/cau_2024_humanities_q2.yaml",
+    "KSAT 2024 CAU Humanities Q3": "ksat/cau_2024_humanities_q3.yaml",
+    "KSAT 2024 CAU Official Humanities Q1": "ksat/cau_2024_official_humanities_q1.yaml",
+    "KSAT 2024 CAU Official Humanities Q2": "ksat/cau_2024_official_humanities_q2.yaml",
+    "KSAT 2024 CAU Official Humanities Q3": "ksat/cau_2024_official_humanities_q3.yaml",
     "KSAT 2025 CAU Humanities Q1": "ksat/cau_2025_humanities_q1.yaml",
     "KSAT 2025 CAU Humanities Q2": "ksat/cau_2025_humanities_q2.yaml",
     "KSAT 2025 CAU Humanities Q3": "ksat/cau_2025_humanities_q3.yaml",
+    "KSAT 2025 CAU Official Humanities Q1": "ksat/cau_2025_official_humanities_q1.yaml",
+    "KSAT 2025 CAU Official Humanities Q2": "ksat/cau_2025_official_humanities_q2.yaml",
+    "KSAT 2025 CAU Official Humanities Q3": "ksat/cau_2025_official_humanities_q3.yaml",
     "KSAT 2026 Inha Humanities Q1": "ksat/inha_2026_humanities_q1.yaml",
     "KSAT 2026 Inha Humanities Q2": "ksat/inha_2026_humanities_q2.yaml",
 }

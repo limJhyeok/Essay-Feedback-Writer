@@ -232,20 +232,23 @@ async def store_ksat_exam_data(db: AsyncSession) -> None:
     for seed_module in SEED_EXAMS:
         meta = seed_module.EXAM_META
         track = TrackType(meta["track"])
+        exam_type = ExamType(meta["exam_type"])
 
         exists = await db.execute(
             select(Exam).where(
                 Exam.university == meta["university"],
                 Exam.year == meta["year"],
                 Exam.track == track,
+                Exam.exam_type == exam_type,
             )
         )
         if exists.scalars().first():
             logger.info(
-                "KSAT exam already seeded: %s %s %s — skipping",
+                "KSAT exam already seeded: %s %s %s %s — skipping",
                 meta["university"],
                 meta["year"],
                 meta["track"],
+                meta["exam_type"],
             )
             continue
 
@@ -254,7 +257,7 @@ async def store_ksat_exam_data(db: AsyncSession) -> None:
             university=meta["university"],
             year=meta["year"],
             track=track,
-            exam_type=ExamType(meta["exam_type"]),
+            exam_type=exam_type,
         )
         db.add(db_exam)
         await db.commit()
@@ -296,8 +299,9 @@ async def store_ksat_exam_data(db: AsyncSession) -> None:
 
         await db.commit()
         logger.info(
-            "KSAT exam seeded: %s %s %s",
+            "KSAT exam seeded: %s %s %s %s",
             meta["university"],
             meta["year"],
             meta["track"],
+            meta["exam_type"],
         )

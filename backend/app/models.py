@@ -360,6 +360,7 @@ class Exam(Base):
     year = Column(Integer, nullable=False)
     track = Column(Enum(TrackType), nullable=False)
     exam_type = Column(Enum(ExamType), nullable=False, server_default="official")
+    duration_minutes = Column(Integer, nullable=True)
     created_at = Column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),

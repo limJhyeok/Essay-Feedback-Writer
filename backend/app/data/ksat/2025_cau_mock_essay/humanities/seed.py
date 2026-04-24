@@ -14,6 +14,7 @@ EXAM_META = {
     "year": 2025,
     "track": "humanities",
     "exam_type": "mock",
+    "duration_minutes": 120,
 }
 
 QUESTIONS = [

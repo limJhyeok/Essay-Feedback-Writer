@@ -14,6 +14,7 @@ EXAM_META = {
     "year": 2024,
     "track": "humanities",
     "exam_type": "official",
+    "duration_minutes": 120,
 }
 
 QUESTIONS = [

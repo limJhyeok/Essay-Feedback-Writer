@@ -35,6 +35,7 @@ class ExamPublic(BaseModel):
     year: int
     track: str
     exam_type: str
+    duration_minutes: Optional[int] = None
     created_at: datetime
 
 

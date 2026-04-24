@@ -5,12 +5,13 @@
   import { onMount, tick } from 'svelte';
   import { push } from 'svelte-spa-router';
   import './home.css';
-  import { BookOpen, FileText, BarChart, PenLine, Search } from 'lucide-svelte';
+  import { BookOpen, FileText, BarChart, PenLine, Search, Check, Circle, AlertTriangle } from 'lucide-svelte';
 
   import Error from '../components/Error.svelte';
   import TopBar from '../components/TopBar.svelte';
   import InfoDeskModal from '../components/InfoDeskModal.svelte';
   import ManageKeyModal from '../components/ManageKeyModal.svelte';
+  import Modal from '../components/Modal.svelte';
   import ModelSelector from '../components/ModelSelector.svelte';
   import ScoreCard from '../components/ScoreCard.svelte';
   import { safeHtml } from '../lib/sanitize.js';
@@ -47,6 +48,27 @@
   let isGeneratingFeedback = false;
   let criteriaLabelsMap = {};
   let hasApiKeys = null;
+
+  // Submit confirmation modal state
+  let showSubmitConfirm = false;
+  let unfilledLabels = '';
+  let submitConfirmResolver = null;
+
+  function askSubmitConfirm(label) {
+    unfilledLabels = label;
+    showSubmitConfirm = true;
+    return new Promise((resolve) => {
+      submitConfirmResolver = resolve;
+    });
+  }
+
+  function resolveSubmitConfirm(proceed) {
+    showSubmitConfirm = false;
+    if (submitConfirmResolver) {
+      submitConfirmResolver(proceed);
+      submitConfirmResolver = null;
+    }
+  }
 
   function checkApiKeys() {
     fastapi('get', '/api/v1/shared/api_keys', {},
@@ -199,6 +221,15 @@
   $: anyEssayFilled = questions.length > 0 &&
     questions.some(q => (essayContents[q.question_number] || '').trim().length > 0);
 
+  // All questions have content
+  $: allEssaysFilled = questions.length > 0 &&
+    questions.every(q => (essayContents[q.question_number] || '').trim().length > 0);
+
+  // Filled count for progress display
+  $: filledCount = questions.filter(
+    q => (essayContents[q.question_number] || '').trim().length > 0
+  ).length;
+
   async function submitAndGenerateFeedback() {
     if (!anyEssayFilled || isGeneratingFeedback) return;
 
@@ -206,6 +237,15 @@
     const filledQuestions = questions.filter(
       q => (essayContents[q.question_number] || '').trim().length > 0
     );
+
+    if (!allEssaysFilled) {
+      const unfilled = questions
+        .filter(q => (essayContents[q.question_number] || '').trim().length === 0)
+        .map(q => `문제 ${q.question_number}`)
+        .join(', ');
+      const proceed = await askSubmitConfirm(unfilled);
+      if (!proceed) return;
+    }
 
     isGeneratingFeedback = true;
     try {
@@ -310,6 +350,31 @@
   {AIModelProviders}
   locale="ko"
 />
+
+<Modal
+  open={showSubmitConfirm}
+  title="미작성 답안이 있습니다"
+  size="md"
+  onClose={() => resolveSubmitConfirm(false)}
+>
+  <svelte:fragment slot="icon">
+    <span class="submit-confirm-icon"><AlertTriangle size={18} /></span>
+  </svelte:fragment>
+
+  <div class="submit-confirm-body">
+    <p class="submit-confirm-lead">아직 작성하지 않은 답안이 있습니다.</p>
+    <div class="submit-confirm-unfilled">{unfilledLabels}</div>
+    <p class="submit-confirm-note">
+      그대로 제출하면 해당 문제는 <strong>채점 및 첨삭이 진행되지 않습니다.</strong>
+      계속 진행하시겠습니까?
+    </p>
+  </div>
+
+  <svelte:fragment slot="footer">
+    <button type="button" class="btn btn-secondary" on:click={() => resolveSubmitConfirm(false)}>취소</button>
+    <button type="button" class="btn btn-primary" on:click={() => resolveSubmitConfirm(true)}>그래도 제출</button>
+  </svelte:fragment>
+</Modal>
 
 <div class="ksat-layout">
   <!-- Left Sidebar -->
@@ -423,18 +488,28 @@
               {#if questions.length > 1}
                 <div class="passage-question-tabs">
                   {#each questions as q (q.question_number)}
+                    {@const filled = (essayContents[q.question_number] || '').trim().length > 0}
                     <button
                       class="passage-question-tab"
                       class:active={activePassageQNum === q.question_number}
+                      class:filled
                       on:click={() => (activePassageQNum = q.question_number)}
+                      aria-label={filled ? `문제 ${q.question_number} (작성 완료)` : `문제 ${q.question_number} (미작성)`}
                     >
+                      <span class="tab-status-icon" aria-hidden="true">
+                        {#if filled}
+                          <Check size={14} strokeWidth={3} />
+                        {:else}
+                          <Circle size={14} strokeWidth={2} />
+                        {/if}
+                      </span>
                       문제 {q.question_number}
                     </button>
                   {/each}
                 </div>
               {/if}
             </div>
-            {#each questions as q (q.question_number)}
+            {#each questions.filter(q => q.question_number === activePassageQNum) as q (q.question_number)}
               <div class="question-write-section">
                 <div class="question-write-header">
                   <span class="question-write-label">[문제 {q.question_number}]</span>
@@ -466,13 +541,22 @@
                   {feedbackModels}
                   bind:selectedFeedbackModel
                 />
-                <button
-                  class="btn btn-primary"
-                  on:click={submitAndGenerateFeedback}
-                  disabled={!anyEssayFilled || isGeneratingFeedback}
-                >
-                  {isGeneratingFeedback ? '채점 중...' : '채점 받기'}
-                </button>
+                <div class="submit-group">
+                  <span class="progress-text" class:complete={allEssaysFilled}>
+                    {#if allEssaysFilled}
+                      모든 문제 작성 완료 ({filledCount}/{questions.length})
+                    {:else}
+                      작성 완료 {filledCount}/{questions.length}
+                    {/if}
+                  </span>
+                  <button
+                    class="btn btn-primary"
+                    on:click={submitAndGenerateFeedback}
+                    disabled={!anyEssayFilled || isGeneratingFeedback}
+                  >
+                    {isGeneratingFeedback ? '채점 중...' : '채점 받기'}
+                  </button>
+                </div>
               </div>
             {:else}
               <div class="empty-message">기출문제 탭에서 문제를 확인한 후 답안을 작성하세요.</div>
@@ -985,13 +1069,17 @@
   }
 
   .passage-question-tab {
-    padding: 4px 10px;
-    border: 1px solid #e5e7eb;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 2px solid #e5e7eb;
     border-radius: 6px;
     background: #fff;
     color: #6b7280;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 500;
+    line-height: 1.2;
     cursor: pointer;
     transition: all 0.15s;
   }
@@ -1001,10 +1089,42 @@
     color: #c44536;
   }
 
+  .passage-question-tab.filled {
+    border-color: #16a34a;
+    background: #f0fdf4;
+    color: #15803d;
+  }
+
+  .passage-question-tab.filled:hover {
+    border-color: #15803d;
+    color: #166534;
+  }
+
   .passage-question-tab.active {
     background: #c44536;
     color: white;
     border-color: #c44536;
+  }
+
+  .passage-question-tab.filled.active {
+    background: #c44536;
+    border-color: #c44536;
+    color: white;
+  }
+
+  .tab-status-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #d1d5db;
+  }
+
+  .passage-question-tab.filled .tab-status-icon {
+    color: #16a34a;
+  }
+
+  .passage-question-tab.active .tab-status-icon {
+    color: rgba(255, 255, 255, 0.95);
   }
 
   .panel-title {
@@ -1087,6 +1207,23 @@
     margin-top: 12px;
     flex-wrap: wrap;
     gap: 8px;
+  }
+
+  .submit-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .progress-text {
+    font-size: 13px;
+    font-weight: 500;
+    color: #6b7280;
+  }
+
+  .progress-text.complete {
+    color: #16a34a;
   }
 
   .btn-primary:disabled {
@@ -1279,6 +1416,52 @@
   }
   @keyframes spin {
     to { transform: rotate(360deg); }
+  }
+
+  /* Submit confirmation modal */
+  .submit-confirm-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #fef3c7;
+    color: #b45309;
+    margin-right: 10px;
+  }
+
+  .submit-confirm-body {
+    padding: 4px 0;
+  }
+
+  .submit-confirm-lead {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0 0 12px 0;
+  }
+
+  .submit-confirm-unfilled {
+    background: #fef3c7;
+    color: #92400e;
+    border-left: 3px solid #f59e0b;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 14px;
+  }
+
+  .submit-confirm-note {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #374151;
+    margin: 0;
+  }
+
+  .submit-confirm-note strong {
+    color: #b91c1c;
   }
 
   .onboarding-banner {

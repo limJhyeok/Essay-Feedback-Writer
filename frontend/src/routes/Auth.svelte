@@ -23,7 +23,7 @@
       fastapi('login', url, params,
           (json) => {
               $accessToken = json.access_token
-              $userEmail = json.user_email
+              $userEmail = json.email
               $isLogin = true
               push("/")
           },

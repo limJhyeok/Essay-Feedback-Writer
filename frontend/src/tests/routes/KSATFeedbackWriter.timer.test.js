@@ -142,12 +142,12 @@ describe('Timer — storage key', () => {
     expect(localStorage.getItem('ksat_timer_alice@example.com_1')).not.toBeNull();
   });
 
-  it('A2: falls back to ksat_timer_anon_{examId} when userEmail is empty', async () => {
+  it('A2: falls back to ksat_timer_anno_{examId} when userEmail is empty', async () => {
     mockUserEmail.set('');
     const result = render(KSATFeedbackWriter);
     await selectExamByTitle(result, '2025학년도');
 
-    expect(localStorage.getItem('ksat_timer_anon_1')).not.toBeNull();
+    expect(localStorage.getItem('ksat_timer_anno_1')).not.toBeNull();
   });
 });
 

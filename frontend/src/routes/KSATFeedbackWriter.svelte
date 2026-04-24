@@ -61,7 +61,7 @@
   let timerIntervalId = null;
 
   function timerStorageKey(examId) {
-    const email = get(userEmail) || 'anon';
+    const email = get(userEmail) || 'anno';
     return `ksat_timer_${email}_${examId}`;
   }
 

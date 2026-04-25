@@ -42,6 +42,7 @@ const EXAM ={
   year: 2025,
   track: 'humanities',
   exam_type: 'mock',
+  duration_minutes: null,
 };
 
 const QUESTIONS = [

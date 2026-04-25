@@ -98,6 +98,81 @@ async def test_exam_question_content_round_trips(
     await db.commit()
 
 
+async def test_exam_detail_includes_duration_minutes(
+    client: AsyncClient, db: AsyncSession
+) -> None:
+    exam = Exam(
+        domain=DomainType.ksat,
+        university="Duration Test University",
+        year=2099,
+        track=TrackType.humanities,
+        exam_type=ExamType.mock,
+        duration_minutes=120,
+    )
+    db.add(exam)
+    await db.commit()
+    await db.refresh(exam)
+
+    try:
+        r = await client.get(f"{settings.API_V1_STR}/ksat/exams/{exam.id}")
+        assert r.status_code == 200
+        assert r.json()["duration_minutes"] == 120
+    finally:
+        await db.delete(exam)
+        await db.commit()
+
+
+async def test_exam_list_includes_duration_minutes(
+    client: AsyncClient, db: AsyncSession
+) -> None:
+    exam = Exam(
+        domain=DomainType.ksat,
+        university="Duration List University",
+        year=2098,
+        track=TrackType.humanities,
+        exam_type=ExamType.mock,
+        duration_minutes=90,
+    )
+    db.add(exam)
+    await db.commit()
+    await db.refresh(exam)
+
+    try:
+        r = await client.get(f"{settings.API_V1_STR}/ksat/exams")
+        assert r.status_code == 200
+        matched = next((e for e in r.json() if e["id"] == exam.id), None)
+        assert matched is not None
+        assert matched["duration_minutes"] == 90
+    finally:
+        await db.delete(exam)
+        await db.commit()
+
+
+async def test_exam_duration_minutes_null_when_unset(
+    client: AsyncClient, db: AsyncSession
+) -> None:
+    exam = Exam(
+        domain=DomainType.ksat,
+        university="No Duration University",
+        year=2097,
+        track=TrackType.humanities,
+        exam_type=ExamType.mock,
+    )
+    db.add(exam)
+    await db.commit()
+    await db.refresh(exam)
+
+    try:
+        r = await client.get(f"{settings.API_V1_STR}/ksat/exams/{exam.id}")
+        assert r.status_code == 200
+        body = r.json()
+        assert "duration_minutes" in body
+        assert body["duration_minutes"] is None
+    finally:
+        await db.delete(exam)
+        await db.commit()
+
+
 async def test_submit_and_list_ksat_essays(
     client: AsyncClient,
     db: AsyncSession,

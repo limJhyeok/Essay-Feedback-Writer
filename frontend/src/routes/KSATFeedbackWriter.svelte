@@ -1,11 +1,11 @@
 <script>
-  import { isLogin, accessToken } from '../lib/store.js';
+  import { isLogin, accessToken, userEmail } from '../lib/store.js';
   import { get } from 'svelte/store';
   import fastapi, { apiCall } from '../lib/api.js';
-  import { onMount, tick } from 'svelte';
+  import { onMount, onDestroy, tick } from 'svelte';
   import { push } from 'svelte-spa-router';
   import './home.css';
-  import { BookOpen, FileText, BarChart, PenLine, Search, Check, Circle, AlertTriangle } from 'lucide-svelte';
+  import { BookOpen, FileText, BarChart, PenLine, Search, Check, Circle, AlertTriangle, Clock, RotateCcw } from 'lucide-svelte';
 
   import Error from '../components/Error.svelte';
   import TopBar from '../components/TopBar.svelte';
@@ -53,6 +53,90 @@
   let showSubmitConfirm = false;
   let unfilledLabels = '';
   let submitConfirmResolver = null;
+
+  // Timer state
+  const WARNING_THRESHOLD_SECONDS = 30 * 60;
+  let timerStartedAt = null; // ms epoch
+  let timerElapsedSeconds = 0;
+  let timerIntervalId = null;
+
+  function timerStorageKey(examId) {
+    const email = get(userEmail) || 'anno';
+    return `ksat_timer_${email}_${examId}`;
+  }
+
+  function startTimerForExam(exam) {
+    if (!exam || !exam.duration_minutes) return;
+    const key = timerStorageKey(exam.id);
+    const stored = localStorage.getItem(key);
+    if (stored) {
+      const parsed = parseInt(stored, 10);
+      if (!Number.isNaN(parsed)) {
+        timerStartedAt = parsed;
+      }
+    }
+    if (!timerStartedAt) {
+      timerStartedAt = Date.now();
+      localStorage.setItem(key, String(timerStartedAt));
+    }
+    tickTimer();
+    if (timerIntervalId) clearInterval(timerIntervalId);
+    timerIntervalId = setInterval(tickTimer, 1000);
+  }
+
+  function tickTimer() {
+    if (!timerStartedAt) return;
+    timerElapsedSeconds = Math.floor((Date.now() - timerStartedAt) / 1000);
+  }
+
+  function stopTimer() {
+    if (timerIntervalId) {
+      clearInterval(timerIntervalId);
+      timerIntervalId = null;
+    }
+  }
+
+  function resetTimer() {
+    if (!selectedExam) return;
+    const key = timerStorageKey(selectedExam.id);
+    timerStartedAt = Date.now();
+    localStorage.setItem(key, String(timerStartedAt));
+    timerElapsedSeconds = 0;
+    if (timerIntervalId) clearInterval(timerIntervalId);
+    timerIntervalId = setInterval(tickTimer, 1000);
+  }
+
+  function clearTimerState() {
+    stopTimer();
+    timerStartedAt = null;
+    timerElapsedSeconds = 0;
+  }
+
+  $: timerDurationSeconds =
+    selectedExam && selectedExam.duration_minutes
+      ? selectedExam.duration_minutes * 60
+      : 0;
+  $: timerRemainingSeconds = timerDurationSeconds
+    ? timerDurationSeconds - timerElapsedSeconds
+    : 0;
+  $: timerIsOver = timerDurationSeconds > 0 && timerRemainingSeconds <= 0;
+  $: timerIsWarning =
+    timerDurationSeconds > 0 &&
+    !timerIsOver &&
+    timerRemainingSeconds <= WARNING_THRESHOLD_SECONDS;
+
+  function formatTimerDisplay(seconds) {
+    if (seconds <= 0) return '00:00';
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    const pad = (n) => String(n).padStart(2, '0');
+    return h > 0 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+  }
+
+  onDestroy(() => {
+    stopTimer();
+  });
 
   function askSubmitConfirm(label) {
     unfilledLabels = label;
@@ -129,8 +213,10 @@
 
   // Select an exam and load its details
   function selectExam(exam) {
+    clearTimerState();
     selectedExam = exam;
     mainActiveTab = 'write';
+    startTimerForExam(exam);
     fastapi('get', `/api/v1/ksat/exams/${exam.id}`, {},
       (json) => {
         questions = json.questions || [];
@@ -400,6 +486,7 @@
           class="university-item"
           class:active={selectedUniversity === university}
           on:click={() => {
+            clearTimerState();
             selectedUniversity = university;
             selectedExam = null;
             mainActiveTab = 'prompts';
@@ -484,7 +571,38 @@
 
           <div class="essay-panel">
             <div class="essay-panel-header">
-              <h4 class="panel-title">답안 작성</h4>
+              <div class="essay-panel-header-title">
+                <h4 class="panel-title">답안 작성</h4>
+                {#if selectedExam?.duration_minutes}
+                  <div
+                    class="timer"
+                    class:warning={timerIsWarning}
+                    class:over={timerIsOver}
+                    role="timer"
+                    aria-live="polite"
+                    aria-label={timerIsOver
+                      ? '제한 시간이 초과되었습니다'
+                      : `남은 시간 ${formatTimerDisplay(timerRemainingSeconds)}`}
+                  >
+                    <Clock size={14} aria-hidden="true" />
+                    {#if timerIsOver}
+                      <span class="timer-label">시간 초과</span>
+                    {:else}
+                      <span class="timer-label">남은 시간</span>
+                      <span class="timer-value">{formatTimerDisplay(timerRemainingSeconds)}</span>
+                    {/if}
+                    <button
+                      type="button"
+                      class="timer-reset"
+                      on:click={resetTimer}
+                      aria-label="타이머 재설정"
+                      title="타이머 재설정"
+                    >
+                      <RotateCcw size={13} aria-hidden="true" />
+                    </button>
+                  </div>
+                {/if}
+              </div>
               {#if questions.length > 1}
                 <div class="passage-question-tabs">
                   {#each questions as q (q.question_number)}
@@ -1060,6 +1178,87 @@
 
   .essay-panel-header .panel-title {
     margin: 0;
+  }
+
+  .essay-panel-header-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .timer {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: #f3f4f6;
+    color: #374151;
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    border: 1px solid #e5e7eb;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+
+  .timer-label {
+    font-weight: 500;
+    color: #6b7280;
+  }
+
+  .timer-value {
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .timer.warning {
+    background: #fdf0ee;
+    color: #c44536;
+    border-color: #c44536;
+  }
+
+  .timer.warning .timer-label {
+    color: #c44536;
+  }
+
+  .timer.over {
+    background: #c44536;
+    color: #fff;
+    border-color: #c44536;
+    animation: timer-blink 1s ease-in-out infinite;
+  }
+
+  @keyframes timer-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.55; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .timer.over { animation: none; }
+  }
+
+  .timer-reset {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    margin-left: 2px;
+    border: none;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    border-radius: 4px;
+    opacity: 0.7;
+  }
+
+  .timer-reset:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.06);
+  }
+
+  .timer.over .timer-reset:hover {
+    background: rgba(255, 255, 255, 0.2);
   }
 
   .passage-question-tabs {

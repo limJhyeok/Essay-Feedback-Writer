@@ -39,7 +39,7 @@ jobs:
       issue_number: ${{ steps.get-pr-info.outputs.issue_number }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -224,7 +224,7 @@ jobs:
       actions: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Find and trigger dependent issues
         env:
